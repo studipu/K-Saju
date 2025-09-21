@@ -8,6 +8,7 @@ import sys
 import argparse
 from typing import List
 from src.translator import SajuTranslator
+from src.tts import TTSManager
 
 def print_header():
     """프로그램 헤더 출력"""
@@ -331,6 +332,188 @@ def show_terms(args):
         print("💡 다시 시도하거나 관리자에게 문의하세요.")
         sys.exit(1)
 
+def tts_single(args):
+    """단일 텍스트 TTS 변환"""
+    try:
+        tts_manager = TTSManager(
+            provider="openai",
+            api_key=args.api_key,
+            model=args.tts_model or "tts-1",
+            voice=args.voice or "alloy"
+        )
+
+        # 텍스트 유효성 검사
+        validation = tts_manager.validate_text(args.text)
+        if not validation["valid"]:
+            print(f"\n❌ 텍스트 오류: {validation['error']}")
+            for suggestion in validation["suggestions"]:
+                print(f"💡 {suggestion}")
+            return
+
+        # 비용 추정 표시 (요청된 경우)
+        if args.show_cost:
+            cost_info = tts_manager.estimate_cost(args.text)
+            print(f"\n💰 예상 비용: ${cost_info['estimated_cost_usd']:.4f}")
+            print(f"   문자 수: {cost_info['character_count']}")
+            print(f"   모델: {cost_info['model']}")
+
+        # 출력 파일 경로 설정
+        output_file = args.output
+        if not output_file:
+            import tempfile
+            output_file = tempfile.mktemp(suffix=f".{args.format}")
+
+        print(f"\n🔊 TTS 변환 시작...")
+        print(f"   텍스트: '{args.text[:50]}{'...' if len(args.text) > 50 else ''}'")
+        print(f"   음성: {args.voice or 'alloy'}")
+        print(f"   모델: {args.tts_model or 'tts-1'}")
+
+        # TTS 생성
+        result = tts_manager.synthesize_text(
+            text=args.text,
+            voice=args.voice,
+            output_file=output_file,
+            output_format=args.format,
+            speed=args.speed
+        )
+
+        if result["success"]:
+            print(f"\n✅ TTS 변환 완료!")
+            print(f"   파일: {result.get('output_file', 'N/A')}")
+            print(f"   크기: {result['audio_size']:,} bytes")
+            print(f"   처리 시간: {result['processing_time']:.2f}초")
+
+            # 자동 재생 (요청된 경우)
+            if args.play and result.get('output_file'):
+                from src.tts.utils.audio_utils import AudioUtils
+                play_result = AudioUtils.play_audio(result['output_file'])
+                if play_result["success"]:
+                    print(f"🎵 재생 시작: {play_result['player']}")
+                else:
+                    print(f"❌ 재생 실패: {play_result['error']}")
+
+        else:
+            print(f"\n❌ TTS 변환 실패: {result['error']}")
+
+    except ValueError as e:
+        print(f"\n❌ 설정 오류: {e}")
+        print("💡 해결 방법:")
+        print("   1. .env 파일에 OPENAI_API_KEY를 설정하세요")
+        print("   2. 또는 --api-key 옵션을 사용하세요")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ 예상치 못한 오류가 발생했습니다: {e}")
+        sys.exit(1)
+
+def tts_translate(args):
+    """번역 + TTS 통합 기능"""
+    try:
+        # 번역기 초기화
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=not args.no_context
+        )
+
+        # TTS 관리자 초기화
+        tts_manager = TTSManager(
+            provider="openai",
+            api_key=args.api_key,
+            model=args.tts_model or "tts-1",
+            voice=args.voice or "alloy"
+        )
+
+        print(f"\n🔀 번역 + TTS 변환")
+        print(f"   원문: {args.text}")
+        print(f"   목표 언어: {args.language}")
+
+        # 번역 수행
+        translation_result = translator.translate(
+            input_text=args.text,
+            target_language=args.language,
+            include_terms=not args.no_terms
+        )
+
+        if not translation_result["success"]:
+            print(f"\n❌ 번역 실패: {translation_result['error']}")
+            return
+
+        translated_text = translation_result["translated_text"]
+        print(f"   번역: {translated_text}")
+
+        # 출력 파일 경로 설정
+        output_file = args.output
+        if not output_file:
+            import tempfile
+            output_file = tempfile.mktemp(suffix=f".{args.format}")
+
+        # TTS 생성
+        print(f"\n🔊 번역된 텍스트를 음성으로 변환 중...")
+        tts_result = tts_manager.synthesize_text(
+            text=translated_text,
+            voice=args.voice,
+            output_file=output_file,
+            output_format=args.format,
+            speed=args.speed
+        )
+
+        if tts_result["success"]:
+            print(f"\n✅ 번역 + TTS 완료!")
+            print(f"   번역 시간: {translation_result['processing_time']:.2f}초")
+            print(f"   TTS 시간: {tts_result['processing_time']:.2f}초")
+            print(f"   오디오 파일: {tts_result.get('output_file', 'N/A')}")
+            print(f"   파일 크기: {tts_result['audio_size']:,} bytes")
+
+            # 자동 재생 (요청된 경우)
+            if args.play and tts_result.get('output_file'):
+                from src.tts.utils.audio_utils import AudioUtils
+                play_result = AudioUtils.play_audio(tts_result['output_file'])
+                if play_result["success"]:
+                    print(f"🎵 재생 시작: {play_result['player']}")
+
+        else:
+            print(f"\n❌ TTS 변환 실패: {tts_result['error']}")
+
+    except Exception as e:
+        print(f"\n❌ 오류 발생: {e}")
+        sys.exit(1)
+
+def tts_voices(args):
+    """사용 가능한 음성 목록 조회"""
+    try:
+        tts_manager = TTSManager(
+            provider="openai",
+            api_key=args.api_key
+        )
+
+        voices = tts_manager.get_available_voices()
+        if not voices:
+            print("\n❌ 음성 정보를 가져올 수 없습니다.")
+            return
+
+        print(f"\n🎙️ 사용 가능한 음성 ({len(voices)}개):")
+        print("=" * 50)
+
+        for voice in voices:
+            print(f"🔸 {voice['id']} ({voice['name']})")
+            print(f"   성별: {voice['gender']}")
+            print(f"   품질: {voice['quality']}")
+            print(f"   설명: {voice['description']}")
+            print()
+
+        # 서비스 정보
+        service_info = tts_manager.get_service_info()
+        print("📊 서비스 정보:")
+        print(f"   제공자: {service_info['provider']}")
+        print(f"   모델: {service_info['model']}")
+        print(f"   지원 형식: {', '.join(service_info['supported_formats'])}")
+        print(f"   최대 텍스트 길이: {service_info['max_text_length']} 문자")
+        print(f"   속도 범위: {service_info['speed_range']}")
+
+    except Exception as e:
+        print(f"\n❌ 오류 발생: {e}")
+        sys.exit(1)
+
 def main():
     """메인 함수"""
     parser = argparse.ArgumentParser(
@@ -397,6 +580,40 @@ def main():
     terms_group.add_argument('--search', help='용어 검색')
     terms_group.add_argument('--term', help='특정 용어 정보 조회')
 
+    # tts 커맨드
+    tts_parser = subparsers.add_parser('tts', help='텍스트를 음성으로 변환')
+    tts_parser.add_argument('text', help='변환할 텍스트')
+    tts_parser.add_argument('--voice', choices=['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'],
+                           default='alloy', help='사용할 음성')
+    tts_parser.add_argument('--tts-model', choices=['tts-1', 'tts-1-hd'], default='tts-1',
+                           help='TTS 모델')
+    tts_parser.add_argument('--format', choices=['mp3', 'opus', 'aac', 'flac'], default='mp3',
+                           help='출력 형식')
+    tts_parser.add_argument('--speed', type=float, default=1.0, help='재생 속도 (0.25-4.0)')
+    tts_parser.add_argument('--output', '-o', help='출력 파일 경로')
+    tts_parser.add_argument('--play', action='store_true', help='생성 후 자동 재생')
+    tts_parser.add_argument('--show-cost', action='store_true', help='예상 비용 표시')
+
+    # translate-tts 커맨드 (번역 + TTS 통합)
+    translate_tts_parser = subparsers.add_parser('translate-tts', help='번역 후 TTS 변환')
+    translate_tts_parser.add_argument('text', help='번역할 텍스트')
+    translate_tts_parser.add_argument('--language', '-l', choices=['en', 'zh'], default='en',
+                                     help='목표 언어')
+    translate_tts_parser.add_argument('--voice', choices=['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'],
+                                     default='alloy', help='사용할 음성')
+    translate_tts_parser.add_argument('--tts-model', choices=['tts-1', 'tts-1-hd'], default='tts-1',
+                                     help='TTS 모델')
+    translate_tts_parser.add_argument('--format', choices=['mp3', 'opus', 'aac', 'flac'], default='mp3',
+                                     help='출력 형식')
+    translate_tts_parser.add_argument('--speed', type=float, default=1.0, help='재생 속도 (0.25-4.0)')
+    translate_tts_parser.add_argument('--output', '-o', help='출력 파일 경로')
+    translate_tts_parser.add_argument('--play', action='store_true', help='생성 후 자동 재생')
+    translate_tts_parser.add_argument('--no-terms', action='store_true', help='사주 용어 정보 제외')
+    translate_tts_parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
+
+    # voices 커맨드
+    voices_parser = subparsers.add_parser('voices', help='사용 가능한 TTS 음성 목록')
+
     args = parser.parse_args()
 
     # 헤더 출력
@@ -413,6 +630,12 @@ def main():
         interactive_mode(args)
     elif args.command == 'terms':
         show_terms(args)
+    elif args.command == 'tts':
+        tts_single(args)
+    elif args.command == 'translate-tts':
+        tts_translate(args)
+    elif args.command == 'voices':
+        tts_voices(args)
     else:
         parser.print_help()
 
