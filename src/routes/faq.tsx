@@ -40,7 +40,7 @@ const FAQItem = styled.div`
   overflow: hidden;
 `;
 
-const FAQQuestion = styled.button`
+const FAQQuestion = styled.button<{ $isOpen: boolean }>`
   width: 100%;
   padding: 20px 24px;
   background: none;
@@ -64,7 +64,7 @@ const FAQQuestion = styled.button`
     height: 20px;
     color: #6b7280;
     transition: transform 0.15s ease;
-    transform: ${(props: { $isOpen: boolean }) => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
   }
 `;
 
