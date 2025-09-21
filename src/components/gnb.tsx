@@ -87,6 +87,20 @@ export default function GNB() {
     return () => unsub();
   }, []);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('[data-dropdown]')) {
+        setOpenLang(false);
+        setOpenProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const onMessages = () => navigate("/messages");
   const onSignIn = () => navigate("/sign-in");
   const onProfile = () => navigate("/profile");
@@ -115,7 +129,7 @@ export default function GNB() {
           <Logo to="/">{t("logo")}</Logo>
         </Left>
         <Right>
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative" }} data-dropdown>
             <IconButton onClick={onToggleLang} aria-label={t("language")}>
               <span style={{ fontSize: 20 }}>
                 {language === "en" && "🇺🇸"}
@@ -155,7 +169,7 @@ export default function GNB() {
           )}
           <Divider />
           {user ? (
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative" }} data-dropdown>
               <IconButton onClick={onToggleProfile} aria-label={t("profile")}>
                 {user.photoURL ? (
                   <ProfileImg src={user.photoURL} alt="profile" />
