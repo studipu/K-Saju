@@ -29,7 +29,8 @@ class SajuTranslator:
                  model: str = None,
                  temperature: float = None,
                  max_tokens: int = None,
-                 api_key: str = None):
+                 api_key: str = None,
+                 enable_context: bool = True):
         """
         사주 번역기 초기화
 
@@ -38,6 +39,7 @@ class SajuTranslator:
             temperature: 응답 일관성 제어 (기본: 0.3)
             max_tokens: 최대 토큰 수 (기본: 1500)
             api_key: OpenAI API 키
+            enable_context: 세션 컨텍스트 관리 활성화 (기본: True)
         """
         # 설정 로드
         self.model = model or os.getenv('DEFAULT_MODEL', 'gpt-4o-mini')
@@ -64,13 +66,20 @@ class SajuTranslator:
         # 음성 녹음기 초기화 (필요시)
         self.audio_recorder = None
 
-        print(f"SajuTranslator initialized with model: {self.model}")
+        # 세션 관리 초기화
+        self.enable_context = enable_context
+        self.conversation_history = []
+        self.max_history_length = 10
+        self.max_context_tokens = 2000  # 컨텍스트에 사용할 최대 토큰 수
+
+        print(f"SajuTranslator initialized with model: {self.model}, context: {self.enable_context}")
 
     def translate(self,
                   input_text: str,
                   target_language: str = "en",
                   context: str = "",
-                  include_terms: bool = True) -> Dict[str, Any]:
+                  include_terms: bool = True,
+                  use_session_context: bool = None) -> Dict[str, Any]:
         """
         사주풀이 텍스트 양방향 번역
 
@@ -79,6 +88,7 @@ class SajuTranslator:
             target_language: 목표 언어 ("en" 또는 "zh")
             context: 추가 컨텍스트 정보
             include_terms: 용어 정보 포함 여부
+            use_session_context: 세션 컨텍스트 사용 여부 (None이면 클래스 설정 따름)
 
         Returns:
             번역 결과 딕셔너리
@@ -86,6 +96,9 @@ class SajuTranslator:
         start_time = time.time()
 
         try:
+            # 세션 컨텍스트 사용 여부 결정
+            should_use_context = use_session_context if use_session_context is not None else self.enable_context
+
             # 입력 언어 감지
             is_korean = self._detect_korean(input_text)
 
@@ -101,6 +114,11 @@ class SajuTranslator:
                 actual_target = "ko"
                 korean_text = ""  # 한국어가 아니므로 용어 추출 불가
 
+            # 세션 컨텍스트 준비
+            session_context = ""
+            if should_use_context and self.conversation_history:
+                session_context = self._build_session_context(actual_target)
+
             # 사주 용어 추출 (한국어인 경우만)
             extracted_terms = []
             relevant_terms = {}
@@ -114,13 +132,20 @@ class SajuTranslator:
             # 시스템 프롬프트 생성
             system_prompt = self.prompts.get_system_prompt(actual_target, is_korean)
 
+            # 전체 컨텍스트 결합
+            combined_context = ""
+            if session_context:
+                combined_context += f"이전 대화:\n{session_context}\n\n"
+            if context:
+                combined_context += f"추가 정보:\n{context}"
+
             # 사용자 프롬프트 생성
             user_prompt = self.prompts.create_translation_prompt(
                 input_text=input_text,
                 source_language=source_lang,
                 target_language=actual_target,
                 saju_terms=relevant_terms,
-                context=context
+                context=combined_context.strip()
             )
 
             # OpenAI API 호출
@@ -137,6 +162,10 @@ class SajuTranslator:
             # 번역 결과 추출
             translation = response.choices[0].message.content.strip()
 
+            # 세션 히스토리에 대화 추가
+            if should_use_context:
+                self._add_to_history(input_text, translation, source_lang, actual_target)
+
             # 결과 반환
             result = {
                 "success": True,
@@ -149,6 +178,8 @@ class SajuTranslator:
                 "relevant_terms": relevant_terms,
                 "processing_time": time.time() - start_time,
                 "model_used": self.model,
+                "session_context_used": should_use_context,
+                "conversation_turn": len(self.conversation_history) if should_use_context else 0,
                 "token_usage": {
                     "prompt_tokens": response.usage.prompt_tokens,
                     "completion_tokens": response.usage.completion_tokens,
@@ -396,7 +427,11 @@ class SajuTranslator:
             "max_tokens": self.max_tokens,
             "api_key_configured": bool(self.api_key and self.api_key != "your_openai_api_key_here"),
             "total_terms": len(self.term_db.get_all_terms()),
-            "available_languages": ["en", "zh"]
+            "available_languages": ["en", "zh"],
+            "context_enabled": self.enable_context,
+            "conversation_turns": len(self.conversation_history),
+            "max_history_length": self.max_history_length,
+            "max_context_tokens": self.max_context_tokens
         }
 
     def _detect_korean(self, text: str) -> bool:
@@ -414,3 +449,59 @@ class SajuTranslator:
 
         # 전체 문자의 30% 이상이 한글이면 한국어로 판단
         return total_chars > 0 and (korean_chars / total_chars) >= 0.3
+
+    def _build_session_context(self, target_language: str) -> str:
+        """세션 컨텍스트 구축 (토큰 제한 고려)"""
+        if not self.conversation_history:
+            return ""
+
+        # 최근 대화부터 역순으로 컨텍스트 구축
+        context_parts = []
+        estimated_tokens = 0
+
+        for entry in reversed(self.conversation_history):
+            # 대략적인 토큰 수 계산 (1토큰 ≈ 4글자)
+            entry_tokens = len(entry) // 4
+
+            if estimated_tokens + entry_tokens > self.max_context_tokens:
+                break
+
+            context_parts.insert(0, entry)
+            estimated_tokens += entry_tokens
+
+        return "\n".join(context_parts)
+
+    def _add_to_history(self, input_text: str, translation: str, source_lang: str, target_lang: str):
+        """대화 히스토리에 추가"""
+        # 언어 이름 매핑
+        lang_names = {"ko": "한국어", "en": "영어", "zh": "중국어"}
+        source_name = lang_names.get(source_lang, source_lang)
+        target_name = lang_names.get(target_lang, target_lang)
+
+        # 히스토리 엔트리 생성
+        history_entry = f"[{source_name}→{target_name}] 원문: {input_text} → 번역: {translation}"
+
+        # 히스토리에 추가
+        self.conversation_history.append(history_entry)
+
+        # 길이 제한 적용
+        if len(self.conversation_history) > self.max_history_length:
+            self.conversation_history = self.conversation_history[-self.max_history_length:]
+
+    def clear_conversation_history(self):
+        """대화 히스토리 초기화"""
+        self.conversation_history.clear()
+        print("💭 대화 히스토리가 초기화되었습니다.")
+
+    def get_conversation_history(self) -> List[str]:
+        """현재 대화 히스토리 반환"""
+        return self.conversation_history.copy()
+
+    def set_context_settings(self, max_history_length: int = None, max_context_tokens: int = None):
+        """컨텍스트 설정 변경"""
+        if max_history_length is not None:
+            self.max_history_length = max_history_length
+        if max_context_tokens is not None:
+            self.max_context_tokens = max_context_tokens
+
+        print(f"📊 컨텍스트 설정 변경: 최대 히스토리 {self.max_history_length}개, 최대 토큰 {self.max_context_tokens}개")

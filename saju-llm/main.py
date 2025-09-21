@@ -43,6 +43,10 @@ def print_translation_result(result: dict, show_details: bool = False):
             print(f"\n📊 상세 정보:")
             print(f"   • 처리 시간: {result['processing_time']:.2f}초")
             print(f"   • 사용 모델: {result['model_used']}")
+            if result.get('session_context_used'):
+                print(f"   • 세션 컨텍스트: 활성화 (대화 {result.get('conversation_turn', 0)}턴)")
+            else:
+                print(f"   • 세션 컨텍스트: 비활성화")
             if result.get('token_usage'):
                 tokens = result['token_usage']
                 print(f"   • 토큰 사용량: {tokens['total_tokens']} (입력: {tokens['prompt_tokens']}, 출력: {tokens['completion_tokens']})")
@@ -53,7 +57,11 @@ def print_translation_result(result: dict, show_details: bool = False):
 def translate_single(args):
     """단일 텍스트 번역"""
     try:
-        translator = SajuTranslator()
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=not args.no_context
+        )
 
         result = translator.translate(
             input_text=args.text,
@@ -79,7 +87,11 @@ def translate_single(args):
 def translate_voice(args):
     """음성 입력 번역"""
     try:
-        translator = SajuTranslator()
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=not args.no_context
+        )
 
         print(f"\n🎤 음성 입력 번역 모드")
         print(f"   목표 언어: {args.language}")
@@ -112,7 +124,11 @@ def translate_voice(args):
 def translate_batch(args):
     """배치 번역"""
     try:
-        translator = SajuTranslator()
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=not args.no_context
+        )
 
         korean_texts = args.texts
         if args.file:
@@ -162,16 +178,23 @@ def translate_batch(args):
 def interactive_mode(args):
     """대화형 번역 모드"""
     try:
-        translator = SajuTranslator()
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=not args.no_context
+        )
 
         print("\n🎯 대화형 번역 모드")
         print(f"   목표 언어: {args.language}")
+        print(f"   컨텍스트 모드: {'활성화' if not args.no_context else '비활성화'}")
         if args.voice:
             print("   입력 방식: 음성 입력")
             print(f"   최대 녹음 시간: {args.duration}초")
         else:
             print("   입력 방식: 텍스트 입력")
         print("   종료하려면 'quit' 또는 'exit'를 입력하세요.")
+        if not args.no_context:
+            print("   대화 히스토리 초기화: 'clear'를 입력하세요.")
         if args.voice:
             print("   음성 입력을 건너뛰려면 Enter를 눌러 텍스트 입력으로 전환할 수 있습니다.")
         print()
@@ -186,12 +209,18 @@ def interactive_mode(args):
                     if user_input.lower() in ['quit', 'exit', '종료']:
                         print("👋 번역기를 종료합니다.")
                         break
+                    elif user_input.lower() == 'clear':
+                        translator.clear_conversation_history()
+                        continue
                     elif user_input.lower() == 't':
                         # 텍스트 입력으로 전환
                         korean_text = input("🔮 사주풀이 텍스트를 입력하세요: ").strip()
                         if korean_text.lower() in ['quit', 'exit', '종료']:
                             print("👋 번역기를 종료합니다.")
                             break
+                        elif korean_text.lower() == 'clear':
+                            translator.clear_conversation_history()
+                            continue
                         if not korean_text:
                             continue
 
@@ -214,6 +243,9 @@ def interactive_mode(args):
                     if korean_text.lower() in ['quit', 'exit', '종료']:
                         print("👋 번역기를 종료합니다.")
                         break
+                    elif korean_text.lower() == 'clear':
+                        translator.clear_conversation_history()
+                        continue
 
                     if not korean_text:
                         continue
@@ -246,7 +278,11 @@ def interactive_mode(args):
 def show_terms(args):
     """사주 용어 조회"""
     try:
-        translator = SajuTranslator()
+        translator = SajuTranslator(
+            api_key=args.api_key,
+            model=args.model,
+            enable_context=False  # 용어 조회는 컨텍스트 불필요
+        )
 
         if args.search:
             # 용어 검색
@@ -277,6 +313,11 @@ def show_terms(args):
             print(f"   • 총 용어 수: {stats['total_terms']}개")
             print(f"   • 지원 언어: {', '.join(stats['available_languages'])}")
             print(f"   • 현재 모델: {stats['model']}")
+            print(f"   • 컨텍스트 모드: {'활성화' if stats['context_enabled'] else '비활성화'}")
+            if stats['context_enabled']:
+                print(f"   • 대화 기록: {stats['conversation_turns']}개")
+                print(f"   • 최대 히스토리: {stats['max_history_length']}개")
+                print(f"   • 최대 컨텍스트 토큰: {stats['max_context_tokens']}개")
 
     except ValueError as e:
         print(f"\n❌ 설정 오류: {e}")
@@ -309,6 +350,7 @@ def main():
     parser.add_argument('--api-key', help='OpenAI API 키')
     parser.add_argument('--model', help='사용할 모델 (기본: gpt-4o-mini)')
     parser.add_argument('--verbose', '-v', action='store_true', help='상세 정보 출력')
+    parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
 
     # 서브커맨드
     subparsers = parser.add_subparsers(dest='command', help='사용 가능한 명령어')
@@ -319,12 +361,16 @@ def main():
     translate_parser.add_argument('--language', '-l', choices=['en', 'zh'], default='en', help='목표 언어')
     translate_parser.add_argument('--context', '-c', help='추가 컨텍스트 정보')
     translate_parser.add_argument('--no-terms', action='store_true', help='사주 용어 정보 제외')
+    translate_parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
+    translate_parser.add_argument('--verbose', '-v', action='store_true', help='상세 정보 출력')
 
     # voice 커맨드
     voice_parser = subparsers.add_parser('voice', help='음성 입력 번역')
     voice_parser.add_argument('--language', '-l', choices=['en', 'zh'], default='en', help='목표 언어')
     voice_parser.add_argument('--duration', '-d', type=int, default=10, help='최대 녹음 시간 (초)')
     voice_parser.add_argument('--no-terms', action='store_true', help='사주 용어 정보 제외')
+    voice_parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
+    voice_parser.add_argument('--verbose', '-v', action='store_true', help='상세 정보 출력')
 
     # batch 커맨드
     batch_parser = subparsers.add_parser('batch', help='배치 번역')
@@ -333,13 +379,17 @@ def main():
     batch_group.add_argument('--file', help='텍스트 파일 경로 (한 줄당 하나의 텍스트)')
     batch_parser.add_argument('--language', '-l', choices=['en', 'zh'], default='en', help='목표 언어')
     batch_parser.add_argument('--no-terms', action='store_true', help='사주 용어 정보 제외')
+    batch_parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
+    batch_parser.add_argument('--verbose', '-v', action='store_true', help='상세 정보 출력')
 
     # interactive 커맨드
     interactive_parser = subparsers.add_parser('interactive', help='대화형 번역 모드')
     interactive_parser.add_argument('--language', '-l', choices=['en', 'zh'], default='en', help='목표 언어')
-    interactive_parser.add_argument('--voice', '-v', action='store_true', help='음성 입력 모드 활성화')
+    interactive_parser.add_argument('--voice', action='store_true', help='음성 입력 모드 활성화')
     interactive_parser.add_argument('--duration', '-d', type=int, default=10, help='최대 녹음 시간 (초)')
     interactive_parser.add_argument('--no-terms', action='store_true', help='사주 용어 정보 제외')
+    interactive_parser.add_argument('--no-context', action='store_true', help='세션 컨텍스트 비활성화')
+    interactive_parser.add_argument('--verbose', '-v', action='store_true', help='상세 정보 출력')
 
     # terms 커맨드
     terms_parser = subparsers.add_parser('terms', help='사주 용어 조회')
