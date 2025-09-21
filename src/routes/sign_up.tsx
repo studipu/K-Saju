@@ -16,10 +16,13 @@ import {
   GoogleButton,
   AppleButton,
   KakaoButton,
+  LanguageSelector,
 } from "../components/auth_components";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useI18n } from "../i18n/i18n";
 
 export function CreateAccount() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -84,6 +87,7 @@ export function CreateAccount() {
   };
   return (
     <Page>
+      <LanguageSelector />
       <Card>
         <Logo>KS</Logo>
         <Wrapper>
@@ -92,7 +96,7 @@ export function CreateAccount() {
           onChange={onChange}
           name="email"
           value={email}
-          placeholder="Email"
+          placeholder={t("email")}
           type="email"
           required
         />
@@ -100,7 +104,7 @@ export function CreateAccount() {
           onChange={onChange}
           value={password}
           name="password"
-          placeholder="Password"
+          placeholder={t("password")}
           type="password"
           required
         />
@@ -108,16 +112,16 @@ export function CreateAccount() {
           onChange={onChange}
           value={confirmPassword}
           name="confirmPassword"
-          placeholder="Confirm Password"
+          placeholder={t("confirmPassword")}
           type="password"
           required
         />
             <Input
               type="submit"
-              value={isLoading ? "Loading..." : "Create Account"}
+              value={isLoading ? t("loading") : t("createAccount")}
             />
           </Form>
-          <Divider>OR</Divider>
+          <Divider>{t("or")}</Divider>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <GoogleButton onClick={onGoogle} />
             <AppleButton onClick={onApple} />
@@ -125,7 +129,7 @@ export function CreateAccount() {
           </div>
           {error !== "" ? <Error>{error}</Error> : null}
           <Switcher>
-            Already have an account? <Link to="/sign_in">Log in &rarr;</Link>
+            {t("alreadyHaveAccount")} <Link to="/sign_in">{t("logInHere")} &rarr;</Link>
           </Switcher>
         </Wrapper>
       </Card>

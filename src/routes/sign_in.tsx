@@ -16,11 +16,14 @@ import {
   GoogleButton,
   AppleButton,
   KakaoButton,
+  LanguageSelector,
 } from "../components/auth_components";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useI18n } from "../i18n/i18n";
 // Kakao SDK assumed initialized elsewhere
 
 export function Login() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -81,6 +84,7 @@ export function Login() {
   };
   return (
     <Page>
+      <LanguageSelector />
       <Card>
         <Logo>KS</Logo>
         <Wrapper>
@@ -89,7 +93,7 @@ export function Login() {
           onChange={onChange}
           name="email"
           value={email}
-          placeholder="Email"
+          placeholder={t("email")}
           type="email"
           required
         />
@@ -97,13 +101,13 @@ export function Login() {
           onChange={onChange}
           value={password}
           name="password"
-          placeholder="Password"
+          placeholder={t("password")}
           type="password"
           required
         />
-            <Input type="submit" value={isLoading ? "Loading..." : "Log In"} />
+            <Input type="submit" value={isLoading ? t("loading") : t("logIn")} />
           </Form>
-          <Divider>OR</Divider>
+          <Divider>{t("or")}</Divider>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <GoogleButton onClick={onGoogle} />
             <AppleButton onClick={onApple} />
@@ -111,8 +115,8 @@ export function Login() {
           </div>
           {error !== "" ? <Error>{error}</Error> : null}
           <Switcher>
-            Don't have an account?{" "}
-            <Link to="/sign_up">Create one &rarr;</Link>
+            {t("dontHaveAccount")}{" "}
+            <Link to="/sign_up">{t("createOne")} &rarr;</Link>
           </Switcher>
         </Wrapper>
       </Card>

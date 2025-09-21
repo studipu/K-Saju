@@ -12,60 +12,64 @@ import { auth } from "./firebase";
 import ProtectedRoute from "./components/protected_route";
 import NotFound from "./components/not_found";
 import KakaoCallback from "./routes/kakao_callback";
+import Messages from "./routes/messages.tsx";
+import Support from "./routes/support";
+import FAQ from "./routes/faq";
+import LiveTranslation from "./routes/live_translation.tsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: (
-      <ProtectedRoute>
-        <Layout />
-      </ProtectedRoute>
-    ),
+    element: <Layout />,
     children: [
-      {
-        path: "",
-        element: <Home />,
-      },
+      { path: "", element: <Home /> },
       {
         path: "profile",
-        element: <Profile />,
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
       },
+      {
+        path: "messages",
+        element: (
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        ),
+      },
+      { path: "support", element: <Support /> },
+      { path: "faq", element: <FAQ /> },
+      { path: "live-translation", element: <LiveTranslation /> },
     ],
   },
-  {
-    path: "/sign-in",
-    element: <Login />,
-  },
-  {
-    path: "/sign-up",
-    element: <CreateAccount />,
-  },
-  {
-    path: "/kakao-callback",
-    element: <KakaoCallback />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
+  { path: "/sign-in", element: <Login /> },
+  { path: "/sign-up", element: <CreateAccount /> },
+  // Allow underscore variants to avoid dead links
+  { path: "/sign_in", element: <Login /> },
+  { path: "/sign_up", element: <CreateAccount /> },
+  { path: "/kakao-callback", element: <KakaoCallback /> },
+  { path: "*", element: <NotFound /> },
 ]);
 
 const GlobalStyles = createGlobalStyle`
   ${reset};
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; }
   body {
-    background-color: black;
-    color:white;
+    background-color: #ffffff;
+    color: #111827;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+  a { color: inherit; text-decoration: none; }
 `;
 
 const Wrapper = styled.div`
-  height: 100vh;
-  display: flex;
-  justify-content: center;
+  min-height: 100vh;
+  display: block;
 `;
 
 function App() {

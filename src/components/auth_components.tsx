@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { styled } from "styled-components";
 import AppleLogo from "../assets/apple_btn.png";
 import KakaoLogo from "../assets/kakao_btn.png";
+import { useI18n } from "../i18n/i18n";
 
 const MOBILE_BP = "768px";
 
@@ -12,6 +14,8 @@ export const Page = styled.div`
   padding: 48px 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
+  background-color: #f0f0f0;
+  position: relative;
   
   @media (max-width: ${MOBILE_BP}) {
     padding: 24px 8px;
@@ -24,7 +28,7 @@ export const Card = styled.div`
   min-width: 560px;
   background: #ffffff;
   color: #1a1a1a;
-  border-radius: 12px;
+  border-radius: 24px;
   border: 1px solid #e5e5e5;
   padding: 40px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -40,7 +44,7 @@ export const Card = styled.div`
 export const Logo = styled.div`
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #f8f9fa;
   color: #1a1a1a;
   display: flex;
@@ -75,7 +79,7 @@ export const Form = styled.form`
 
 export const Input = styled.input`
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 16px;
   border: 1px solid #d1d5db;
   background: #ffffff;
   color: #1a1a1a;
@@ -168,7 +172,7 @@ export const SocialButton = styled.button`
   background: #ffffff;
   color: #1a1a1a;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,6 +250,114 @@ export const Label = styled.span`
   line-height: 1;
 `;
 
+const LanguageSelectorContainer = styled.div`
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  
+  @media (max-width: ${MOBILE_BP}) {
+    bottom: 16px;
+    right: 16px;
+  }
+`;
+
+const LanguageButton = styled.button`
+  appearance: none;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  &:hover {
+    background: #f9fafb;
+  }
+`;
+
+const LanguageDropdown = styled.div`
+  position: absolute;
+  right: 0;
+  bottom: 44px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  width: 200px;
+  overflow: hidden;
+`;
+
+const LanguageOption = styled.button<{ $isActive: boolean }>`
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: ${props => props.$isActive ? "#f3f4f6" : "#ffffff"};
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  
+  &:hover {
+    background: #f9fafb;
+  }
+`;
+
+export function LanguageSelector() {
+  const { language, setLanguage } = useI18n();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const languages = [
+    { code: "en", label: "English", icon: "🇺🇸" },
+    { code: "ko", label: "한국어", icon: "🇰🇷" },
+    { code: "zh", label: "中文", icon: "🇨🇳" },
+    { code: "ja", label: "日本語", icon: "🇯🇵" },
+    { code: "es", label: "Español", icon: "🇪🇸" },
+  ];
+  
+  const currentLanguage = languages.find(lang => lang.code === language);
+  
+  return (
+    <LanguageSelectorContainer>
+      <LanguageButton onClick={() => setIsOpen(!isOpen)}>
+        <span style={{ fontSize: 20 }}>{currentLanguage?.icon}</span>
+        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z" fill="#6b7280" />
+        </svg>
+      </LanguageButton>
+      {isOpen && (
+        <LanguageDropdown>
+          {languages.map((lang) => (
+            <LanguageOption
+              key={lang.code}
+              $isActive={language === lang.code}
+              onClick={() => {
+                setLanguage(lang.code as any);
+                setIsOpen(false);
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{lang.icon}</span>
+              <span>{lang.label}</span>
+            </LanguageOption>
+          ))}
+        </LanguageDropdown>
+      )}
+    </LanguageSelectorContainer>
+  );
+}
+
 // Google Identity Services Material-style button
 const GsiButton = styled.button`
   position: relative;
@@ -256,7 +368,7 @@ const GsiButton = styled.button`
   background: #ffffff;
   color: #1a1a1a;
   height: 46px;
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 0 16px;
   width: 100%;
   cursor: pointer;
@@ -302,6 +414,7 @@ const GsiButton = styled.button`
 `;
 
 export function GoogleButton({ onClick }: { onClick?: () => void }) {
+  const { t } = useI18n();
   return (
     <GsiButton type="button" onClick={onClick} className="gsi-material-button">
       <div className="gsi-material-button-state"></div>
@@ -315,30 +428,32 @@ export function GoogleButton({ onClick }: { onClick?: () => void }) {
             <path fill="none" d="M0 0h48v48H0z"></path>
           </svg>
         </div>
-        <span className="gsi-material-button-contents">Continue with Google</span>
+        <span className="gsi-material-button-contents">{t("continueWithGoogle")}</span>
       </div>
     </GsiButton>
   );
 }
 
 export function AppleButton({ onClick }: { onClick?: () => void }) {
+  const { t } = useI18n();
   return (
     <SocialButton type="button" data-variant="apple" onClick={onClick}>
       <Icon className="apple">
         <img src={AppleLogo} alt="Apple" />
       </Icon>
-      <Label>Continue with Apple</Label>
+      <Label>{t("continueWithApple")}</Label>
     </SocialButton>
   );
 }
 
 export function KakaoButton({ onClick }: { onClick?: () => void }) {
+  const { t } = useI18n();
   return (
     <SocialButton type="button" data-variant="kakao" onClick={onClick}>
       <Icon>
         <img src={KakaoLogo} alt="Kakao" />
       </Icon>
-      <Label>Continue with Kakao</Label>
+      <Label>{t("continueWithKakao")}</Label>
     </SocialButton>
   );
 }
