@@ -1,42 +1,91 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import Layout from "./components/layout";
+import { Home } from "./routes/home";
+import Profile from "./routes/profile";
+import { Login } from "./routes/sign_in";
+import { CreateAccount } from "./routes/sign_up";
+import { createGlobalStyle, styled } from "styled-components";
+import reset from "styled-reset";
+import { useEffect, useState } from "react";
+import LoadingScreen from "./components/loading_screen";
+import { auth } from "./firebase";
+import ProtectedRoute from "./components/protected_route";
+import NotFound from "./components/not_found";
+import KakaoCallback from "./routes/kakao_callback";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        element: <Home />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+    ],
+  },
+  {
+    path: "/sign-in",
+    element: <Login />,
+  },
+  {
+    path: "/sign-up",
+    element: <CreateAccount />,
+  },
+  {
+    path: "/kakao-callback",
+    element: <KakaoCallback />,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
+
+const GlobalStyles = createGlobalStyle`
+  ${reset};
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: black;
+    color:white;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+`;
+
+const Wrapper = styled.div`
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+`;
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  const [isLoading, setLoading] = useState(true);
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      await auth.authStateReady();
+      if (isMounted) setLoading(false);
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   return (
-    <div className="max-w-[1280px] mx-auto p-8 text-center">
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img
-            src={viteLogo}
-            className="h-[6em] p-6 transition-[filter] duration-300 hover:drop-shadow-[0_0_2em_#646cffaa]"
-            alt="Vite logo"
-          />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img
-            src={reactLogo}
-            className="h-[6em] p-6 transition-[filter] duration-300 motion-safe:animate-[spin_20s_linear_infinite] hover:drop-shadow-[0_0_2em_#61dafbaa]"
-            alt="React logo"
-          />
-        </a>
-      </div>
-      <h1 className="text-4xl font-bold">Vite + React</h1>
-      <div className="p-8">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="text-[#888]">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    <Wrapper>
+      <GlobalStyles />
+      {isLoading ? <LoadingScreen /> : <RouterProvider router={router} />}
+    </Wrapper>
+  );
 }
 
-export default App
+export default App;
