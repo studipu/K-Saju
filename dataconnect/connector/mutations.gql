@@ -1,0 +1,131 @@
+mutation SeedMockHosts @auth(level: NO_ACCESS) {
+  _1: host_upsert(data: { id_expr: "uuidV4()", displayName: "Bart", profileTitle: "Tarot reader and teacher", about: "I have been working with tarot for over two decades..." })
+}
+
+mutation SeedMockPlaces @auth(level: NO_ACCESS) {
+  p1: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Jung-gu", postalCode: "04620", addressLine: "Dongguk University Station exit 6", placeLabel: "Dongguk University Station", latitude: 37.5585, longitude: 127.0002 })
+  p2: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Mapo-gu", postalCode: "04101", addressLine: "Hongdae Station exit 9", placeLabel: "Hongdae Station", latitude: 37.5572, longitude: 126.9245 })
+  p3: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Gangnam-gu", postalCode: "06164", addressLine: "Gangnam Station exit 11", placeLabel: "Gangnam Station", latitude: 37.4979, longitude: 127.0276 })
+  p4: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Jongno-gu", postalCode: "03154", addressLine: "Gyeongbokgung Palace", placeLabel: "Gyeongbokgung", latitude: 37.5796, longitude: 126.9770 })
+  p5: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Yongsan-gu", postalCode: "04390", addressLine: "Itaewon Station exit 3", placeLabel: "Itaewon", latitude: 37.5349, longitude: 126.9946 })
+  p6: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Songpa-gu", postalCode: "05551", addressLine: "Lotte World Tower", placeLabel: "Jamsil", latitude: 37.5131, longitude: 127.1025 })
+  p7: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Seodaemun-gu", postalCode: "03722", addressLine: "Sinchon Station exit 2", placeLabel: "Sinchon", latitude: 37.5599, longitude: 126.9425 })
+  p8: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Gwangjin-gu", postalCode: "05075", addressLine: "Konkuk Univ. Station exit 6", placeLabel: "Konkuk Univ.", latitude: 37.5404, longitude: 127.0707 })
+  p9: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Seocho-gu", postalCode: "06514", addressLine: "Express Bus Terminal", placeLabel: "Gangnam Express Bus Terminal", latitude: 37.5041, longitude: 127.0048 })
+  p10: place_upsert(data: { id_expr: "uuidV4()", region: "Seoul", city: "Seoul", district: "Jung-gu", postalCode: "04524", addressLine: "Myeongdong Cathedral", placeLabel: "Myeongdong", latitude: 37.5637, longitude: 126.9874 })
+}
+
+# Create a single Location (listing) given hostId and placeId
+mutation CreateLocation(
+  $hostId: UUID!
+  $placeId: UUID!
+  $title: String!
+  $tagline: String
+  $longDescription: String
+  $languagePrimary: LangCode!
+  $activityLevel: ActivityLevel!
+  $skillLevel: SkillLevel!
+  $maxGuestsTotal: Int!
+  $minAge: Int
+  $currency: CurrencyCode!
+  $basePricePerGuest: Float!
+  $freeCancellation: Boolean!
+  $freeCancelCutoffHours: Int
+  $meetingPointNote: String
+) @auth(level: NO_ACCESS) {
+  location_upsert(
+    data: {
+      id_expr: "uuidV4()"
+      hostId: $hostId
+      placeId: $placeId
+      title: $title
+      tagline: $tagline
+      longDescription: $longDescription
+      languagePrimary: $languagePrimary
+      activityLevel: $activityLevel
+      skillLevel: $skillLevel
+      maxGuestsTotal: $maxGuestsTotal
+      minAge: $minAge
+      currency: $currency
+      basePricePerGuest: $basePricePerGuest
+      freeCancellation: $freeCancellation
+      freeCancelCutoffHours: $freeCancelCutoffHours
+      meetingPointNote: $meetingPointNote
+      isActive: true
+    }
+  )
+}
+
+mutation SeedMockLocations(
+  $hostId: UUID!
+  $place1Id: UUID!, $place2Id: UUID!, $place3Id: UUID!, $place4Id: UUID!, $place5Id: UUID!,
+  $place6Id: UUID!, $place7Id: UUID!, $place8Id: UUID!, $place9Id: UUID!, $place10Id: UUID!
+) @auth(level: NO_ACCESS) {
+  l1: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Tarot Basics with Bart", tagline: "Card meanings & daily spreads.", longDescription: "Learn about decks, spreads, and reading for others.", languagePrimary: EN, activityLevel: LIGHT, skillLevel: BEGINNER, maxGuestsTotal: 4, minAge: 18, currency: KRW, basePricePerGuest: 63999.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place1Id, meetingPointNote: "Meet at the station exit 6.", isActive: true })
+  l2: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Night Fortune Stroll", tagline: "Street tarot and destiny talk.", longDescription: "Capture Seoul by night with tarot themes.", languagePrimary: EN, activityLevel: MODERATE, skillLevel: BEGINNER, maxGuestsTotal: 6, minAge: 12, currency: KRW, basePricePerGuest: 45000.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place2Id, meetingPointNote: "Look for the tarot sign.", isActive: true })
+  l3: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Korean Saju Introduction", tagline: "Four Pillars for beginners.", longDescription: "Hands-on intro class for Korean fortune telling.", languagePrimary: EN, activityLevel: MODERATE, skillLevel: BEGINNER, maxGuestsTotal: 8, minAge: 10, currency: KRW, basePricePerGuest: 55000.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place3Id, meetingPointNote: "Classroom 2F.", isActive: true })
+  l4: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Temple Fortune Meditation", tagline: "Mindfulness for readings.", longDescription: "Intro to Seon meditation for intuition.", languagePrimary: EN, activityLevel: LIGHT, skillLevel: BEGINNER, maxGuestsTotal: 12, minAge: 16, currency: KRW, basePricePerGuest: 30000.0, freeCancellation: true, freeCancelCutoffHours: 12, placeId: $place4Id, meetingPointNote: "Meet at the main gate.", isActive: true })
+  l5: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Itaewon Tarot Pop-up", tagline: "Fast 10-min readings.", longDescription: "Taste local fortune-telling culture.", languagePrimary: EN, activityLevel: MODERATE, skillLevel: BEGINNER, maxGuestsTotal: 10, minAge: 10, currency: KRW, basePricePerGuest: 35000.0, freeCancellation: true, freeCancelCutoffHours: 12, placeId: $place5Id, meetingPointNote: "In front of stall #7.", isActive: true })
+  l6: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Jamsil Astrology Circle", tagline: "Birth charts & coffee.", longDescription: "Learn the basics of astrology.", languagePrimary: EN, activityLevel: MODERATE, skillLevel: INTERMEDIATE, maxGuestsTotal: 6, minAge: 14, currency: KRW, basePricePerGuest: 28000.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place6Id, meetingPointNote: "Cafe corner.", isActive: true })
+  l7: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Sinchon Saju Study", tagline: "Practice with peers.", longDescription: "Study session for beginners.", languagePrimary: EN, activityLevel: LIGHT, skillLevel: BEGINNER, maxGuestsTotal: 15, minAge: 8, currency: KRW, basePricePerGuest: 15000.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place7Id, meetingPointNote: "Library steps.", isActive: true })
+  l8: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "K-Pop Oracle Workshop", tagline: "Use music for intuition.", longDescription: "Beginner-friendly choreo & oracle.", languagePrimary: EN, activityLevel: INTENSE, skillLevel: BEGINNER, maxGuestsTotal: 10, minAge: 10, currency: KRW, basePricePerGuest: 40000.0, freeCancellation: true, freeCancelCutoffHours: 24, placeId: $place8Id, meetingPointNote: "Studio B.", isActive: true })
+  l9: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "River Sunset Readings", tagline: "Tarot by the water.", longDescription: "Bring your mat.", languagePrimary: EN, activityLevel: LIGHT, skillLevel: BEGINNER, maxGuestsTotal: 12, minAge: 0, currency: KRW, basePricePerGuest: 12000.0, freeCancellation: true, freeCancelCutoffHours: 6, placeId: $place9Id, meetingPointNote: "Under the bridge.", isActive: true })
+  l10: location_upsert(data: { id_expr: "uuidV4()", hostId: $hostId, title: "Hanok Alley Omens", tagline: "Stories & symbolism.", longDescription: "Cultural insights in historic lanes.", languagePrimary: EN, activityLevel: MODERATE, skillLevel: BEGINNER, maxGuestsTotal: 12, minAge: 8, currency: KRW, basePricePerGuest: 22000.0, freeCancellation: true, freeCancelCutoffHours: 12, placeId: $place10Id, meetingPointNote: "Alley entrance.", isActive: true })
+}
+
+# Seed diverse photos for each Location (by title)
+mutation SeedLocationPhotos @auth(level: NO_ACCESS) {
+  # Tarot Basics with Bart
+  lp1a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Tarot Basics with Bart' limit 1"), imageUrl: "https://images.unsplash.com/photo-1599050751790-6cdaafbc1e9b?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp1b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Tarot Basics with Bart' limit 1"), imageUrl: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Night Fortune Stroll
+  lp2a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Night Fortune Stroll' limit 1"), imageUrl: "https://images.unsplash.com/photo-1556227701-833dc4c6b6f7?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp2b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Night Fortune Stroll' limit 1"), imageUrl: "https://images.unsplash.com/photo-1491897554428-130a60dd4757?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Korean Saju Introduction
+  lp3a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Korean Saju Introduction' limit 1"), imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp3b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Korean Saju Introduction' limit 1"), imageUrl: "https://images.unsplash.com/photo-1476370648495-3533f64427a2?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Temple Fortune Meditation
+  lp4a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Temple Fortune Meditation' limit 1"), imageUrl: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp4b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Temple Fortune Meditation' limit 1"), imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Itaewon Tarot Pop-up
+  lp5a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Itaewon Tarot Pop-up' limit 1"), imageUrl: "https://images.unsplash.com/photo-1519681394507-46b59cc0b4c1?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp5b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Itaewon Tarot Pop-up' limit 1"), imageUrl: "https://images.unsplash.com/photo-1548438294-1ad5d5f4f063?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Jamsil Astrology Circle
+  lp6a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Jamsil Astrology Circle' limit 1"), imageUrl: "https://images.unsplash.com/photo-1533154683836-81fddf7e8e62?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp6b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Jamsil Astrology Circle' limit 1"), imageUrl: "https://images.unsplash.com/photo-1523473827532-6e9a9c285022?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Sinchon Saju Study
+  lp7a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Sinchon Saju Study' limit 1"), imageUrl: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp7b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Sinchon Saju Study' limit 1"), imageUrl: "https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # K-Pop Oracle Workshop
+  lp8a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'K-Pop Oracle Workshop' limit 1"), imageUrl: "https://images.unsplash.com/photo-1519681391401-64d9590b6f3e?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp8b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'K-Pop Oracle Workshop' limit 1"), imageUrl: "https://images.unsplash.com/photo-1491897554428-130a60dd4757?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # River Sunset Readings
+  lp9a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'River Sunset Readings' limit 1"), imageUrl: "https://images.unsplash.com/photo-1496307653780-42ee777d4833?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp9b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'River Sunset Readings' limit 1"), imageUrl: "https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+
+  # Hanok Alley Omens
+  lp10a: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Hanok Alley Omens' limit 1"), imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop", sortOrder: 1 })
+  lp10b: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Hanok Alley Omens' limit 1"), imageUrl: "https://images.unsplash.com/photo-1491555721665-5f32f4f4d18b?q=80&w=1600&auto=format&fit=crop", sortOrder: 2 })
+}
+
+# Ensure each Location has a unique primary thumbnail (sortOrder = 0)
+mutation SwapLocationThumbnails @auth(level: NO_ACCESS) {
+  t1: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Tarot Basics with Bart' limit 1"), imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t2: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Night Fortune Stroll' limit 1"), imageUrl: "https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t3: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Korean Saju Introduction' limit 1"), imageUrl: "https://images.unsplash.com/photo-1476370648495-3533f64427a2?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t4: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Temple Fortune Meditation' limit 1"), imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t5: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Itaewon Tarot Pop-up' limit 1"), imageUrl: "https://images.unsplash.com/photo-1548438294-1ad5d5f4f063?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t6: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Jamsil Astrology Circle' limit 1"), imageUrl: "https://images.unsplash.com/photo-1523473827532-6e9a9c285022?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t7: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Sinchon Saju Study' limit 1"), imageUrl: "https://images.unsplash.com/photo-1491897554428-130a60dd4757?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t8: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'K-Pop Oracle Workshop' limit 1"), imageUrl: "https://images.unsplash.com/photo-1519681391401-64d9590b6f3e?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t9: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'River Sunset Readings' limit 1"), imageUrl: "https://images.unsplash.com/photo-1496307653780-42ee777d4833?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+  t10: locationPhoto_upsert(data: { id_expr: "uuidV4()", locationId: (select: "select id from locations where title = 'Hanok Alley Omens' limit 1"), imageUrl: "https://images.unsplash.com/photo-1491555721665-5f32f4f4d18b?q=80&w=1600&auto=format&fit=crop", sortOrder: 0 })
+}

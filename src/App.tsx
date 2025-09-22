@@ -16,6 +16,7 @@ import Messages from "./routes/messages.tsx";
 import Support from "./routes/support";
 import FAQ from "./routes/faq";
 import LiveTranslation from "./routes/live_translation.tsx";
+import Locations from "./routes/locations";
 
 const router = createBrowserRouter([
   {
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
       { path: "support", element: <Support /> },
       { path: "faq", element: <FAQ /> },
       { path: "live-translation", element: <LiveTranslation /> },
+      { path: "locations", element: <Locations /> },
     ],
   },
   { path: "/sign-in", element: <Login /> },

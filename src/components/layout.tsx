@@ -13,6 +13,8 @@ const Shell = styled.div`
 
 const Main = styled.main`
   flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
 `;
 
 export default function Layout() {

@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "k-saju-ku-service"
+location: "asia-northeast3"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "k-saju-ku-database"
+      cloudSql:
+        instanceId: "k-saju-ku-instance"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

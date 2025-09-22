@@ -11,7 +11,7 @@ const Bar = styled.header`
   z-index: 50;
   width: 100%;
   backdrop-filter: saturate(180%) blur(8px);
-  background: #f0f0f0;
+  background: #ffffff;
   border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 `;
 

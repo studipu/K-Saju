@@ -16,6 +16,11 @@ declare global {
     };
   }
 
+  // Minimal Google Maps typings used by the Locations route
+  interface Window {
+    google?: any;
+  }
+
   interface SpeechRecognition {
     lang: string;
     continuous: boolean;
