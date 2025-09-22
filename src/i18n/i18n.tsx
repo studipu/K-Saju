@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type Language = "en" | "ko" | "zh" | "ja" | "es";
 
@@ -19,7 +26,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     contact: "Contact",
     safety: "Safety",
     about: "About",
-    careers: "Careers", 
+    careers: "Careers",
     newsroom: "Newsroom",
     investors: "Investors",
     blog: "Blog",
@@ -55,7 +62,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     stop: "Stop",
     speakerAUnderstands: "Speaker A understands",
     speakerBUnderstands: "Speaker B understands",
-    webSpeechNotSupported: "Your browser may not support real-time transcription (Web Speech API). Basic recording fallback is used.",
+    webSpeechNotSupported:
+      "Your browser may not support real-time transcription (Web Speech API). Basic recording fallback is used.",
   },
   ko: {
     appName: "케이사주",
@@ -107,7 +115,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     stop: "중지",
     speakerAUnderstands: "화자 A 언어",
     speakerBUnderstands: "화자 B 언어",
-    webSpeechNotSupported: "브라우저에서 실시간 음성 인식을 지원하지 않을 수 있습니다. 기본 녹음 기능을 사용합니다.",
+    webSpeechNotSupported:
+      "브라우저에서 실시간 음성 인식을 지원하지 않을 수 있습니다. 기본 녹음 기능을 사용합니다.",
   },
   zh: {
     appName: "K-Saju",
@@ -159,7 +168,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     stop: "停止",
     speakerAUnderstands: "说话者A语言",
     speakerBUnderstands: "说话者B语言",
-    webSpeechNotSupported: "您的浏览器可能不支持实时语音识别（Web Speech API）。使用基本录音回退功能。",
+    webSpeechNotSupported:
+      "您的浏览器可能不支持实时语音识别（Web Speech API）。使用基本录音回退功能。",
   },
   ja: {
     appName: "K-Saju",
@@ -211,7 +221,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     stop: "停止",
     speakerAUnderstands: "話者A言語",
     speakerBUnderstands: "話者B言語",
-    webSpeechNotSupported: "お使いのブラウザではリアルタイム音声認識（Web Speech API）をサポートしていない可能性があります。基本録音機能を使用します。",
+    webSpeechNotSupported:
+      "お使いのブラウザではリアルタイム音声認識（Web Speech API）をサポートしていない可能性があります。基本録音機能を使用します。",
   },
   es: {
     appName: "K-Saju",
@@ -263,7 +274,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     stop: "Detener",
     speakerAUnderstands: "Idioma del Hablante A",
     speakerBUnderstands: "Idioma del Hablante B",
-    webSpeechNotSupported: "Su navegador puede no soportar transcripción en tiempo real (Web Speech API). Se usa grabación básica como respaldo.",
+    webSpeechNotSupported:
+      "Su navegador puede no soportar transcripción en tiempo real (Web Speech API). Se usa grabación básica como respaldo.",
   },
 };
 
@@ -279,7 +291,8 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem("app.lang") as Language | null;
-    if (stored && ["en","ko","zh","ja","es"].includes(stored)) return stored as Language;
+    if (stored && ["en", "ko", "zh", "ja", "es"].includes(stored))
+      return stored as Language;
     const nav = navigator.language?.toLowerCase() ?? "en";
     if (nav.startsWith("ko")) return "ko";
     if (nav.startsWith("zh")) return "zh";
@@ -304,9 +317,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     [language]
   );
 
-  const value = useMemo<I18nContextValue>(() => (
-    { language, setLanguage, t, availableLanguages: ["en", "ko", "zh", "ja", "es"] }
-  ), [language, setLanguage, t]);
+  const value = useMemo<I18nContextValue>(
+    () => ({
+      language,
+      setLanguage,
+      t,
+      availableLanguages: ["en", "ko", "zh", "ja", "es"],
+    }),
+    [language, setLanguage, t]
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -314,7 +333,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 export function useI18n() {
   const ctx = useContext(I18nContext);
   if (!ctx) {
-    console.error("useI18n called outside I18nProvider - falling back to English");
+    console.error(
+      "useI18n called outside I18nProvider - falling back to English"
+    );
     // Return fallback context
     return {
       language: "en" as const,
@@ -352,10 +373,8 @@ export function useI18n() {
         };
         return fallbacks[key] || key;
       },
-      availableLanguages: ["en", "ko", "zh", "ja", "es"] as const
+      availableLanguages: ["en", "ko", "zh", "ja", "es"] as const,
     };
   }
   return ctx;
 }
-
-

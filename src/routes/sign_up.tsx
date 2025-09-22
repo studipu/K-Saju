@@ -9,7 +9,7 @@ import {
   Form,
   Error,
   Input,
-  Logo,
+  LogoImage,
   Page,
   Switcher,
   Wrapper,
@@ -68,7 +68,8 @@ export function CreateAccount() {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    if (isLoading || email === "" || password === "" || confirmPassword === "") return;
+    if (isLoading || email === "" || password === "" || confirmPassword === "")
+      return;
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -89,33 +90,33 @@ export function CreateAccount() {
     <Page>
       <LanguageSelector />
       <Card>
-        <Logo>KS</Logo>
+        <LogoImage />
         <Wrapper>
           <Form onSubmit={onSubmit}>
-        <Input
-          onChange={onChange}
-          name="email"
-          value={email}
-          placeholder={t("email")}
-          type="email"
-          required
-        />
-        <Input
-          onChange={onChange}
-          value={password}
-          name="password"
-          placeholder={t("password")}
-          type="password"
-          required
-        />
-        <Input
-          onChange={onChange}
-          value={confirmPassword}
-          name="confirmPassword"
-          placeholder={t("confirmPassword")}
-          type="password"
-          required
-        />
+            <Input
+              onChange={onChange}
+              name="email"
+              value={email}
+              placeholder={t("email")}
+              type="email"
+              required
+            />
+            <Input
+              onChange={onChange}
+              value={password}
+              name="password"
+              placeholder={t("password")}
+              type="password"
+              required
+            />
+            <Input
+              onChange={onChange}
+              value={confirmPassword}
+              name="confirmPassword"
+              placeholder={t("confirmPassword")}
+              type="password"
+              required
+            />
             <Input
               type="submit"
               value={isLoading ? t("loading") : t("createAccount")}
@@ -129,7 +130,8 @@ export function CreateAccount() {
           </div>
           {error !== "" ? <Error>{error}</Error> : null}
           <Switcher>
-            {t("alreadyHaveAccount")} <Link to="/sign_in">{t("logInHere")} &rarr;</Link>
+            {t("alreadyHaveAccount")}{" "}
+            <Link to="/sign_in">{t("logInHere")} &rarr;</Link>
           </Switcher>
         </Wrapper>
       </Card>

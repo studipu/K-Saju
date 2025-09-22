@@ -9,7 +9,7 @@ import {
   Error,
   Form,
   Input,
-  Logo,
+  LogoImage,
   Page,
   Switcher,
   Wrapper,
@@ -86,26 +86,29 @@ export function Login() {
     <Page>
       <LanguageSelector />
       <Card>
-        <Logo>KS</Logo>
+        <LogoImage />
         <Wrapper>
           <Form onSubmit={onSubmit}>
-        <Input
-          onChange={onChange}
-          name="email"
-          value={email}
-          placeholder={t("email")}
-          type="email"
-          required
-        />
-        <Input
-          onChange={onChange}
-          value={password}
-          name="password"
-          placeholder={t("password")}
-          type="password"
-          required
-        />
-            <Input type="submit" value={isLoading ? t("loading") : t("logIn")} />
+            <Input
+              onChange={onChange}
+              name="email"
+              value={email}
+              placeholder={t("email")}
+              type="email"
+              required
+            />
+            <Input
+              onChange={onChange}
+              value={password}
+              name="password"
+              placeholder={t("password")}
+              type="password"
+              required
+            />
+            <Input
+              type="submit"
+              value={isLoading ? t("loading") : t("logIn")}
+            />
           </Form>
           <Divider>{t("or")}</Divider>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

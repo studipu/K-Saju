@@ -15,9 +15,11 @@ const Controls = styled.div`
 
 const Button = styled.button<{ $primary?: boolean; $danger?: boolean }>`
   appearance: none;
-  border: 1px solid ${p => (p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#e5e7eb")};
-  background: ${p => (p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#ffffff")};
-  color: ${p => (p.$danger || p.$primary ? "#ffffff" : "#111827")};
+  border: 1px solid
+    ${(p) => (p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#e5e7eb")};
+  background: ${(p) =>
+    p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#ffffff"};
+  color: ${(p) => (p.$danger || p.$primary ? "#ffffff" : "#111827")};
   height: 40px;
   padding: 0 16px;
   border-radius: 999px;
@@ -27,16 +29,21 @@ const Button = styled.button<{ $primary?: boolean; $danger?: boolean }>`
   cursor: pointer;
   font-weight: 600;
   transition: all 0.15s ease;
-  &:hover { filter: brightness(0.98); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover {
+    filter: brightness(0.98);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 20px;
-  @media (max-width: 960px) { 
-    grid-template-columns: 1fr; 
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
 `;
@@ -88,7 +95,9 @@ const LangButton = styled.button`
   gap: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
-  &:hover { background: #f9fafb; }
+  &:hover {
+    background: #f9fafb;
+  }
 `;
 
 const LangMenu = styled.div`
@@ -98,7 +107,7 @@ const LangMenu = styled.div`
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   width: 200px;
   overflow: hidden;
   z-index: 10;
@@ -127,11 +136,16 @@ const LangMenuItem = styled.button`
   font-size: 14px;
   text-align: left;
   transition: background-color 0.15s ease;
-  &:hover { background: #f3f4f6; }
-  &:first-child { border-radius: 12px 12px 0 0; }
-  &:last-child { border-radius: 0 0 12px 12px; }
+  &:hover {
+    background: #f3f4f6;
+  }
+  &:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+  &:last-child {
+    border-radius: 0 0 12px 12px;
+  }
 `;
-
 
 const ChatWrap = styled.div`
   height: 68vh;
@@ -145,18 +159,18 @@ const ChatWrap = styled.div`
 
 const ChatItem = styled.div<{ $right?: boolean }>`
   display: flex;
-  justify-content: ${p => (p.$right ? "flex-end" : "flex-start")};
+  justify-content: ${(p) => (p.$right ? "flex-end" : "flex-start")};
   padding: 6px 4px;
 `;
 
 const Bubble = styled.div<{ $right?: boolean }>`
   max-width: 74%;
-  background: ${p => (p.$right ? "#111111" : "#ffffff")};
-  color: ${p => (p.$right ? "#ffffff" : "#111827")};
-  border: 1px solid ${p => (p.$right ? "#0f0f0f" : "#e5e7eb")};
+  background: ${(p) => (p.$right ? "#111111" : "#ffffff")};
+  color: ${(p) => (p.$right ? "#ffffff" : "#111827")};
+  border: 1px solid ${(p) => (p.$right ? "#0f0f0f" : "#e5e7eb")};
   border-radius: 16px;
   padding: 10px 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 `;
 
 const BubbleOriginal = styled.div`
@@ -190,13 +204,14 @@ function useRecorderSpeech(lang: SpeechLang) {
   const [messages, setMessages] = useState<FinalMessage[]>([]);
 
   useEffect(() => {
-    const SR: typeof window.SpeechRecognition | undefined = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SR: typeof window.SpeechRecognition | undefined =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) setSupported(true);
   }, []);
 
   const start = useCallback(async () => {
     setInterim("");
-    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       const rec: SpeechRecognition = new SR();
       recognitionRef.current = rec;
@@ -209,8 +224,13 @@ function useRecorderSpeech(lang: SpeechLang) {
           const res = e.results[i];
           const txt = res[0].transcript.trim();
           if (res.isFinal) {
-            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            setMessages(prev => [...prev, { id, text: txt, timestamp: Date.now() }]);
+            const id = `${Date.now()}-${Math.random()
+              .toString(36)
+              .slice(2, 8)}`;
+            setMessages((prev) => [
+              ...prev,
+              { id, text: txt, timestamp: Date.now() },
+            ]);
           } else {
             interimAgg += (interimAgg ? " " : "") + txt;
           }
@@ -237,8 +257,9 @@ function useRecorderSpeech(lang: SpeechLang) {
       recognitionRef.current = null;
     }
     if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state !== "inactive") mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+      if (mediaRecorderRef.current.state !== "inactive")
+        mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
       mediaRecorderRef.current = null;
     }
     setListening(false);
@@ -280,24 +301,39 @@ export default function LiveTranslation() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('[data-lang-picker]')) {
+      if (!target.closest("[data-lang-picker]")) {
         setOpenA(false);
         setOpenB(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const recA = useRecorderSpeech(langA);
   const recB = useRecorderSpeech(langB);
 
-  type ChatMsg = { id: string; speaker: "A" | "B"; text: string; timestamp: number };
+  type ChatMsg = {
+    id: string;
+    speaker: "A" | "B";
+    text: string;
+    timestamp: number;
+  };
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const chat: ChatMsg[] = useMemo(() => {
-    const a = recA.messages.map(m => ({ id: `A-${m.id}`, speaker: "A" as const, text: m.text, timestamp: m.timestamp }));
-    const b = recB.messages.map(m => ({ id: `B-${m.id}`, speaker: "B" as const, text: m.text, timestamp: m.timestamp }));
+    const a = recA.messages.map((m) => ({
+      id: `A-${m.id}`,
+      speaker: "A" as const,
+      text: m.text,
+      timestamp: m.timestamp,
+    }));
+    const b = recB.messages.map((m) => ({
+      id: `B-${m.id}`,
+      speaker: "B" as const,
+      text: m.text,
+      timestamp: m.timestamp,
+    }));
     return [...a, ...b].sort((x, y) => x.timestamp - y.timestamp);
   }, [recA.messages, recB.messages]);
 
@@ -311,7 +347,7 @@ export default function LiveTranslation() {
     const target = latest.speaker === "A" ? langB : langA;
     (async () => {
       const out = await translateText(latest.text, target);
-      setTranslations(prev => ({ ...prev, [latest.id]: out }));
+      setTranslations((prev) => ({ ...prev, [latest.id]: out }));
     })();
   }, [chat, langA, langB]);
 
@@ -324,21 +360,28 @@ export default function LiveTranslation() {
         const target = m.speaker === "A" ? langB : langA;
         updates[m.id] = await translateText(m.text, target);
       }
-      setTranslations(prev => ({ ...prev, ...updates }));
+      setTranslations((prev) => ({ ...prev, ...updates }));
     })();
-  }, [langA, langB]);
+  }, [langA, langB, chat]);
 
-  const startAll = useCallback(() => { recA.start(); recB.start(); }, [recA, recB]);
-  const stopAll = useCallback(() => { recA.stop(); recB.stop(); }, [recA, recB]);
+  const startAll = useCallback(() => {
+    recA.start();
+    recB.start();
+  }, [recA, recB]);
+  const stopAll = useCallback(() => {
+    recA.stop();
+    recB.stop();
+  }, [recA, recB]);
 
   const running = recA.listening || recB.listening;
   const chatRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    if (chatRef.current)
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [chat, recA.interim, recB.interim]);
 
-  const handleToggleLangPicker = (picker: 'A' | 'B') => {
-    if (picker === 'A') {
+  const handleToggleLangPicker = (picker: "A" | "B") => {
+    if (picker === "A") {
       setOpenA(!openA);
       setOpenB(false); // Close B when opening A
     } else {
@@ -351,34 +394,48 @@ export default function LiveTranslation() {
     value: SpeechLang,
     setValue: (v: SpeechLang) => void,
     open: boolean,
-    picker: 'A' | 'B'
+    picker: "A" | "B"
   ) => (
     <LangPicker data-lang-picker>
-      <LangButton onClick={() => handleToggleLangPicker(picker)} aria-haspopup="menu" aria-label="Language">
+      <LangButton
+        onClick={() => handleToggleLangPicker(picker)}
+        aria-haspopup="menu"
+        aria-label="Language"
+      >
         <span style={{ fontSize: 18 }}>
-          {LANG_OPTIONS.find(o => o.code === value)?.icon}
+          {LANG_OPTIONS.find((o) => o.code === value)?.icon}
         </span>
-        <svg 
-          width="12" 
-          height="12" 
-          viewBox="0 0 12 12" 
-          fill="none" 
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.15s ease",
+          }}
         >
-          <path 
-            d="M3 4.5L6 7.5L9 4.5" 
-            stroke="#6b7280" 
-            strokeWidth="1.5" 
-            strokeLinecap="round" 
+          <path
+            d="M3 4.5L6 7.5L9 4.5"
+            stroke="#6b7280"
+            strokeWidth="1.5"
+            strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
       </LangButton>
       {open && (
         <LangMenu>
-          {LANG_OPTIONS.map(opt => (
-            <LangMenuItem key={opt.code} onClick={() => { setValue(opt.code); setOpenA(false); setOpenB(false); }}>
+          {LANG_OPTIONS.map((opt) => (
+            <LangMenuItem
+              key={opt.code}
+              onClick={() => {
+                setValue(opt.code);
+                setOpenA(false);
+                setOpenB(false);
+              }}
+            >
               <span style={{ fontSize: 18 }}>{opt.icon}</span>
               <span>{opt.label}</span>
             </LangMenuItem>
@@ -399,15 +456,26 @@ export default function LiveTranslation() {
           </PanelHeader>
           <div style={{ display: "grid", gap: 12 }}>
             <SpeakerLangBox>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>{t("speakerAUnderstands")}</div>
-              {renderLangPicker(langA, setLangA, openA, 'A')}
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
+                {t("speakerAUnderstands")}
+              </div>
+              {renderLangPicker(langA, setLangA, openA, "A")}
             </SpeakerLangBox>
             <SpeakerLangBox>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>{t("speakerBUnderstands")}</div>
-              {renderLangPicker(langB, setLangB, openB, 'B')}
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
+                {t("speakerBUnderstands")}
+              </div>
+              {renderLangPicker(langB, setLangB, openB, "B")}
             </SpeakerLangBox>
             {!recA.supported || !recB.supported ? (
-              <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: "#6b7280",
+                  lineHeight: 1.4,
+                }}
+              >
                 {t("webSpeechNotSupported")}
               </div>
             ) : null}
@@ -419,8 +487,12 @@ export default function LiveTranslation() {
           <PanelHeader>
             <PanelTitle>{t("liveTranslation")}</PanelTitle>
             <Controls>
-              <Button onClick={startAll} $primary disabled={running}>{t("start")}</Button>
-              <Button onClick={stopAll} $danger disabled={!running}>{t("stop")}</Button>
+              <Button onClick={startAll} $primary disabled={running}>
+                {t("start")}
+              </Button>
+              <Button onClick={stopAll} $danger disabled={!running}>
+                {t("stop")}
+              </Button>
             </Controls>
           </PanelHeader>
           <ChatWrap ref={chatRef}>
@@ -428,7 +500,9 @@ export default function LiveTranslation() {
               <ChatItem key={m.id} $right={m.speaker === "B"}>
                 <Bubble $right={m.speaker === "B"}>
                   <BubbleOriginal>{m.text}</BubbleOriginal>
-                  <BubbleTranslation>{translations[m.id] ?? ""}</BubbleTranslation>
+                  <BubbleTranslation>
+                    {translations[m.id] ?? ""}
+                  </BubbleTranslation>
                 </Bubble>
               </ChatItem>
             ))}
@@ -453,5 +527,3 @@ export default function LiveTranslation() {
     </Page>
   );
 }
-
-
