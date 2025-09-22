@@ -1,12 +1,9 @@
 import { useState } from "react";
-import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
-import { FirebaseError } from "firebase/app";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   Card,
   Divider,
-  Error,
+  Error as ErrorText,
   Form,
   Input,
   LogoImage,
@@ -18,8 +15,8 @@ import {
   KakaoButton,
   LanguageSelector,
 } from "../components/auth_components";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useI18n } from "../i18n/i18n";
+import { supabase } from "../supabase";
 // Kakao SDK assumed initialized elsewhere
 
 export function Login() {
@@ -30,31 +27,21 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const onGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      navigate("/");
-    } catch (e) {
-      if (e instanceof FirebaseError) setError(e.message);
-    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/kakao-callback" },
+    });
+    if (error) setError(error.message);
   };
   const onApple = async () => {
     setError("Apple Sign-In not configured yet");
   };
   const onKakao = async () => {
-    // Direct OAuth redirect (no Kakao JS SDK required)
-    const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID ?? "";
-    const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI ?? "";
-    if (!clientId || !redirectUri) {
-      setError("Kakao env not configured");
-      return;
-    }
-    const authorizeUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(
-      clientId
-    )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
-    // Optionally store returnUrl
-    // localStorage.setItem("returnUrl", "/profile");
-    window.location.href = authorizeUrl;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao" as any,
+      options: { redirectTo: window.location.origin + "/kakao-callback" },
+    });
+    if (error) setError(error.message);
   };
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const {
@@ -72,12 +59,15 @@ export function Login() {
     if (isLoading || email === "" || password === "") return;
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
-    } catch (e) {
-      if (e instanceof FirebaseError) {
-        setError(e.message);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+      } else {
+        navigate("/");
       }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -116,7 +106,7 @@ export function Login() {
             <AppleButton onClick={onApple} />
             <KakaoButton onClick={onKakao} />
           </div>
-          {error !== "" ? <Error>{error}</Error> : null}
+          {error !== "" ? <ErrorText>{error}</ErrorText> : null}
           <Switcher>
             {t("dontHaveAccount")}{" "}
             <Link to="/sign_up">{t("createOne")} &rarr;</Link>

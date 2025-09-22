@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
-import { auth } from "../firebase";
+import { supabase } from "../supabase";
 import { useI18n } from "../i18n/i18n";
 import { useEffect, useState } from "react";
 import temporaryLogo from "../assets/temporary_logo.png";
@@ -88,13 +88,22 @@ export default function GNB() {
   const { t, language, setLanguage } = useI18n();
   const navigate = useNavigate();
   useLocation();
-  const [user, setUser] = useState(() => auth.currentUser);
+  const [user, setUser] = useState<null | { id: string; user_metadata?: any; user_metadata_photo?: string; }>(null);
   const [openLang, setOpenLang] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => setUser(u));
-    return () => unsub();
+    const init = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user as any);
+    };
+    init();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user as any ?? null);
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   // Close dropdowns when clicking outside
@@ -117,7 +126,7 @@ export default function GNB() {
   const onLogout = async () => {
     const ok = confirm("Are you sure you want to log out?");
     if (ok) {
-      await auth.signOut();
+      await supabase.auth.signOut();
       navigate("/sign-in");
     }
   };
@@ -232,8 +241,8 @@ export default function GNB() {
           {user ? (
             <div style={{ position: "relative" }} data-dropdown>
               <IconButton onClick={onToggleProfile} aria-label={t("profile")}>
-                {user.photoURL ? (
-                  <ProfileImg src={user.photoURL} alt="profile" />
+                {(user.user_metadata?.avatar_url || (user as any).photoURL) ? (
+                  <ProfileImg src={user.user_metadata?.avatar_url || (user as any).photoURL} alt="profile" />
                 ) : (
                   <svg
                     viewBox="0 0 20 20"

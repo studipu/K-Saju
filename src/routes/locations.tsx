@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { PlusIcon, MinusIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, Squares2X2Icon, Bars3Icon } from "@heroicons/react/24/outline";
+import { supabase } from "../supabase";
 
 type Place = {
   id: string;
@@ -35,13 +36,15 @@ const Container = styled.div<{ $expanded?: boolean }>`
   background: #ffffff;
 `;
 
-const ListPane = styled.div<{ $expanded?: boolean }>`
+const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
   background: transparent;
   display: ${p => (p.$expanded ? "none" : "block")};
-  margin-right: calc(clamp(320px, 42vw, 560px) + 16px);
+  margin-right: ${p => (
+    p.$expanded ? 0 : `calc(${(((p.$mapRatio ?? 0.4) * 100).toFixed(3))}vw + 16px)`
+  )};
 `;
 
-const MapPane = styled.div<{ $expanded?: boolean }>`
+const MapPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
   position: ${p => (p.$expanded ? "fixed" : "sticky")};
   top: ${p => (p.$expanded ? 0 : "86px")};
   right: ${p => (p.$expanded ? 0 : "auto")};
@@ -49,7 +52,9 @@ const MapPane = styled.div<{ $expanded?: boolean }>`
   bottom: ${p => (p.$expanded ? 0 : "auto")};
   float: ${p => (p.$expanded ? "none" : "right")};
   margin-left: ${p => (p.$expanded ? 0 : "16px")};
-  width: ${p => (p.$expanded ? "100%" : "clamp(320px, 42vw, 560px)")};
+  width: ${p => (
+    p.$expanded ? "100%" : `calc(${(((p.$mapRatio ?? 0.4) * 100).toFixed(3))}vw)`
+  )};
   height: ${p => (p.$expanded ? "100vh" : "calc(100vh - 96px - 16px)")};
   border-radius: ${p => (p.$expanded ? "0px" : "14px")};
   overflow: hidden;
@@ -170,36 +175,28 @@ const ViewBtn = styled.button<{ $active?: boolean }>`
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  border: 1px solid ${p => (p.$active ? "#111827" : "#e5e7eb")};
+  border: 1px solid ${p => (p.$active ? "#111827" : "#d1d5db")};
   background: #ffffff;
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  &:hover { background: #f9fafb; }
+  &:focus-visible { outline: 2px solid #111827; outline-offset: 2px; }
 `;
 
-const mockPlaces: Place[] = [
-  { id: "p1", region: "Seoul", city: "Seoul", district: "Jung-gu", postalCode: "04620", addressLine: "Dongguk University Station exit 6", placeLabel: "Dongguk University Station", latitude: 37.5585, longitude: 127.0002 },
-  { id: "p2", region: "Seoul", city: "Seoul", district: "Mapo-gu", postalCode: "04101", addressLine: "Hongdae Station exit 9", placeLabel: "Hongdae Station", latitude: 37.5572, longitude: 126.9245 },
-  { id: "p3", region: "Seoul", city: "Seoul", district: "Gangnam-gu", postalCode: "06164", addressLine: "Gangnam Station exit 11", placeLabel: "Gangnam Station", latitude: 37.4979, longitude: 127.0276 },
-  { id: "p4", region: "Seoul", city: "Seoul", district: "Jongno-gu", postalCode: "03154", addressLine: "Gyeongbokgung Palace", placeLabel: "Gyeongbokgung", latitude: 37.5796, longitude: 126.977 },
-  { id: "p5", region: "Seoul", city: "Seoul", district: "Yongsan-gu", postalCode: "04390", addressLine: "Itaewon Station exit 3", placeLabel: "Itaewon", latitude: 37.5349, longitude: 126.9946 },
-  { id: "p6", region: "Seoul", city: "Seoul", district: "Songpa-gu", postalCode: "05551", addressLine: "Lotte World Tower", placeLabel: "Jamsil", latitude: 37.5131, longitude: 127.1025 },
-  { id: "p7", region: "Seoul", city: "Seoul", district: "Seodaemun-gu", postalCode: "03722", addressLine: "Sinchon Station exit 2", placeLabel: "Sinchon", latitude: 37.5599, longitude: 126.9425 },
-  { id: "p8", region: "Seoul", city: "Seoul", district: "Gwangjin-gu", postalCode: "05075", addressLine: "Konkuk Univ. Station exit 6", placeLabel: "Konkuk Univ.", latitude: 37.5404, longitude: 127.0707 },
-  { id: "p9", region: "Seoul", city: "Seoul", district: "Seocho-gu", postalCode: "06514", addressLine: "Express Bus Terminal", placeLabel: "Gangnam Express Bus Terminal", latitude: 37.5041, longitude: 127.0048 },
-  { id: "p10", region: "Seoul", city: "Seoul", district: "Jung-gu", postalCode: "04524", addressLine: "Myeongdong Cathedral", placeLabel: "Myeongdong", latitude: 37.5637, longitude: 126.9874 },
-];
+const Resizer = styled.div<{ $mapRatio: number; $visible: boolean }>`
+  position: absolute;
+  top: 86px;
+  bottom: 16px;
+  right: ${p => `calc(${(p.$mapRatio * 100).toFixed(3)}vw + 16px)`};
+  width: 8px;
+  margin-left: -4px;
+  cursor: col-resize;
+  z-index: 10;
+  display: ${p => (p.$visible ? "block" : "none")};
+  background: transparent;
+`;
 
-const mockLocations: LocationItem[] = [
-  { id: "l1", title: "Tarot Basics with Bart", tagline: "Card meanings & daily spreads.", imageUrl: "https://images.unsplash.com/photo-1599050751790-6cdaafbc1e9b?q=80&w=1600&auto=format&fit=crop", priceKRW: 63999, activityLevel: "LIGHT", skillLevel: "BEGINNER", maxGuestsTotal: 4, minAge: 18, placeId: "p1" },
-  { id: "l2", title: "Night Fortune Stroll", tagline: "Street tarot and destiny talk.", imageUrl: "https://images.unsplash.com/photo-1556227701-833dc4c6b6f7?q=80&w=1600&auto=format&fit=crop", priceKRW: 45000, activityLevel: "MODERATE", skillLevel: "BEGINNER", maxGuestsTotal: 6, minAge: 12, placeId: "p2" },
-  { id: "l3", title: "Korean Saju Introduction", tagline: "Four Pillars for beginners.", imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop", priceKRW: 55000, activityLevel: "MODERATE", skillLevel: "BEGINNER", maxGuestsTotal: 8, minAge: 10, placeId: "p3" },
-  { id: "l4", title: "Temple Fortune Meditation", tagline: "Mindfulness for readings.", imageUrl: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop", priceKRW: 30000, activityLevel: "LIGHT", skillLevel: "BEGINNER", maxGuestsTotal: 12, minAge: 16, placeId: "p4" },
-  { id: "l5", title: "Itaewon Tarot Pop-up", tagline: "Fast 10-min readings.", imageUrl: "https://images.unsplash.com/photo-1519681394507-46b59cc0b4c1?q=80&w=1600&auto=format&fit=crop", priceKRW: 35000, activityLevel: "MODERATE", skillLevel: "BEGINNER", maxGuestsTotal: 10, minAge: 10, placeId: "p5" },
-  { id: "l6", title: "Jamsil Astrology Circle", tagline: "Birth charts & coffee.", imageUrl: "https://images.unsplash.com/photo-1533154683836-81fddf7e8e62?q=80&w=1600&auto=format&fit=crop", priceKRW: 28000, activityLevel: "MODERATE", skillLevel: "INTERMEDIATE", maxGuestsTotal: 6, minAge: 14, placeId: "p6" },
-  { id: "l7", title: "Sinchon Saju Study", tagline: "Practice with peers.", imageUrl: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?q=80&w=1600&auto=format&fit=crop", priceKRW: 15000, activityLevel: "LIGHT", skillLevel: "BEGINNER", maxGuestsTotal: 15, minAge: 8, placeId: "p7" },
-  { id: "l8", title: "K-Pop Oracle Workshop", tagline: "Use music for intuition.", imageUrl: "https://images.unsplash.com/photo-1519681391401-64d9590b6f3e?q=80&w=1600&auto=format&fit=crop", priceKRW: 40000, activityLevel: "INTENSE", skillLevel: "BEGINNER", maxGuestsTotal: 10, minAge: 10, placeId: "p8" },
-  { id: "l9", title: "River Sunset Readings", tagline: "Tarot by the water.", imageUrl: "https://images.unsplash.com/photo-1496307653780-42ee777d4833?q=80&w=1600&auto=format&fit=crop", priceKRW: 12000, activityLevel: "LIGHT", skillLevel: "BEGINNER", maxGuestsTotal: 12, minAge: 0, placeId: "p9" },
-  { id: "l10", title: "Hanok Alley Omens", tagline: "Stories & symbolism.", imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop", priceKRW: 22000, activityLevel: "MODERATE", skillLevel: "BEGINNER", maxGuestsTotal: 12, minAge: 8, placeId: "p10" },
-];
+// DB-only rendering. If no data exists, the page will show an empty state.
 
 function formatKRW(n: number) {
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(n);
@@ -229,7 +226,10 @@ function useGoogleMaps(apiKey?: string) {
 
 export default function Locations() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  const placesById = useMemo(() => new Map(mockPlaces.map(p => [p.id, p])), []);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [locations, setLocations] = useState<LocationItem[]>([]);
+  const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.3 ~ 0.5
+  const placesById = useMemo(() => new Map(places.map(p => [p.id, p])), [places]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -253,7 +253,60 @@ export default function Locations() {
     { featureType: "water", elementType: "geometry", stylers: [{ color: "#bae6fd" }] }
   ]);
 
-  // Initialize map and markers when SDK is loaded
+  // Fetch from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: places, error: placesErr } = await supabase
+        .from("places")
+        .select("id, region, city, district, postal_code, address_line, place_label, latitude, longitude");
+      const { data: locs, error: locsErr } = await supabase
+        .from("locations")
+        .select("id, title, tagline, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id");
+      if (cancelled) return;
+      if (placesErr || locsErr) {
+        // Minimal logging to help production debugging
+        console.error("Supabase error", { placesErr, locsErr });
+      }
+      if (places && places.length > 0) {
+        const mappedPlaces: Place[] = places.map((p: any) => ({
+          id: p.id,
+          region: p.region,
+          city: p.city,
+          district: p.district ?? undefined,
+          postalCode: p.postal_code ?? undefined,
+          addressLine: p.address_line ?? undefined,
+          placeLabel: p.place_label ?? undefined,
+          latitude: p.latitude,
+          longitude: p.longitude,
+        }));
+        setPlaces(mappedPlaces);
+      }
+      if (locs && locs.length > 0) {
+        const mappedLocs: LocationItem[] = locs.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          tagline: l.tagline ?? undefined,
+          imageUrl: l.image_url,
+          priceKRW: l.price_krw,
+          activityLevel: l.activity_level,
+          skillLevel: l.skill_level,
+          maxGuestsTotal: l.max_guests_total,
+          minAge: l.min_age ?? undefined,
+          placeId: l.place_id,
+        }));
+        setLocations(mappedLocs);
+      }
+      if ((places?.length ?? 0) === 0 || (locs?.length ?? 0) === 0) {
+        console.log("Supabase fetch counts", { places: places?.length ?? 0, locations: locs?.length ?? 0 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Initialize map and markers when SDK and data are ready
   useEffect(() => {
     if (!loaded || !mapRef.current || !window.google) return;
 
@@ -270,7 +323,7 @@ export default function Locations() {
     // Clear previous markers
     markerMap.current = {};
 
-    for (const loc of mockLocations) {
+    for (const loc of locations) {
       const place = placesById.get(loc.placeId);
       if (!place) continue;
 
@@ -281,12 +334,12 @@ export default function Locations() {
       if (markerLib && markerLib.AdvancedMarkerElement) {
         const el = document.createElement("div");
         el.style.padding = "6px 10px";
-        el.style.background = "#fff";
-        el.style.border = "1px solid #fde68a";
+        el.style.background = "#111111";
+        el.style.border = "1px solid #111111";
         el.style.borderRadius = "999px";
         el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
         el.style.fontWeight = "700";
-        el.style.color = "#92400e";
+        el.style.color = "#ffffff";
         el.style.fontSize = "12px";
         el.textContent = priceText;
 
@@ -304,7 +357,14 @@ export default function Locations() {
         const marker = new (window as any).google.maps.Marker({
           map: mapObj.current,
           position: { lat: place.latitude, lng: place.longitude },
-          label: { text: priceText, color: "#92400e", fontSize: "12px", fontWeight: "700" } as any,
+          label: { text: priceText, color: "#ffffff", fontSize: "12px", fontWeight: "700" } as any,
+          icon: {
+            path: (window as any).google.maps.SymbolPath.CIRCLE,
+            scale: 0,
+            fillColor: "#111111",
+            fillOpacity: 1,
+            strokeOpacity: 0
+          } as any,
         });
         marker.addListener("click", () => {
           setSelectedId(loc.id);
@@ -313,21 +373,44 @@ export default function Locations() {
         markerMap.current[loc.id] = marker;
       }
     }
-  }, [loaded, placesById]);
+  }, [loaded, placesById, locations]);
 
   // Focus selected marker
   useEffect(() => {
     if (!selectedId || !mapObj.current) return;
-    const loc = mockLocations.find(l => l.id === selectedId);
+    const loc = locations.find(l => l.id === selectedId);
     const place = loc ? placesById.get(loc.placeId) : undefined;
     if (!place) return;
     mapObj.current.panTo({ lat: place.latitude, lng: place.longitude });
     mapObj.current.setZoom(14);
-  }, [selectedId, placesById]);
+  }, [selectedId, placesById, locations]);
 
   return (
     <Container $expanded={expanded}>
-      <MapPane $expanded={expanded}>
+      <Resizer
+        $mapRatio={mapRatio}
+        $visible={!expanded}
+        onMouseDown={(e) => {
+          if (expanded) return;
+          const startX = e.clientX;
+          const startRatio = mapRatio;
+          const onMove = (ev: MouseEvent) => {
+            const delta = startX - ev.clientX;
+            // viewport 기준으로 근사치 변환: 1920px 화면 기준 1vw ≈ 19.2px
+            const pxPerVw = Math.max(window.innerWidth, 320) / 100;
+            const deltaRatio = (delta / (pxPerVw * 100));
+            const next = Math.min(Math.max(startRatio + deltaRatio, 0.3), 0.5);
+            setMapRatio(next);
+          };
+          const onUp = () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+          };
+          window.addEventListener("mousemove", onMove);
+          window.addEventListener("mouseup", onUp);
+        }}
+      />
+      <MapPane $expanded={expanded} $mapRatio={mapRatio}>
         <MapControls>
           <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.min((mapObj.current.getZoom?.() ?? 12) + 1, 20)); }} aria-label="Zoom in">
             <PlusIcon width={18} height={18} color="#111827" />
@@ -345,11 +428,11 @@ export default function Locations() {
         </MapControls>
         <MapDiv ref={mapRef} />
       </MapPane>
-      <ListPane $expanded={expanded}>
+      <ListPane $expanded={expanded} $mapRatio={mapRatio}>
         <ListHeader>
           <div>
             <div style={{ fontWeight: 700, color: "#111827" }}>Seoul stays & experiences</div>
-            <Count>{mockLocations.length} locations • {new Date().toLocaleDateString()}</Count>
+            <Count>{locations.length} locations • {new Date().toLocaleDateString()}</Count>
           </div>
           <ViewSwitch>
             <ViewBtn onClick={() => setViewMode("list")} $active={viewMode === "list"} aria-label="List view">
@@ -366,13 +449,16 @@ export default function Locations() {
           </Notice>
         )}
         <CardsWrap>
+        {locations.length === 0 ? (
+          <Notice>등록된 체험이 없습니다. Supabase에 시드 데이터를 추가해 주세요.</Notice>
+        ) : (
         <Cards $mode={viewMode}>
-          {mockLocations.map((loc) => {
+          {locations.map((loc) => {
             const place = placesById.get(loc.placeId);
             return (
               <Card
                 key={loc.id}
-                ref={(el) => (listRefs.current[loc.id] = el)}
+                ref={(el) => { listRefs.current[loc.id] = el; }}
                 onClick={() => setSelectedId(loc.id)}
                 $active={selectedId === loc.id}
               >
@@ -396,6 +482,7 @@ export default function Locations() {
             );
           })}
         </Cards>
+        )}
         </CardsWrap>
       </ListPane>
     </Container>

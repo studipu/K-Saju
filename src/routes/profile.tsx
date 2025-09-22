@@ -1,8 +1,6 @@
 import { styled } from "styled-components";
-import { auth, storage } from "../firebase";
-import { useState } from "react";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { updateProfile } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabase";
 
 const Wrapper = styled.div`
   display: flex;
@@ -38,20 +36,27 @@ const Name = styled.span`
 // Tweet list removed
 
 export default function Profile() {
-  const user = auth.currentUser;
-  const [avatar, setAvatar] = useState(user?.photoURL);
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const u = data.user;
+      setUserId(u?.id ?? null);
+      setAvatar((u?.user_metadata as any)?.avatar_url || undefined);
+    })();
+  }, []);
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
-    if (!user) return;
+    if (!userId) return;
     if (files && files.length === 1) {
       const file = files[0];
-      const locationRef = ref(storage, `avatars/${user?.uid}`);
-      const result = await uploadBytes(locationRef, file);
-      const avatarUrl = await getDownloadURL(result.ref);
+      const filePath = `avatars/${userId}`;
+      await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = pub.publicUrl;
       setAvatar(avatarUrl);
-      await updateProfile(user, {
-        photoURL: avatarUrl,
-      });
+      await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
     }
   };
   return (
@@ -76,7 +81,7 @@ export default function Profile() {
         type="file"
         accept="image/*"
       />
-      <Name>{user?.displayName ?? "Anonymous"}</Name>
+      <Name>My Profile</Name>
     </Wrapper>
   );
 }

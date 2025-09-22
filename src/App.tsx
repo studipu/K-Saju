@@ -8,7 +8,7 @@ import { createGlobalStyle, styled } from "styled-components";
 import reset from "styled-reset";
 import { useEffect, useState } from "react";
 import LoadingScreen from "./components/loading_screen";
-import { auth } from "./firebase";
+import { supabase } from "./supabase";
 import ProtectedRoute from "./components/protected_route";
 import NotFound from "./components/not_found";
 import KakaoCallback from "./routes/kakao_callback";
@@ -79,7 +79,7 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      await auth.authStateReady();
+      await supabase.auth.getSession();
       if (isMounted) setLoading(false);
     })();
     return () => {
