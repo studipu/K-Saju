@@ -11,7 +11,7 @@ import LoadingScreen from "./components/loading_screen";
 import { supabase } from "./supabase";
 import ProtectedRoute from "./components/protected_route";
 import NotFound from "./components/not_found";
-import KakaoCallback from "./routes/kakao_callback";
+import AuthCallback from "./routes/auth_callback";
 import Messages from "./routes/messages.tsx";
 import Support from "./routes/support";
 import FAQ from "./routes/faq";
@@ -51,7 +51,9 @@ const router = createBrowserRouter([
   // Allow underscore variants to avoid dead links
   { path: "/sign_in", element: <Login /> },
   { path: "/sign_up", element: <CreateAccount /> },
-  { path: "/kakao-callback", element: <KakaoCallback /> },
+  { path: "/auth-callback", element: <AuthCallback /> },
+  // Backward-compatible alias for old links
+  { path: "/kakao-callback", element: <AuthCallback /> },
   { path: "*", element: <NotFound /> },
 ]);
 

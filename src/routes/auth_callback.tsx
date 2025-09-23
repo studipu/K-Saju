@@ -1,15 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 
 function GlobalLoading() {
-  return <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>Processing Kakao login…</div>;
+  return <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>Processing sign-in…</div>;
 }
 
-export default function KakaoCallback() {
+export default function AuthCallback() {
   const navigate = useNavigate();
+  const hasExchangedRef = useRef(false);
 
   useEffect(() => {
+    if (hasExchangedRef.current) return;
+    hasExchangedRef.current = true;
     const run = async () => {
       try {
         const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
@@ -33,5 +36,6 @@ export default function KakaoCallback() {
 
   return <GlobalLoading />;
 }
+
 
 

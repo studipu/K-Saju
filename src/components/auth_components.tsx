@@ -112,7 +112,7 @@ export const Form = styled.form`
 
 export const Input = styled.input`
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 999px;
   border: 1px solid #d1d5db;
   background: #ffffff;
   color: #1a1a1a;
@@ -205,7 +205,7 @@ export const SocialButton = styled.button`
   background: #ffffff;
   color: #1a1a1a;
   padding: 0 16px;
-  border-radius: 16px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,7 +409,7 @@ const GsiButton = styled.button`
   background: #ffffff;
   color: #1a1a1a;
   height: 46px;
-  border-radius: 16px;
+  border-radius: 999px;
   padding: 0 16px;
   width: 100%;
   cursor: pointer;
