@@ -30,12 +30,6 @@ const SubTitle = styled.p`
   font-weight: 400;
 `;
 
-const Controls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-`;
 
 const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
   appearance: none;
