@@ -1,25 +1,33 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
 
 const Page = styled.div`
   margin: 0 auto;
   padding: 20px 20px 40px;
+  max-width: 1200px;
 `;
 
 const Controls = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 20px;
 `;
 
-const Button = styled.button<{ $primary?: boolean; $danger?: boolean }>`
+const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean }>`
   appearance: none;
-  border: 1px solid
-    ${(p) => (p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#e5e7eb")};
+  border: 1px solid ${(p) =>
+    p.$danger ? "#dc2626" :
+    p.$primary ? "#111111" :
+    p.$customer ? "#3b82f6" :
+    p.$business ? "#10b981" : "#e5e7eb"};
   background: ${(p) =>
-    p.$danger ? "#dc2626" : p.$primary ? "#111111" : "#ffffff"};
-  color: ${(p) => (p.$danger || p.$primary ? "#ffffff" : "#111827")};
+    p.$danger ? "#dc2626" :
+    p.$primary ? "#111111" :
+    p.$customer ? "#3b82f6" :
+    p.$business ? "#10b981" : "#ffffff"};
+  color: ${(p) => (p.$danger || p.$primary || p.$customer || p.$business ? "#ffffff" : "#111827")};
   height: 40px;
   padding: 0 16px;
   border-radius: 999px;
@@ -40,7 +48,7 @@ const Button = styled.button<{ $primary?: boolean; $danger?: boolean }>`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 20px;
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
@@ -64,7 +72,6 @@ const PanelHeader = styled.div`
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #f3f4f6;
-  height: 44px;
 `;
 
 const PanelTitle = styled.h2`
@@ -73,8 +80,6 @@ const PanelTitle = styled.h2`
   color: #111827;
   margin: 0;
   line-height: 1.2;
-  display: flex;
-  align-items: center;
 `;
 
 const LangPicker = styled.div`
@@ -113,17 +118,6 @@ const LangMenu = styled.div`
   z-index: 10;
 `;
 
-const SpeakerLangBox = styled.div`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
 const LangMenuItem = styled.button`
   display: flex;
   width: 100%;
@@ -147,40 +141,76 @@ const LangMenuItem = styled.button`
   }
 `;
 
-const ChatWrap = styled.div`
-  height: 68vh;
-  min-height: 420px;
-  overflow: auto;
-  padding: 12px;
+const CustomerLangBox = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const ConversationArea = styled.div`
+  height: 70vh;
+  min-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
   background: #fafafa;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
 `;
 
-const ChatItem = styled.div<{ $right?: boolean }>`
+const MessageItem = styled.div`
   display: flex;
-  justify-content: ${(p) => (p.$right ? "flex-end" : "flex-start")};
-  padding: 6px 4px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
 `;
 
-const Bubble = styled.div<{ $right?: boolean }>`
-  max-width: 74%;
-  background: ${(p) => (p.$right ? "#111111" : "#ffffff")};
-  color: ${(p) => (p.$right ? "#ffffff" : "#111827")};
-  border: 1px solid ${(p) => (p.$right ? "#0f0f0f" : "#e5e7eb")};
-  border-radius: 16px;
-  padding: 10px 12px;
+const ProfileIcon = styled.div<{ $speaker: "customer" | "business" }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: ${(p) => p.$speaker === "customer" ? "#3b82f6" : "#10b981"};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+`;
+
+const MessageContent = styled.div`
+  flex: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 16px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 `;
 
-const BubbleOriginal = styled.div`
+const OriginalText = styled.div`
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  color: #111827;
+  line-height: 1.4;
 `;
 
-const BubbleTranslation = styled.div`
-  font-size: 13px;
-  opacity: 0.9;
+const KoreanText = styled.div`
+  font-size: 14px;
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.4;
+  padding-top: 4px;
+  border-top: 1px solid #f3f4f6;
+`;
+
+const RecordingButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
 `;
 
 type SpeechLang = "en-US" | "ko-KR" | "ja-JP" | "zh-CN" | "es-ES";
@@ -193,117 +223,189 @@ const LANG_OPTIONS: Array<{ code: SpeechLang; label: string; icon: string }> = [
   { code: "es-ES", label: "Español", icon: "🇪🇸" },
 ];
 
-type FinalMessage = { id: string; text: string; timestamp: number };
+type FinalMessage = {
+  id: string;
+  originalText: string;
+  koreanText: string;
+  timestamp: number;
+  speaker: "customer" | "business";
+};
 
-function useRecorderSpeech(lang: SpeechLang) {
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+function useRecorderSpeech() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [supported, setSupported] = useState<boolean>(false);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [supported, setSupported] = useState<boolean>(true);
   const [listening, setListening] = useState(false);
+  const [currentSpeaker, setCurrentSpeaker] = useState<"customer" | "business" | null>(null);
   const [interim, setInterim] = useState("");
   const [messages, setMessages] = useState<FinalMessage[]>([]);
+  const [recordingTime, setRecordingTime] = useState(0);
 
-  useEffect(() => {
-    const SR: typeof window.SpeechRecognition | undefined =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) setSupported(true);
-  }, []);
-
-  const start = useCallback(async () => {
+  const startRecording = useCallback(async (speaker: "customer" | "business", customerLang: SpeechLang) => {
     setInterim("");
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-      const rec: SpeechRecognition = new SR();
-      recognitionRef.current = rec;
-      rec.lang = lang;
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.onresult = (e: SpeechRecognitionEvent) => {
-        let interimAgg = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const res = e.results[i];
-          const txt = res[0].transcript.trim();
-          if (res.isFinal) {
-            const id = `${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2, 8)}`;
+    setRecordingTime(0);
+    setCurrentSpeaker(speaker);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mr;
+
+      const audioChunks: Blob[] = [];
+
+      mr.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mr.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+        try {
+          const apiUrl = import.meta.env.VITE_SAJU_API_URL || 'http://localhost:8000';
+          const formData = new FormData();
+          formData.append('audio_file', audioBlob, 'recording.webm');
+
+          // 언어 코드 매핑
+          const langMap: Record<string, string> = {
+            'en-US': 'en',
+            'ko-KR': 'ko',
+            'zh-CN': 'zh',
+            'ja-JP': 'ja',
+            'es-ES': 'es'
+          };
+
+          const customerLanguageCode = langMap[customerLang] || 'en';
+
+          // 고객이면 선택된 언어에서 한국어로, 업체면 한국어에서 선택된 언어로
+          const targetLang = speaker === 'customer' ? 'ko' : customerLanguageCode;
+          const sourceLang = speaker === 'customer' ? customerLanguageCode : 'ko';
+
+          console.log(`Speaker: ${speaker}, Customer Lang: ${customerLang} -> ${customerLanguageCode}, Source: ${sourceLang}, Target: ${targetLang}`);
+
+          formData.append('target_language', targetLang);
+          formData.append('source_language', sourceLang);
+
+          const response = await fetch(`${apiUrl}/translate/audio`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+            // 고객: 원문(고객언어) + 한국어, 업체: 번역(고객언어) + 원문(한국어)
+            let displayOriginal, displayKorean;
+
+            if (speaker === 'customer') {
+              // 고객: 원문(고객언어) 위에, 한국어 아래에
+              displayOriginal = result.original_text;
+              displayKorean = result.translated_text;
+            } else {
+              // 업체: 번역(고객언어) 위에, 원문(한국어) 아래에
+              displayOriginal = result.translated_text;
+              displayKorean = result.original_text;
+            }
+
             setMessages((prev) => [
               ...prev,
-              { id, text: txt, timestamp: Date.now() },
+              {
+                id,
+                originalText: displayOriginal,
+                koreanText: displayKorean,
+                timestamp: Date.now(),
+                speaker
+              },
             ]);
           } else {
-            interimAgg += (interimAgg ? " " : "") + txt;
+            // Fallback
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id,
+                originalText: '[테스트] 음성 입력',
+                koreanText: '[테스트] 음성이 정상적으로 입력되었습니다',
+                timestamp: Date.now(),
+                speaker
+              },
+            ]);
           }
+        } catch (error) {
+          console.error('API 오류:', error);
+          const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id,
+              originalText: '[오프라인] 음성 녹음 완료',
+              koreanText: '[오프라인] 음성이 성공적으로 녹음되었습니다',
+              timestamp: Date.now(),
+              speaker
+            },
+          ]);
         }
-        setInterim(interimAgg);
+
+        stream.getTracks().forEach(track => track.stop());
+        setListening(false);
+        setCurrentSpeaker(null);
       };
-      rec.onend = () => setListening(false);
-      rec.onerror = () => setListening(false);
-      rec.start();
-      setListening(true);
-    } else {
-      // Fallback to MediaRecorder (no real-time transcript)
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
-      mediaRecorderRef.current = mr;
+
       mr.start();
       setListening(true);
-    }
-  }, [lang]);
 
-  const stop = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+      recordingTimeoutRef.current = setTimeout(() => {
+        if (mr.state === 'recording') {
+          mr.stop();
+        }
+      }, 10000);
+
+      const interval = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 10) {
+            clearInterval(interval);
+            return 10;
+          }
+          return prev + 0.1;
+        });
+      }, 100);
+
+    } catch (error) {
+      console.error('녹음 시작 실패:', error);
+      setListening(false);
     }
-    if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state !== "inactive")
-        mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
-      mediaRecorderRef.current = null;
-    }
-    setListening(false);
-    setInterim("");
   }, []);
 
-  return { supported, listening, interim, messages, start, stop };
-}
-
-async function translateText(text: string, target: SpeechLang) {
-  if (!text.trim()) return "";
-  try {
-    const endpoint = import.meta.env.VITE_TRANSLATE_API_URL;
-    if (endpoint) {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, target }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return (data.translation ?? data.translatedText ?? text) as string;
-      }
+  const stop = useCallback(() => {
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
     }
-    return text;
-  } catch {
-    return text;
-  }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setListening(false);
+    setCurrentSpeaker(null);
+    setInterim("");
+    setRecordingTime(0);
+  }, []);
+
+  return { supported, listening, interim, messages, startRecording, stop, recordingTime, currentSpeaker };
 }
 
 export default function LiveTranslation() {
   const { t } = useI18n();
-  const [langA, setLangA] = useState<SpeechLang>("en-US");
-  const [langB, setLangB] = useState<SpeechLang>("ko-KR");
-  const [openA, setOpenA] = useState(false);
-  const [openB, setOpenB] = useState(false);
+  const [customerLang, setCustomerLang] = useState<SpeechLang>("en-US");
+  const [openLangMenu, setOpenLangMenu] = useState(false);
 
-  // Close dropdowns when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest("[data-lang-picker]")) {
-        setOpenA(false);
-        setOpenB(false);
+        setOpenLangMenu(false);
       }
     };
 
@@ -311,99 +413,34 @@ export default function LiveTranslation() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const recA = useRecorderSpeech(langA);
-  const recB = useRecorderSpeech(langB);
+  const recorder = useRecorderSpeech();
 
-  type ChatMsg = {
-    id: string;
-    speaker: "A" | "B";
-    text: string;
-    timestamp: number;
+  const handleCustomerRecord = () => {
+    recorder.startRecording('customer', customerLang);
   };
-  const [translations, setTranslations] = useState<Record<string, string>>({});
-  const chat: ChatMsg[] = useMemo(() => {
-    const a = recA.messages.map((m) => ({
-      id: `A-${m.id}`,
-      speaker: "A" as const,
-      text: m.text,
-      timestamp: m.timestamp,
-    }));
-    const b = recB.messages.map((m) => ({
-      id: `B-${m.id}`,
-      speaker: "B" as const,
-      text: m.text,
-      timestamp: m.timestamp,
-    }));
-    return [...a, ...b].sort((x, y) => x.timestamp - y.timestamp);
-  }, [recA.messages, recB.messages]);
 
-  // Translate new messages based on opposite user's understanding
-  const lastTranslatedRef = useRef<string | null>(null);
+  const handleBusinessRecord = () => {
+    recorder.startRecording('business', customerLang);
+  };
+
+  const running = recorder.listening;
+  const conversationRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    if (chat.length === 0) return;
-    const latest = chat[chat.length - 1];
-    if (lastTranslatedRef.current === latest.id) return;
-    lastTranslatedRef.current = latest.id;
-    const target = latest.speaker === "A" ? langB : langA;
-    (async () => {
-      const out = await translateText(latest.text, target);
-      setTranslations((prev) => ({ ...prev, [latest.id]: out }));
-    })();
-  }, [chat, langA, langB]);
-
-  // Re-translate existing messages when language settings change
-  useEffect(() => {
-    if (chat.length === 0) return;
-    (async () => {
-      const updates: Record<string, string> = {};
-      for (const m of chat) {
-        const target = m.speaker === "A" ? langB : langA;
-        updates[m.id] = await translateText(m.text, target);
-      }
-      setTranslations((prev) => ({ ...prev, ...updates }));
-    })();
-  }, [langA, langB, chat]);
-
-  const startAll = useCallback(() => {
-    recA.start();
-    recB.start();
-  }, [recA, recB]);
-  const stopAll = useCallback(() => {
-    recA.stop();
-    recB.stop();
-  }, [recA, recB]);
-
-  const running = recA.listening || recB.listening;
-  const chatRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (chatRef.current)
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [chat, recA.interim, recB.interim]);
-
-  const handleToggleLangPicker = (picker: "A" | "B") => {
-    if (picker === "A") {
-      setOpenA(!openA);
-      setOpenB(false); // Close B when opening A
-    } else {
-      setOpenB(!openB);
-      setOpenA(false); // Close A when opening B
+    if (conversationRef.current) {
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
-  };
+  }, [recorder.messages]);
 
-  const renderLangPicker = (
-    value: SpeechLang,
-    setValue: (v: SpeechLang) => void,
-    open: boolean,
-    picker: "A" | "B"
-  ) => (
+  const renderLangPicker = () => (
     <LangPicker data-lang-picker>
       <LangButton
-        onClick={() => handleToggleLangPicker(picker)}
+        onClick={() => setOpenLangMenu(!openLangMenu)}
         aria-haspopup="menu"
         aria-label="Language"
       >
         <span style={{ fontSize: 18 }}>
-          {LANG_OPTIONS.find((o) => o.code === value)?.icon}
+          {LANG_OPTIONS.find((o) => o.code === customerLang)?.icon}
         </span>
         <svg
           width="12"
@@ -412,7 +449,7 @@ export default function LiveTranslation() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           style={{
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transform: openLangMenu ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.15s ease",
           }}
         >
@@ -425,15 +462,14 @@ export default function LiveTranslation() {
           />
         </svg>
       </LangButton>
-      {open && (
+      {openLangMenu && (
         <LangMenu>
           {LANG_OPTIONS.map((opt) => (
             <LangMenuItem
               key={opt.code}
               onClick={() => {
-                setValue(opt.code);
-                setOpenA(false);
-                setOpenB(false);
+                setCustomerLang(opt.code);
+                setOpenLangMenu(false);
               }}
             >
               <span style={{ fontSize: 18 }}>{opt.icon}</span>
@@ -448,80 +484,86 @@ export default function LiveTranslation() {
   return (
     <Page>
       <Grid>
-        {/* Left column: user language settings */}
+        {/* Left column: language settings */}
         <Panel>
           <PanelHeader>
-            <PanelTitle>{t("sessionInfo")}</PanelTitle>
-            <div></div>
+            <PanelTitle>고객 언어 설정</PanelTitle>
           </PanelHeader>
-          <div style={{ display: "grid", gap: 12 }}>
-            <SpeakerLangBox>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
-                {t("speakerAUnderstands")}
-              </div>
-              {renderLangPicker(langA, setLangA, openA, "A")}
-            </SpeakerLangBox>
-            <SpeakerLangBox>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
-                {t("speakerBUnderstands")}
-              </div>
-              {renderLangPicker(langB, setLangB, openB, "B")}
-            </SpeakerLangBox>
-            {!recA.supported || !recB.supported ? (
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 12,
-                  color: "#6b7280",
-                  lineHeight: 1.4,
-                }}
-              >
-                {t("webSpeechNotSupported")}
-              </div>
-            ) : null}
-          </div>
+          <CustomerLangBox>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
+              고객 언어
+            </div>
+            {renderLangPicker()}
+          </CustomerLangBox>
+          {!recorder.supported && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: "#6b7280",
+                lineHeight: 1.4,
+              }}
+            >
+              {t("webSpeechNotSupported")}
+            </div>
+          )}
         </Panel>
 
-        {/* Right column: live transcription controls + chat */}
+        {/* Right column: conversation area */}
         <Panel>
           <PanelHeader>
             <PanelTitle>{t("liveTranslation")}</PanelTitle>
-            <Controls>
-              <Button onClick={startAll} $primary disabled={running}>
-                {t("start")}
-              </Button>
-              <Button onClick={stopAll} $danger disabled={!running}>
-                {t("stop")}
-              </Button>
-            </Controls>
           </PanelHeader>
-          <ChatWrap ref={chatRef}>
-            {chat.map((m) => (
-              <ChatItem key={m.id} $right={m.speaker === "B"}>
-                <Bubble $right={m.speaker === "B"}>
-                  <BubbleOriginal>{m.text}</BubbleOriginal>
-                  <BubbleTranslation>
-                    {translations[m.id] ?? ""}
-                  </BubbleTranslation>
-                </Bubble>
-              </ChatItem>
+
+          <RecordingButtons>
+            <Button
+              onClick={handleCustomerRecord}
+              $customer
+              disabled={running}
+            >
+              {running && recorder.currentSpeaker === "customer"
+                ? `${t("recording")} (${Math.ceil(10 - recorder.recordingTime)}s)`
+                : "고객 음성"}
+            </Button>
+            <Button
+              onClick={handleBusinessRecord}
+              $business
+              disabled={running}
+            >
+              {running && recorder.currentSpeaker === "business"
+                ? `${t("recording")} (${Math.ceil(10 - recorder.recordingTime)}s)`
+                : "업체 음성"}
+            </Button>
+            <Button onClick={recorder.stop} $danger disabled={!running}>
+              {t("stop")}
+            </Button>
+          </RecordingButtons>
+
+          <ConversationArea ref={conversationRef}>
+            {recorder.messages.map((message) => (
+              <MessageItem key={message.id}>
+                <ProfileIcon $speaker={message.speaker}>
+                  {message.speaker === "customer" ? "고" : "업"}
+                </ProfileIcon>
+                <MessageContent>
+                  <OriginalText>{message.originalText}</OriginalText>
+                  <KoreanText>🇰🇷 {message.koreanText}</KoreanText>
+                </MessageContent>
+              </MessageItem>
             ))}
-            {/* Interim bubbles */}
-            {recA.interim && (
-              <ChatItem $right={false}>
-                <Bubble $right={false}>
-                  <BubbleOriginal>{recA.interim}</BubbleOriginal>
-                </Bubble>
-              </ChatItem>
+
+            {/* Interim message during recording */}
+            {recorder.interim && (
+              <MessageItem>
+                <ProfileIcon $speaker="customer">
+                  고
+                </ProfileIcon>
+                <MessageContent>
+                  <OriginalText>{recorder.interim}</OriginalText>
+                </MessageContent>
+              </MessageItem>
             )}
-            {recB.interim && (
-              <ChatItem $right>
-                <Bubble $right>
-                  <BubbleOriginal>{recB.interim}</BubbleOriginal>
-                </Bubble>
-              </ChatItem>
-            )}
-          </ChatWrap>
+          </ConversationArea>
         </Panel>
       </Grid>
     </Page>

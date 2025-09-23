@@ -85,7 +85,7 @@ class SajuTranslator:
 
         Args:
             input_text: 번역할 텍스트 (한국어 또는 외국어)
-            target_language: 목표 언어 ("en" 또는 "zh")
+            target_language: 목표 언어 ("en", "zh", "ja", "es" 등)
             context: 추가 컨텍스트 정보
             include_terms: 용어 정보 포함 여부
             use_session_context: 세션 컨텍스트 사용 여부 (None이면 클래스 설정 따름)
@@ -108,11 +108,13 @@ class SajuTranslator:
                 source_lang = "ko"
                 actual_target = target_language
                 korean_text = input_text
+                print(f"🔄 Translation direction: Korean → {actual_target}")
             else:
                 # 외국어 → 한국어
                 source_lang = target_language
                 actual_target = "ko"
                 korean_text = ""  # 한국어가 아니므로 용어 추출 불가
+                print(f"🔄 Translation direction: {source_lang} → Korean")
 
             # 세션 컨텍스트 준비
             session_context = ""
@@ -209,7 +211,7 @@ class SajuTranslator:
 
         Args:
             korean_texts: 번역할 한국어 텍스트 목록
-            target_language: 목표 언어 ("en" 또는 "zh")
+            target_language: 목표 언어 ("en", "zh", "ja", "es" 등)
             include_terms: 용어 정보 포함 여부
 
         Returns:
@@ -317,7 +319,7 @@ class SajuTranslator:
         음성 입력을 통한 사주풀이 번역
 
         Args:
-            target_language: 목표 언어 ("en" 또는 "zh")
+            target_language: 목표 언어 ("en", "zh", "ja", "es" 등)
             max_duration: 최대 녹음 시간 (초)
             include_terms: 용어 정보 포함 여부
 
@@ -377,6 +379,85 @@ class SajuTranslator:
 
         except Exception as e:
             error_msg = f"Voice translation failed: {str(e)}"
+            print(f"⚠️  {error_msg}")
+            return {
+                "success": False,
+                "error": error_msg,
+                "processing_time": time.time() - start_time
+            }
+
+    def translate_from_audio_file(self,
+                                 audio_file_path: str,
+                                 target_language: str = "en",
+                                 include_terms: bool = True,
+                                 source_language: str = "ko") -> Dict[str, Any]:
+        """
+        웹에서 업로드된 음성 파일을 통한 사주풀이 번역
+
+        Args:
+            audio_file_path: 업로드된 음성 파일 경로
+            target_language: 목표 언어 ("en", "zh", "ja", "es" 등)
+            include_terms: 용어 정보 포함 여부
+            source_language: 소스 언어 ("ko", "en" 등)
+
+        Returns:
+            번역 결과 딕셔너리 (STT 정보 포함)
+        """
+        start_time = time.time()
+
+        try:
+            # 음성 녹음기 초기화 (STT용)
+            if not self.audio_recorder:
+                self.audio_recorder = AudioRecorder(api_key=self.api_key)
+
+            print(f"🎯 STT processing - Source language: {source_language}")
+
+            # 음성 파일 STT 처리
+            stt_result = self.audio_recorder.transcribe_audio(
+                audio_file_path=audio_file_path,
+                language=source_language
+            )
+
+            if not stt_result["success"]:
+                return {
+                    "success": False,
+                    "error": f"STT failed: {stt_result['error']}",
+                    "processing_time": time.time() - start_time
+                }
+
+            recognized_text = stt_result["text"].strip()
+            if not recognized_text:
+                return {
+                    "success": False,
+                    "error": "No speech detected in audio file",
+                    "processing_time": time.time() - start_time
+                }
+
+            print(f"🎯 인식된 텍스트: '{recognized_text}'")
+
+            # 번역 수행
+            translation_result = self.translate(
+                input_text=recognized_text,
+                target_language=target_language,
+                include_terms=include_terms
+            )
+
+            # STT 정보를 번역 결과에 추가
+            if translation_result["success"]:
+                translation_result.update({
+                    "stt_info": {
+                        "detected_text": recognized_text,
+                        "audio_duration": stt_result.get("duration"),
+                        "detected_language": stt_result.get("language"),
+                        "confidence": stt_result.get("confidence")
+                    },
+                    "input_method": "voice_upload"
+                })
+
+            return translation_result
+
+        except Exception as e:
+            error_msg = f"Audio file translation failed: {str(e)}"
             print(f"⚠️  {error_msg}")
             return {
                 "success": False,

@@ -64,6 +64,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     speakerBUnderstands: "Speaker B understands",
     webSpeechNotSupported:
       "Your browser may not support real-time transcription (Web Speech API). Basic recording fallback is used.",
+    recording: "Recording",
   },
   ko: {
     appName: "케이사주",
@@ -117,6 +118,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     speakerBUnderstands: "화자 B 언어",
     webSpeechNotSupported:
       "브라우저에서 실시간 음성 인식을 지원하지 않을 수 있습니다. 기본 녹음 기능을 사용합니다.",
+    recording: "녹음중",
   },
   zh: {
     appName: "K-Saju",
@@ -170,6 +172,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     speakerBUnderstands: "说话者B语言",
     webSpeechNotSupported:
       "您的浏览器可能不支持实时语音识别（Web Speech API）。使用基本录音回退功能。",
+    recording: "录音中",
   },
   ja: {
     appName: "K-Saju",
@@ -223,6 +226,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     speakerBUnderstands: "話者B言語",
     webSpeechNotSupported:
       "お使いのブラウザではリアルタイム音声認識（Web Speech API）をサポートしていない可能性があります。基本録音機能を使用します。",
+    recording: "録音中",
   },
   es: {
     appName: "K-Saju",
@@ -276,6 +280,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     speakerBUnderstands: "Idioma del Hablante B",
     webSpeechNotSupported:
       "Su navegador puede no soportar transcripción en tiempo real (Web Speech API). Se usa grabación básica como respaldo.",
+    recording: "Grabando",
   },
 };
 
