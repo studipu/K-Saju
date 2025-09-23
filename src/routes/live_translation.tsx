@@ -30,12 +30,6 @@ const SubTitle = styled.p`
   font-weight: 400;
 `;
 
-const Controls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-`;
 
 const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
   appearance: none;
@@ -474,7 +468,7 @@ function useRecorderSpeech(translations: {
 }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [supported] = useState<boolean>(true);
+  const supported = true;
   const [listening, setListening] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<"customer" | "business" | null>(null);
   const [interim, setInterim] = useState("");
