@@ -69,11 +69,22 @@ const IconButton = styled.button`
 `;
 
 const ProfileImg = styled.img`
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   display: block;
+`;
+
+const ProfileButton = styled.button`
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 `;
 
 const Divider = styled.span`
@@ -105,6 +116,14 @@ export default function GNB() {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // Apply user's preferred language globally when present
+  useEffect(() => {
+    const pref = (user?.user_metadata as any)?.preferred_language as string | undefined;
+    if (pref && ["en", "ko", "zh", "ja", "es"].includes(pref)) {
+      setLanguage(pref as any);
+    }
+  }, [user, setLanguage]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -150,6 +169,7 @@ export default function GNB() {
           </Logo>
         </Left>
         <Right>
+          {!((user?.user_metadata as any)?.preferred_language) && (
           <div style={{ position: "relative" }} data-dropdown>
             <IconButton onClick={onToggleLang} aria-label={t("language")}>
               <span style={{ fontSize: 20 }}>
@@ -216,6 +236,7 @@ export default function GNB() {
               </div>
             )}
           </div>
+          )}
           {user && (
             <IconButton onClick={onMessages} aria-label={t("messages")}>
               <svg
@@ -240,7 +261,7 @@ export default function GNB() {
           <Divider />
           {user ? (
             <div style={{ position: "relative" }} data-dropdown>
-              <IconButton onClick={onToggleProfile} aria-label={t("profile")}>
+              <ProfileButton onClick={onToggleProfile} aria-label={t("profile")}>
                 {(user.user_metadata?.avatar_url || (user as any).photoURL) ? (
                   <ProfileImg src={user.user_metadata?.avatar_url || (user as any).photoURL} alt="profile" />
                 ) : (
@@ -248,6 +269,7 @@ export default function GNB() {
                     viewBox="0 0 20 20"
                     xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true"
+                    style={{ width: 38, height: 38 }}
                   >
                     <path
                       d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z"
@@ -255,18 +277,7 @@ export default function GNB() {
                     />
                   </svg>
                 )}
-                <svg
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                  style={{ width: 16, height: 16 }}
-                >
-                  <path
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z"
-                    fill="#6b7280"
-                  />
-                </svg>
-              </IconButton>
+              </ProfileButton>
               {openProfile && (
                 <div
                   style={{
