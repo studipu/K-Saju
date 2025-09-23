@@ -3,9 +3,31 @@ import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
 
 const Page = styled.div`
-  margin: 0 auto;
-  padding: 20px 20px 40px;
-  max-width: 1200px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  width: 100%;
+`;
+
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+`;
+
+const MainTitle = styled.h1`
+  color: white;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const SubTitle = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 400;
 `;
 
 const Controls = styled.div`
@@ -15,53 +37,107 @@ const Controls = styled.div`
   margin-bottom: 20px;
 `;
 
-const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean }>`
+const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
   appearance: none;
-  border: 1px solid ${(p) =>
-    p.$danger ? "#dc2626" :
-    p.$primary ? "#111111" :
-    p.$customer ? "#3b82f6" :
-    p.$business ? "#10b981" : "#e5e7eb"};
-  background: ${(p) =>
-    p.$danger ? "#dc2626" :
-    p.$primary ? "#111111" :
-    p.$customer ? "#3b82f6" :
-    p.$business ? "#10b981" : "#ffffff"};
-  color: ${(p) => (p.$danger || p.$primary || p.$customer || p.$business ? "#ffffff" : "#111827")};
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
+  border: none;
+  background: ${(p) => {
+    if (p.$recording) return "linear-gradient(135deg, #ff6b6b, #ff8e53)";
+    if (p.$danger) return "linear-gradient(135deg, #ff6b6b, #ee5a6f)";
+    if (p.$customer) return "linear-gradient(135deg, #4facfe, #00f2fe)";
+    if (p.$business) return "linear-gradient(135deg, #43e97b, #38f9d7)";
+    return "linear-gradient(135deg, #667eea, #764ba2)";
+  }};
+  color: white;
+  height: 56px;
+  padding: 0 24px;
+  border-radius: 28px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 12px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.15s ease;
+  font-weight: 700;
+  font-size: 16px;
+  min-width: 160px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
+
   &:hover {
-    filter: brightness(0.98);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   }
+
+  &:active {
+    transform: translateY(0);
+  }
+
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    &:hover {
+      transform: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
   }
+
+  ${(p) => p.$recording && `
+    animation: pulse 2s infinite;
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+      }
+      50% {
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.6), 0 0 0 10px rgba(255, 107, 107, 0.1);
+      }
+      100% {
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+      }
+    }
+  `}
 `;
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 20px;
-  @media (max-width: 960px) {
+  grid-template-columns: 350px 1fr;
+  gap: 32px;
+  @media (max-width: 1024px) {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 24px;
   }
 `;
 
 const Panel = styled.div`
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
 `;
 
 const PanelHeader = styled.div`
@@ -75,11 +151,17 @@ const PanelHeader = styled.div`
 `;
 
 const PanelTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
   line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
 const LangPicker = styled.div`
@@ -88,78 +170,151 @@ const LangPicker = styled.div`
 
 const LangButton = styled.button`
   appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
-  height: 36px;
-  padding: 0 8px;
-  border-radius: 18px;
+  border: 2px solid #e0e7ff;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  color: #4338ca;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(67, 56, 202, 0.1);
+
   &:hover {
-    background: #f9fafb;
+    background: linear-gradient(135deg, #f8fafc, #e0e7ff);
+    border-color: #c7d2fe;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(67, 56, 202, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const LangMenu = styled.div`
   position: absolute;
   right: 0;
-  top: 42px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  width: 200px;
+  top: 56px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  width: 220px;
   overflow: hidden;
   z-index: 10;
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
 `;
 
 const LangMenuItem = styled.button`
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: #ffffff;
+  gap: 12px;
+  padding: 16px 20px;
+  background: transparent;
   border: 0;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
   text-align: left;
-  transition: background-color 0.15s ease;
+  color: #374151;
+  transition: all 0.2s ease;
+
   &:hover {
-    background: #f3f4f6;
+    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+    color: #4338ca;
+    transform: translateX(4px);
   }
+
   &:first-child {
-    border-radius: 12px 12px 0 0;
+    border-radius: 16px 16px 0 0;
   }
+
   &:last-child {
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  span:first-child {
+    font-size: 20px;
   }
 `;
 
 const CustomerLangBox = styled.div`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc, #e8f2ff);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+  }
 `;
 
 const ConversationArea = styled.div`
   height: 70vh;
   min-height: 500px;
   overflow-y: auto;
-  padding: 16px;
-  background: #fafafa;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e8f2ff 100%);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  position: relative;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, rgba(248, 250, 252, 0.8), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
 `;
 
 const MessageItem = styled.div`
@@ -170,48 +325,128 @@ const MessageItem = styled.div`
 `;
 
 const ProfileIcon = styled.div<{ $speaker: "customer" | "business" }>`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: ${(p) => p.$speaker === "customer" ? "#3b82f6" : "#10b981"};
+  background: ${(p) => p.$speaker === "customer"
+    ? "linear-gradient(135deg, #4facfe, #00f2fe)"
+    : "linear-gradient(135deg, #43e97b, #38f9d7)"};
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 16px;
   flex-shrink: 0;
+  box-shadow: 0 8px 24px ${(p) => p.$speaker === "customer"
+    ? "rgba(79, 172, 254, 0.3)"
+    : "rgba(67, 233, 123, 0.3)"};
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px ${(p) => p.$speaker === "customer"
+      ? "rgba(79, 172, 254, 0.4)"
+      : "rgba(67, 233, 123, 0.4)"};
+  }
 `;
 
 const MessageContent = styled.div`
   flex: 1;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
 `;
 
 const OriginalText = styled.div`
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-weight: 700;
+  margin-bottom: 12px;
   color: #111827;
-  line-height: 1.4;
+  line-height: 1.5;
+  font-size: 16px;
 `;
 
 const KoreanText = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   color: #6b7280;
   font-style: italic;
-  line-height: 1.4;
-  padding-top: 4px;
-  border-top: 1px solid #f3f4f6;
+  line-height: 1.5;
+  padding-top: 12px;
+  border-top: 2px solid #f1f5f9;
+  font-weight: 500;
 `;
 
 const RecordingButtons = styled.div`
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
 `;
+
+const StatusIndicator = styled.div<{ $isRecording: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: ${(p) => p.$isRecording
+    ? "linear-gradient(135deg, #ff6b6b, #ff8e53)"
+    : "linear-gradient(135deg, #e0e7ff, #c7d2fe)"};
+  border-radius: 25px;
+  color: ${(p) => p.$isRecording ? "white" : "#4338ca"};
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px ${(p) => p.$isRecording
+    ? "rgba(255, 107, 107, 0.3)"
+    : "rgba(67, 56, 202, 0.1)"};
+`;
+
+const WaveIcon = styled.div<{ $animate: boolean }>`
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  &::before,
+  &::after {
+    content: '';
+    width: 3px;
+    background: currentColor;
+    border-radius: 2px;
+    animation: ${(p) => p.$animate ? "wave 1.5s ease-in-out infinite" : "none"};
+  }
+
+  &::before {
+    height: 12px;
+    animation-delay: 0s;
+  }
+
+  &::after {
+    height: 8px;
+    animation-delay: 0.3s;
+  }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.5); }
+  }
+`
 
 type SpeechLang = "en-US" | "ko-KR" | "ja-JP" | "zh-CN" | "es-ES";
 
@@ -231,10 +466,15 @@ type FinalMessage = {
   speaker: "customer" | "business";
 };
 
-function useRecorderSpeech() {
+function useRecorderSpeech(translations: {
+  testVoiceInput: string;
+  testVoiceRecorded: string;
+  offlineRecordingComplete: string;
+  offlineRecordingSuccess: string;
+}) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [supported, setSupported] = useState<boolean>(true);
+  const [supported] = useState<boolean>(true);
   const [listening, setListening] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<"customer" | "business" | null>(null);
   const [interim, setInterim] = useState("");
@@ -263,9 +503,24 @@ function useRecorderSpeech() {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 
         try {
-          const apiUrl = import.meta.env.VITE_SAJU_API_URL || 'http://localhost:8000';
-          const formData = new FormData();
-          formData.append('audio_file', audioBlob, 'recording.webm');
+          // Supabase Edge Function 사용
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+          if (!supabaseUrl || !supabaseAnonKey) {
+            throw new Error('Supabase configuration missing');
+          }
+
+          // 오디오를 base64로 변환
+          const reader = new FileReader();
+          const audioBase64 = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(audioBlob);
+          });
 
           // 언어 코드 매핑
           const langMap: Record<string, string> = {
@@ -284,12 +539,18 @@ function useRecorderSpeech() {
 
           console.log(`Speaker: ${speaker}, Customer Lang: ${customerLang} -> ${customerLanguageCode}, Source: ${sourceLang}, Target: ${targetLang}`);
 
-          formData.append('target_language', targetLang);
-          formData.append('source_language', sourceLang);
-
-          const response = await fetch(`${apiUrl}/translate/audio`, {
+          const response = await fetch(`${supabaseUrl}/functions/v1/translate-audio`, {
             method: 'POST',
-            body: formData,
+            headers: {
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              audio_data: audioBase64,
+              target_language: targetLang,
+              source_language: sourceLang,
+              include_terms: true
+            }),
           });
 
           if (response.ok) {
@@ -326,8 +587,8 @@ function useRecorderSpeech() {
               ...prev,
               {
                 id,
-                originalText: '[테스트] 음성 입력',
-                koreanText: '[테스트] 음성이 정상적으로 입력되었습니다',
+                originalText: translations.testVoiceInput,
+                koreanText: translations.testVoiceRecorded,
                 timestamp: Date.now(),
                 speaker
               },
@@ -340,8 +601,8 @@ function useRecorderSpeech() {
             ...prev,
             {
               id,
-              originalText: '[오프라인] 음성 녹음 완료',
-              koreanText: '[오프라인] 음성이 성공적으로 녹음되었습니다',
+              originalText: translations.offlineRecordingComplete,
+              koreanText: translations.offlineRecordingSuccess,
               timestamp: Date.now(),
               speaker
             },
@@ -398,6 +659,14 @@ function useRecorderSpeech() {
 export default function LiveTranslation() {
   const { t } = useI18n();
   const [customerLang, setCustomerLang] = useState<SpeechLang>("en-US");
+
+  // Get translations for use in callbacks
+  const translations = {
+    testVoiceInput: t('testVoiceInput'),
+    testVoiceRecorded: t('testVoiceRecorded'),
+    offlineRecordingComplete: t('offlineRecordingComplete'),
+    offlineRecordingSuccess: t('offlineRecordingSuccess'),
+  };
   const [openLangMenu, setOpenLangMenu] = useState(false);
 
   // Close dropdown when clicking outside
@@ -413,7 +682,7 @@ export default function LiveTranslation() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const recorder = useRecorderSpeech();
+  const recorder = useRecorderSpeech(translations);
 
   const handleCustomerRecord = () => {
     recorder.startRecording('customer', customerLang);
@@ -483,28 +752,39 @@ export default function LiveTranslation() {
 
   return (
     <Page>
+      <Header>
+        <MainTitle>{t("liveTranslationTitle")}</MainTitle>
+        <SubTitle>{t("liveTranslationSubtitle")}</SubTitle>
+      </Header>
+
       <Grid>
         {/* Left column: language settings */}
         <Panel>
           <PanelHeader>
-            <PanelTitle>고객 언어 설정</PanelTitle>
+            <PanelTitle>
+              🌍 {t("customerLanguageSettings")}
+            </PanelTitle>
           </PanelHeader>
           <CustomerLangBox>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
-              고객 언어
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#4338ca" }}>
+              💬 {t("customerLanguage")}
             </div>
             {renderLangPicker()}
           </CustomerLangBox>
           {!recorder.supported && (
             <div
               style={{
-                marginTop: 8,
-                fontSize: 12,
-                color: "#6b7280",
+                marginTop: 12,
+                fontSize: 14,
+                color: "#ef4444",
                 lineHeight: 1.4,
+                padding: "12px 16px",
+                background: "rgba(239, 68, 68, 0.1)",
+                borderRadius: "12px",
+                border: "1px solid rgba(239, 68, 68, 0.2)"
               }}
             >
-              {t("webSpeechNotSupported")}
+              ⚠️ {t("webSpeechNotSupported")}
             </div>
           )}
         </Panel>
@@ -512,38 +792,58 @@ export default function LiveTranslation() {
         {/* Right column: conversation area */}
         <Panel>
           <PanelHeader>
-            <PanelTitle>{t("liveTranslation")}</PanelTitle>
+            <PanelTitle>
+              🗣️ {t("liveTranslation")}
+            </PanelTitle>
           </PanelHeader>
+
+          <StatusIndicator $isRecording={running}>
+            <WaveIcon $animate={running} />
+            {running
+              ? `🔴 ${recorder.currentSpeaker === "customer" ? t("customerVoice").replace("🎤 ", "") : t("businessVoice").replace("🎯 ", "")} - ${Math.ceil(10 - recorder.recordingTime)} ${t("secondsLeft")}`
+              : t("waitingMessage")}
+          </StatusIndicator>
 
           <RecordingButtons>
             <Button
               onClick={handleCustomerRecord}
               $customer
+              $recording={running && recorder.currentSpeaker === "customer"}
               disabled={running}
             >
-              {running && recorder.currentSpeaker === "customer"
-                ? `${t("recording")} (${Math.ceil(10 - recorder.recordingTime)}s)`
-                : "고객 음성"}
+              {t("customerVoice")}
             </Button>
             <Button
               onClick={handleBusinessRecord}
               $business
+              $recording={running && recorder.currentSpeaker === "business"}
               disabled={running}
             >
-              {running && recorder.currentSpeaker === "business"
-                ? `${t("recording")} (${Math.ceil(10 - recorder.recordingTime)}s)`
-                : "업체 음성"}
+              {t("businessVoice")}
             </Button>
             <Button onClick={recorder.stop} $danger disabled={!running}>
-              {t("stop")}
+              ⏹️ {t("stop")}
             </Button>
           </RecordingButtons>
 
           <ConversationArea ref={conversationRef}>
+            {recorder.messages.length === 0 && (
+              <div style={{
+                textAlign: "center",
+                padding: "60px 20px",
+                color: "#6b7280",
+                fontSize: "16px",
+                lineHeight: 1.6
+              }}>
+                {t("noConversationYet")}<br/>
+                <span style={{ fontSize: "14px" }}>{t("pressButtonToStart")}</span>
+              </div>
+            )}
+
             {recorder.messages.map((message) => (
               <MessageItem key={message.id}>
                 <ProfileIcon $speaker={message.speaker}>
-                  {message.speaker === "customer" ? "고" : "업"}
+                  {message.speaker === "customer" ? "🙋" : "👩‍💼"}
                 </ProfileIcon>
                 <MessageContent>
                   <OriginalText>{message.originalText}</OriginalText>
@@ -556,10 +856,10 @@ export default function LiveTranslation() {
             {recorder.interim && (
               <MessageItem>
                 <ProfileIcon $speaker="customer">
-                  고
+                  🎤
                 </ProfileIcon>
                 <MessageContent>
-                  <OriginalText>{recorder.interim}</OriginalText>
+                  <OriginalText style={{ opacity: 0.7 }}>{recorder.interim}</OriginalText>
                 </MessageContent>
               </MessageItem>
             )}
