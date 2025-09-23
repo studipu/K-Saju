@@ -29,7 +29,7 @@ export function Login() {
   const onGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/auth-callback" },
+      // Let Supabase redirect back to Site URL; no explicit redirectTo
     });
     if (error) setError(error.message);
   };
@@ -39,7 +39,7 @@ export function Login() {
   const onKakao = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao" as any,
-      options: { redirectTo: window.location.origin + "/auth-callback" },
+      // Let Supabase redirect back to Site URL; no explicit redirectTo
     });
     if (error) setError(error.message);
   };
