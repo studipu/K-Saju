@@ -10,84 +10,225 @@ const Bar = styled.header`
   top: 0;
   z-index: 50;
   width: 100%;
-  backdrop-filter: saturate(180%) blur(8px);
-  background: #ffffff;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  backdrop-filter: saturate(180%) blur(20px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+    border-bottom-color: rgba(102, 126, 234, 0.15);
+  }
 `;
 
 const Inner = styled.div`
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 16px 24px;
+  max-width: 1400px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    gap: 16px;
+  }
 `;
 
 const Left = styled.div`
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 32px;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
 `;
 
 const Right = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
 `;
 
 const Logo = styled(Link)`
   display: flex;
   align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 
   img {
-    height: 32px;
+    height: 40px;
     width: auto;
+    transition: all 0.3s ease;
   }
 `;
 
-const IconButton = styled.button`
+const LogoText = styled.div`
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const IconButton = styled.button<{ $primary?: boolean }>`
   appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
+  border: 2px solid ${(p) => p.$primary ? "transparent" : "rgba(102, 126, 234, 0.2)"};
+  background: ${(p) => p.$primary
+    ? "linear-gradient(135deg, #667eea, #764ba2)"
+    : "rgba(255, 255, 255, 0.8)"};
+  backdrop-filter: blur(10px);
+  color: ${(p) => p.$primary ? "white" : "#4338ca"};
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  svg {
-    width: 18px;
-    height: 18px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: ${(p) => p.$primary
+    ? "0 8px 32px rgba(102, 126, 234, 0.3)"
+    : "0 4px 16px rgba(102, 126, 234, 0.1)"};
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
   }
+
+  &:hover::before {
+    left: 100%;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.3s ease;
+  }
+
   &:hover {
-    background: #f9fafb;
+    transform: translateY(-2px);
+    box-shadow: ${(p) => p.$primary
+      ? "0 12px 40px rgba(102, 126, 234, 0.4)"
+      : "0 8px 25px rgba(102, 126, 234, 0.15)"};
+    border-color: ${(p) => p.$primary ? "transparent" : "rgba(102, 126, 234, 0.3)"};
+    background: ${(p) => p.$primary
+      ? "linear-gradient(135deg, #5a67d8, #6b46c1)"
+      : "rgba(255, 255, 255, 0.95)"};
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const ProfileImg = styled.img`
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
+  border: 2px solid rgba(102, 126, 234, 0.2);
   display: block;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: scale(1.05);
+  }
 `;
 
 const Divider = styled.span`
   display: inline-block;
-  width: 1px;
-  height: 20px;
-  background: #e5e7eb;
-  margin: 0 4px;
+  width: 2px;
+  height: 24px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  border-radius: 1px;
+  margin: 0 8px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const NavMenu = styled.nav`
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const NavLink = styled(Link)<{ $active?: boolean }>`
+  text-decoration: none;
+  color: ${(p) => p.$active ? "#667eea" : "#6b7280"};
+  font-weight: ${(p) => p.$active ? "700" : "500"};
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    opacity: ${(p) => p.$active ? "1" : "0"};
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    color: #667eea;
+    transform: translateY(-1px);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 export default function GNB() {
   const { t, language, setLanguage } = useI18n();
   const navigate = useNavigate();
-  useLocation();
+  const location = useLocation();
   const [user, setUser] = useState<null | { id: string; user_metadata?: any; user_metadata_photo?: string; }>(null);
   const [openLang, setOpenLang] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
@@ -147,7 +288,19 @@ export default function GNB() {
         <Left>
           <Logo to="/">
             <img src={temporaryLogo} alt="K-Saju" />
+            <LogoText>K-Saju</LogoText>
           </Logo>
+          <NavMenu>
+            <NavLink to="/" $active={location.pathname === "/"}>
+              <span>🏠 {t("home")}</span>
+            </NavLink>
+            <NavLink to="/live-translation" $active={location.pathname === "/live-translation"}>
+              <span>🔮 {t("liveTranslation")}</span>
+            </NavLink>
+            <NavLink to="/locations" $active={location.pathname === "/locations"}>
+              <span>📍 {t("locations")}</span>
+            </NavLink>
+          </NavMenu>
         </Left>
         <Right>
           <div style={{ position: "relative" }} data-dropdown>
@@ -176,13 +329,15 @@ export default function GNB() {
                 style={{
                   position: "absolute",
                   right: 0,
-                  top: 44,
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 20,
-                  boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
-                  width: 200,
+                  top: 52,
+                  background: "rgba(255, 255, 255, 0.95)",
+                  backdropFilter: "blur(20px)",
+                  border: "2px solid rgba(102, 126, 234, 0.1)",
+                  borderRadius: 16,
+                  boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+                  width: 220,
                   overflow: "hidden",
+                  animation: "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
                 {[
@@ -202,15 +357,33 @@ export default function GNB() {
                       display: "flex",
                       width: "100%",
                       alignItems: "center",
-                      gap: 10,
-                      padding: "10px 12px",
-                      background: language === opt.code ? "#f3f4f6" : "#ffffff",
+                      gap: 12,
+                      padding: "16px 20px",
+                      background: language === opt.code
+                        ? "linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))"
+                        : "transparent",
                       border: 0,
                       cursor: "pointer",
+                      fontSize: 15,
+                      fontWeight: language === opt.code ? 600 : 500,
+                      color: language === opt.code ? "#667eea" : "#374151",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (language !== opt.code) {
+                        e.currentTarget.style.background = "linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05))";
+                        e.currentTarget.style.transform = "translateX(4px)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (language !== opt.code) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.transform = "translateX(0)";
+                      }
                     }}
                   >
-                    <span style={{ fontSize: 18 }}>{opt.icon}</span>
-                    <span style={{ fontSize: 14 }}>{opt.label}</span>
+                    <span style={{ fontSize: 20 }}>{opt.icon}</span>
+                    <span>{opt.label}</span>
                   </button>
                 ))}
               </div>
@@ -272,13 +445,15 @@ export default function GNB() {
                   style={{
                     position: "absolute",
                     right: 0,
-                    top: 44,
-                    background: "#ffffff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 20,
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
-                    width: 200,
+                    top: 52,
+                    background: "rgba(255, 255, 255, 0.95)",
+                    backdropFilter: "blur(20px)",
+                    border: "2px solid rgba(102, 126, 234, 0.1)",
+                    borderRadius: 16,
+                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+                    width: 220,
                     overflow: "hidden",
+                    animation: "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
                   <button
@@ -291,11 +466,24 @@ export default function GNB() {
                       width: "100%",
                       alignItems: "center",
                       gap: 12,
-                      padding: "12px 16px",
-                      background: "#ffffff",
+                      padding: "16px 20px",
+                      background: "transparent",
                       border: 0,
                       cursor: "pointer",
-                      fontSize: 14,
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: "#374151",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))";
+                      e.currentTarget.style.color = "#667eea";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#374151";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
                     <svg
@@ -321,11 +509,24 @@ export default function GNB() {
                       width: "100%",
                       alignItems: "center",
                       gap: 12,
-                      padding: "12px 16px",
-                      background: "#ffffff",
+                      padding: "16px 20px",
+                      background: "transparent",
                       border: 0,
                       cursor: "pointer",
-                      fontSize: 14,
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: "#374151",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))";
+                      e.currentTarget.style.color = "#667eea";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#374151";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
                     <svg
@@ -360,12 +561,24 @@ export default function GNB() {
                       width: "100%",
                       alignItems: "center",
                       gap: 12,
-                      padding: "12px 16px",
-                      background: "#ffffff",
+                      padding: "16px 20px",
+                      background: "transparent",
                       border: 0,
                       cursor: "pointer",
-                      fontSize: 14,
+                      fontSize: 15,
+                      fontWeight: 500,
                       color: "#dc2626",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+                      e.currentTarget.style.color = "#ef4444";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#dc2626";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
                     <svg
@@ -396,14 +609,10 @@ export default function GNB() {
             <IconButton
               onClick={onSignIn}
               aria-label={t("signIn")}
-              style={{
-                background: "#111111",
-                color: "#ffffff",
-                borderColor: "#111111",
-              }}
+              $primary
             >
-              <span style={{ fontSize: 14, fontWeight: 600 }}>
-                {t("signIn")}
+              <span style={{ fontSize: 14, fontWeight: 700 }}>
+                ✨ {t("signIn")}
               </span>
             </IconButton>
           )}

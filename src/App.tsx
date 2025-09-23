@@ -58,7 +58,13 @@ const router = createBrowserRouter([
 const GlobalStyles = createGlobalStyle`
   ${reset};
   * { box-sizing: border-box; }
-  html, body, #root { height: 100%; }
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
   body {
     background-color: #ffffff;
     color: #111827;
@@ -67,6 +73,17 @@ const GlobalStyles = createGlobalStyle`
     -moz-osx-font-smoothing: grayscale;
   }
   a { color: inherit; text-decoration: none; }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
 `;
 
 const Wrapper = styled.div`

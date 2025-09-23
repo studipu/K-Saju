@@ -1,22 +1,15 @@
 """
 사주풀이 LLM 번역기
-GPT-4o-mini를 활용한 사주 전문 번역 시스템
+Supabase Edge Functions를 활용한 사주 전문 번역 시스템
 """
 import os
 import time
+import requests
+import base64
 from typing import Dict, List, Any, Optional
 from dotenv import load_dotenv
 
-try:
-    import openai
-    from openai import OpenAI
-except ImportError:
-    print("Warning: openai package not found. Please install: pip install openai")
-    openai = None
-    OpenAI = None
-
 from ..utils.saju_terms import SajuTermDatabase
-from ..utils.audio_recorder import AudioRecorder
 from ..prompts.translation_prompts import TranslationPrompts
 
 # 환경 변수 로드
@@ -26,36 +19,33 @@ class SajuTranslator:
     """사주풀이 전문 번역기"""
 
     def __init__(self,
-                 model: str = None,
-                 temperature: float = None,
-                 max_tokens: int = None,
-                 api_key: str = None,
+                 supabase_url: str = None,
+                 supabase_anon_key: str = None,
                  enable_context: bool = True):
         """
         사주 번역기 초기화
 
         Args:
-            model: OpenAI 모델명 (기본: gpt-4o-mini)
-            temperature: 응답 일관성 제어 (기본: 0.3)
-            max_tokens: 최대 토큰 수 (기본: 1500)
-            api_key: OpenAI API 키
+            supabase_url: Supabase 프로젝트 URL
+            supabase_anon_key: Supabase 익명 키
             enable_context: 세션 컨텍스트 관리 활성화 (기본: True)
         """
-        # 설정 로드
-        self.model = model or os.getenv('DEFAULT_MODEL', 'gpt-4o-mini')
-        self.temperature = temperature or float(os.getenv('DEFAULT_TEMPERATURE', 0.3))
-        self.max_tokens = max_tokens or int(os.getenv('DEFAULT_MAX_TOKENS', 1500))
+        # Supabase 설정
+        self.supabase_url = supabase_url or os.getenv('VITE_SUPABASE_URL')
+        self.supabase_anon_key = supabase_anon_key or os.getenv('VITE_SUPABASE_ANON_KEY')
 
-        # API 키 설정
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
-        if not self.api_key or self.api_key == "your_openai_api_key_here":
-            raise ValueError("OpenAI API key is required. Please set OPENAI_API_KEY environment variable.")
+        if not self.supabase_url or not self.supabase_anon_key:
+            raise ValueError("Supabase URL and anon key are required. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.")
 
-        # OpenAI 클라이언트 초기화
-        if not OpenAI:
-            raise ImportError("openai package is required. Please install: pip install openai")
+        # Edge Function URLs
+        self.translate_function_url = f"{self.supabase_url}/functions/v1/translate"
+        self.translate_audio_function_url = f"{self.supabase_url}/functions/v1/translate-audio"
 
-        self.client = OpenAI(api_key=self.api_key)
+        # API 헤더 설정
+        self.headers = {
+            'Authorization': f'Bearer {self.supabase_anon_key}',
+            'Content-Type': 'application/json'
+        }
 
         # 사주 용어 데이터베이스 초기화
         self.term_db = SajuTermDatabase()
@@ -63,16 +53,13 @@ class SajuTranslator:
         # 프롬프트 관리자 초기화
         self.prompts = TranslationPrompts()
 
-        # 음성 녹음기 초기화 (필요시)
-        self.audio_recorder = None
-
         # 세션 관리 초기화
         self.enable_context = enable_context
         self.conversation_history = []
         self.max_history_length = 10
         self.max_context_tokens = 2000  # 컨텍스트에 사용할 최대 토큰 수
 
-        print(f"SajuTranslator initialized with model: {self.model}, context: {self.enable_context}")
+        print(f"SajuTranslator initialized with Supabase, context: {self.enable_context}")
 
     def translate(self,
                   input_text: str,
@@ -150,19 +137,29 @@ class SajuTranslator:
                 context=combined_context.strip()
             )
 
-            # OpenAI API 호출
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=self.max_tokens,
-                temperature=self.temperature
+            # Supabase Edge Function 호출
+            payload = {
+                "text": input_text,
+                "target_language": actual_target,
+                "include_terms": include_terms
+            }
+
+            response = requests.post(
+                self.translate_function_url,
+                headers=self.headers,
+                json=payload,
+                timeout=30
             )
 
-            # 번역 결과 추출
-            translation = response.choices[0].message.content.strip()
+            if not response.ok:
+                raise Exception(f"Supabase Edge Function error: {response.status_code} - {response.text}")
+
+            response_data = response.json()
+
+            if not response_data.get("success"):
+                raise Exception(response_data.get("error", "Translation failed"))
+
+            translation = response_data.get("translated_text", "")
 
             # 세션 히스토리에 대화 추가
             if should_use_context:
@@ -176,17 +173,12 @@ class SajuTranslator:
                 "source_language": source_lang,
                 "target_language": actual_target,
                 "is_korean_input": is_korean,
-                "extracted_terms": extracted_terms,
+                "extracted_terms": response_data.get("extracted_terms", extracted_terms),
                 "relevant_terms": relevant_terms,
                 "processing_time": time.time() - start_time,
-                "model_used": self.model,
                 "session_context_used": should_use_context,
                 "conversation_turn": len(self.conversation_history) if should_use_context else 0,
-                "token_usage": {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens
-                }
+                "token_usage": response_data.get("token_usage", {})
             }
 
             return result
@@ -245,20 +237,33 @@ class SajuTranslator:
                 saju_terms=relevant_terms
             )
 
-            # OpenAI API 호출
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=self.max_tokens,
-                temperature=self.temperature
-            )
+            # 각 텍스트를 개별적으로 번역 (Edge Function은 개별 번역만 지원)
+            translations = []
+            for text in korean_texts:
+                payload = {
+                    "text": text,
+                    "target_language": target_language,
+                    "include_terms": include_terms
+                }
 
-            # 번역 결과 추출 및 파싱
-            translation_text = response.choices[0].message.content.strip()
-            translations = self._parse_batch_translations(translation_text, len(korean_texts))
+                response = requests.post(
+                    self.translate_function_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=30
+                )
+
+                if response.ok:
+                    response_data = response.json()
+                    if response_data.get("success"):
+                        translations.append(response_data.get("translated_text", ""))
+                    else:
+                        translations.append(f"Error: {response_data.get('error', 'Translation failed')}")
+                else:
+                    translations.append(f"Error: {response.status_code} - {response.text}")
+
+            # 마지막 응답에서 토큰 사용량 정보 가져오기
+            token_usage = response_data.get("token_usage", {}) if 'response_data' in locals() else {}
 
             # 결과 반환
             result = {
@@ -269,12 +274,7 @@ class SajuTranslator:
                 "extracted_terms": unique_terms,
                 "relevant_terms": relevant_terms,
                 "processing_time": time.time() - start_time,
-                "model_used": self.model,
-                "token_usage": {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens
-                }
+                "token_usage": token_usage
             }
 
             return result
@@ -329,53 +329,15 @@ class SajuTranslator:
         start_time = time.time()
 
         try:
-            # 음성 녹음기 초기화
-            if not self.audio_recorder:
-                self.audio_recorder = AudioRecorder(api_key=self.api_key)
+            print("🎤 Live audio recording not implemented for Supabase Edge Functions")
+            print("📝 Please use translate_from_audio_file() method with an audio file instead")
 
-            # 음성 녹음 및 STT 처리
-            stt_result = self.audio_recorder.record_and_transcribe(
-                duration=max_duration,
-                language="ko"
-            )
-
-            if not stt_result["success"]:
-                return {
-                    "success": False,
-                    "error": f"STT failed: {stt_result['error']}",
-                    "processing_time": time.time() - start_time
-                }
-
-            korean_text = stt_result["text"].strip()
-            if not korean_text:
-                return {
-                    "success": False,
-                    "error": "No speech detected",
-                    "processing_time": time.time() - start_time
-                }
-
-            print(f"🎯 인식된 텍스트: '{korean_text}'")
-
-            # 번역 수행
-            translation_result = self.translate(
-                input_text=korean_text,
-                target_language=target_language,
-                include_terms=include_terms
-            )
-
-            # STT 정보를 번역 결과에 추가
-            if translation_result["success"]:
-                translation_result.update({
-                    "stt_info": {
-                        "detected_text": korean_text,
-                        "audio_duration": stt_result.get("duration"),
-                        "detected_language": stt_result.get("language"),
-                        "confidence": stt_result.get("confidence")
-                    },
-                    "input_method": "voice"
-                })
-
-            return translation_result
+            return {
+                "success": False,
+                "error": "Live audio recording not implemented for Supabase Edge Functions. Please use translate_from_audio_file() method.",
+                "processing_time": time.time() - start_time,
+                "suggestion": "Use translate_from_audio_file(audio_file_path, target_language) instead"
+            }
 
         except Exception as e:
             error_msg = f"Voice translation failed: {str(e)}"
@@ -406,55 +368,36 @@ class SajuTranslator:
         start_time = time.time()
 
         try:
-            # 음성 녹음기 초기화 (STT용)
-            if not self.audio_recorder:
-                self.audio_recorder = AudioRecorder(api_key=self.api_key)
+            # 음성 파일을 base64로 인코딩
+            with open(audio_file_path, 'rb') as audio_file:
+                audio_data = base64.b64encode(audio_file.read()).decode('utf-8')
 
-            print(f"🎯 STT processing - Source language: {source_language}")
+            print(f"🎯 Audio translation - Source: {source_language}, Target: {target_language}")
 
-            # 음성 파일 STT 처리
-            stt_result = self.audio_recorder.transcribe_audio(
-                audio_file_path=audio_file_path,
-                language=source_language
+            # Supabase Edge Function 호출
+            payload = {
+                "audio_data": audio_data,
+                "target_language": target_language,
+                "source_language": source_language,
+                "include_terms": include_terms
+            }
+
+            response = requests.post(
+                self.translate_audio_function_url,
+                headers=self.headers,
+                json=payload,
+                timeout=60  # 음성 처리는 더 오래 걸릴 수 있음
             )
 
-            if not stt_result["success"]:
-                return {
-                    "success": False,
-                    "error": f"STT failed: {stt_result['error']}",
-                    "processing_time": time.time() - start_time
-                }
+            if not response.ok:
+                raise Exception(f"Supabase Edge Function error: {response.status_code} - {response.text}")
 
-            recognized_text = stt_result["text"].strip()
-            if not recognized_text:
-                return {
-                    "success": False,
-                    "error": "No speech detected in audio file",
-                    "processing_time": time.time() - start_time
-                }
+            result = response.json()
 
-            print(f"🎯 인식된 텍스트: '{recognized_text}'")
+            if not result.get("success"):
+                raise Exception(result.get("error", "Audio translation failed"))
 
-            # 번역 수행
-            translation_result = self.translate(
-                input_text=recognized_text,
-                target_language=target_language,
-                include_terms=include_terms
-            )
-
-            # STT 정보를 번역 결과에 추가
-            if translation_result["success"]:
-                translation_result.update({
-                    "stt_info": {
-                        "detected_text": recognized_text,
-                        "audio_duration": stt_result.get("duration"),
-                        "detected_language": stt_result.get("language"),
-                        "confidence": stt_result.get("confidence")
-                    },
-                    "input_method": "voice_upload"
-                })
-
-            return translation_result
+            return result
 
         except Exception as e:
             error_msg = f"Audio file translation failed: {str(e)}"
@@ -466,7 +409,7 @@ class SajuTranslator:
             }
 
     def get_available_models(self) -> List[str]:
-        """사용 가능한 OpenAI 모델 목록 반환"""
+        """사용 가능한 모델 목록 반환 (Supabase Edge Function에서 사용)"""
         return [
             "gpt-4o-mini",
             "gpt-4o",
@@ -474,16 +417,6 @@ class SajuTranslator:
             "gpt-4",
             "gpt-3.5-turbo"
         ]
-
-    def set_model(self, model: str) -> bool:
-        """모델 변경"""
-        if model in self.get_available_models():
-            self.model = model
-            print(f"Model changed to: {model}")
-            return True
-        else:
-            print(f"Model {model} is not available. Available models: {self.get_available_models()}")
-            return False
 
     def get_term_info(self, korean_term: str) -> Dict[str, Any]:
         """특정 사주 용어 정보 조회"""
@@ -503,16 +436,18 @@ class SajuTranslator:
     def get_translation_stats(self) -> Dict[str, Any]:
         """번역기 상태 정보 반환"""
         return {
-            "model": self.model,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "api_key_configured": bool(self.api_key and self.api_key != "your_openai_api_key_here"),
+            "supabase_url": self.supabase_url,
+            "supabase_configured": bool(self.supabase_url and self.supabase_anon_key),
             "total_terms": len(self.term_db.get_all_terms()),
-            "available_languages": ["en", "zh"],
+            "available_languages": ["en", "zh", "ja", "es"],
             "context_enabled": self.enable_context,
             "conversation_turns": len(self.conversation_history),
             "max_history_length": self.max_history_length,
-            "max_context_tokens": self.max_context_tokens
+            "max_context_tokens": self.max_context_tokens,
+            "edge_functions": {
+                "translate": self.translate_function_url,
+                "translate_audio": self.translate_audio_function_url
+            }
         }
 
     def _detect_korean(self, text: str) -> bool:
