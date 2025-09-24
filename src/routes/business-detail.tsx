@@ -1230,8 +1230,8 @@ export default function BusinessDetail() {
   };
 
   const handleBook = () => {
-    // 예약하기 기능 구현
-    alert(t("bookingComingSoon"));
+    // 예약 페이지로 이동
+    navigate(`/business/${id}/booking`);
   };
 
   const handlePrevImage = () => {

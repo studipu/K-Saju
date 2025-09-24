@@ -18,6 +18,10 @@ import FAQ from "./routes/faq";
 import LiveTranslation from "./routes/live_translation.tsx";
 import Locations from "./routes/locations";
 import BusinessDetail from "./routes/business-detail";
+import Booking from "./routes/booking";
+import Payment from "./routes/payment";
+import TodayFortune from "./routes/today-fortune";
+import NameCreation from "./routes/name-creation"; // Added import
 
 const router = createBrowserRouter([
   {
@@ -45,7 +49,11 @@ const router = createBrowserRouter([
       { path: "faq", element: <FAQ /> },
       { path: "live-translation", element: <LiveTranslation /> },
       { path: "locations", element: <Locations /> },
+      { path: "today-fortune", element: <TodayFortune /> },
+      { path: "name-creation", element: <NameCreation /> },
       { path: "business/:id", element: <BusinessDetail /> },
+      { path: "business/:id/booking", element: <Booking /> },
+      { path: "business/:id/payment", element: <Payment /> },
     ],
   },
   { path: "/sign-in", element: <Login /> },

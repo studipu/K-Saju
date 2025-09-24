@@ -297,6 +297,98 @@ const AIServiceTitle = styled.h3`
   color: #1f2937;
 `;
 
+// "왜 K-Saju인가요?" 섹션 스타일
+const WhySection = styled.section`
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+  overflow: hidden;
+`;
+
+const WhyContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
+const WhyHeader = styled.div`
+  text-align: center;
+  margin-bottom: 3rem;
+`;
+
+const WhyTitle = styled.h2`
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const WhyIcon = styled.span`
+  font-size: 2rem;
+  color: #8b5cf6;
+`;
+
+const FeaturesGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+`;
+
+const FeatureCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const FeatureHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const FeatureIcon = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+`;
+
+const FeatureTitle = styled.h3`
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+`;
+
+const FeatureDescription = styled.p`
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 1rem;
+  margin: 0;
+`;
+
 const PopularCard = styled.div`
   width: 300px;
   flex-shrink: 0;
@@ -371,6 +463,46 @@ export function Home() {
   const [recommendedIndex, setRecommendedIndex] = useState(0);
   const [hotDealsIndex, setHotDealsIndex] = useState(0);
 
+  // "왜 K-Saju인가요?" 기능 데이터
+  const whyFeatures = [
+    {
+      id: 1,
+      title: "다국어 지원",
+      icon: "🌍",
+      description: "영어, 중국어, 일본어, 스페인어로 실시간 번역 서비스를 제공하여 언어 장벽 없이 정확한 사주 풀이를 받으실 수 있습니다."
+    },
+    {
+      id: 2,
+      title: "전통 사주풀이",
+      icon: "🏮",
+      description: "수백 년의 역사를 가진 한국 전통 사주풀이 기법으로 당신의 운명과 미래를 정확하게 해석해드립니다."
+    },
+    {
+      id: 3,
+      title: "검증된 업체",
+      icon: "🤝",
+      description: "엄선된 전문 사주풀이 업체들과 매칭되어 신뢰할 수 있는 고품질의 상담 서비스를 경험하세요."
+    },
+    {
+      id: 4,
+      title: "맞춤형 매칭",
+      icon: "🎯",
+      description: "당신의 위치, 선호도, 예산에 맞는 최적의 사주 풀이 업체를 AI가 추천해드립니다."
+    },
+    {
+      id: 5,
+      title: "프리미엄 경험",
+      icon: "💎",
+      description: "한국 문화의 깊이를 느낄 수 있는 특별한 경험과 기억에 남을 문화 체험을 제공합니다."
+    },
+    {
+      id: 6,
+      title: "편리한 예약",
+      icon: "📱",
+      description: "간편한 온라인 예약 시스템으로 언제 어디서나 쉽게 사주풀이 상담을 예약하실 수 있습니다."
+    }
+  ];
+
   const aiServices = [
     {
       id: 1,
@@ -379,18 +511,18 @@ export function Home() {
     },
     {
       id: 2,
-      title: t("sajuAnalysis"),
-      icon: "📅"
+      title: t("nameCreation"),
+      icon: "✍️"
     },
     {
       id: 3,
-      title: t("nearbySearch"),
-      icon: "🗺️"
+      title: "실시간 통역",
+      icon: "🎙️"
     },
     {
       id: 4,
-      title: t("nameCreation"),
-      icon: "✍️"
+      title: t("nearbySearch"),
+      icon: "🗺️"
     }
   ];
   
@@ -644,10 +776,15 @@ export function Home() {
   };
 
   const handleAIServiceClick = (serviceId: number) => {
-    if (serviceId === 3) { // 근처 찾기 (id: 3)
+    if (serviceId === 1) { // 오늘의 운세 (id: 1)
+      navigate('/today-fortune');
+    } else if (serviceId === 2) { // 이름 작명 (id: 2)
+      navigate('/name-creation');
+    } else if (serviceId === 3) { // 실시간 통역 (id: 3)
+      navigate('/live-translation');
+    } else if (serviceId === 4) { // 근처 찾기 (id: 4)
       navigate('/locations');
     }
-    // 다른 서비스들은 필요에 따라 추가 처리
   };
 
   const renderStars = (rating: number) => {
@@ -697,6 +834,30 @@ export function Home() {
           </CTAButton>
         </HeroContent>
       </HeroSection>
+      
+      {/* "왜 K-Saju인가요?" 섹션 */}
+      <WhySection>
+        <WhyContainer>
+          <WhyHeader>
+            <WhyTitle>
+              <WhyIcon>⭐</WhyIcon>
+              왜 K-Saju인가요?
+            </WhyTitle>
+          </WhyHeader>
+          
+          <FeaturesGrid>
+            {whyFeatures.map((feature) => (
+              <FeatureCard key={feature.id}>
+                <FeatureHeader>
+                  <FeatureIcon>{feature.icon}</FeatureIcon>
+                  <FeatureTitle>{feature.title}</FeatureTitle>
+                </FeatureHeader>
+                <FeatureDescription>{feature.description}</FeatureDescription>
+              </FeatureCard>
+            ))}
+          </FeaturesGrid>
+        </WhyContainer>
+      </WhySection>
       
       <AIServicesSection id="ai-services-section">
         <SectionTitle>{t("aiServices")}</SectionTitle>
