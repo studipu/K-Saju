@@ -17,6 +17,8 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
+    "stream-chat": "^9.20.0",
+    "stream-chat-react": "^13.7.0",
     "styled-components": "^6.1.19",
     "styled-reset": "^5.0.0"
   },

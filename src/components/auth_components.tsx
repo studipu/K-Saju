@@ -64,9 +64,7 @@ const LogoLink = styled(Link)`
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 30px auto;
   transition: opacity 0.15s ease;
 
   &:hover {
@@ -74,8 +72,7 @@ const LogoLink = styled(Link)`
   }
 
   img {
-    width: 48px;
-    height: 48px;
+    width: 120px;
     object-fit: contain;
   }
 `;

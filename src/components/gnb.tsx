@@ -95,6 +95,39 @@ const Divider = styled.span`
   margin: 0 4px;
 `;
 
+// New: Search Locations button with shine animation
+const ShineButton = styled.button`
+  position: relative;
+  appearance: none;
+  background: #181818;
+  color: #ffffff;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-20deg);
+    animation: shine 2s ease-in-out infinite;
+  }
+
+  @keyframes shine {
+    0% { left: -100%; }
+    100% { left: 140%; }
+  }
+`;
+
 export default function GNB() {
   const { t, language, setLanguage } = useI18n();
   const navigate = useNavigate();
@@ -140,6 +173,7 @@ export default function GNB() {
   }, []);
 
   const onMessages = () => navigate("/messages");
+  const onSearchLocations = () => navigate("/locations");
   const onSignIn = () => navigate("/sign-in");
   const onProfile = () => navigate("/profile");
   const onLogout = async () => {
@@ -169,6 +203,11 @@ export default function GNB() {
           </Logo>
         </Left>
         <Right>
+          {/* Search Locations button placed to the left of language control */}
+          <ShineButton onClick={onSearchLocations} aria-label={t("searchLocations")}>
+            {"📍 "}{t("searchLocations")}
+          </ShineButton>
+
           {!((user?.user_metadata as any)?.preferred_language) && (
           <div style={{ position: "relative" }} data-dropdown>
             <IconButton onClick={onToggleLang} aria-label={t("language")}>
@@ -237,6 +276,7 @@ export default function GNB() {
             )}
           </div>
           )}
+
           {user && (
             <IconButton onClick={onMessages} aria-label={t("messages")}>
               <svg
@@ -408,9 +448,9 @@ export default function GNB() {
               onClick={onSignIn}
               aria-label={t("signIn")}
               style={{
-                background: "#111111",
+                background: "#4c1d95", // dark purple
                 color: "#ffffff",
-                borderColor: "#111111",
+                borderColor: "#4c1d95",
               }}
             >
               <span style={{ fontSize: 14, fontWeight: 600 }}>
