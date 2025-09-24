@@ -13,6 +13,8 @@ import ProtectedRoute from "./components/protected_route";
 import NotFound from "./components/not_found";
 import AuthCallback from "./routes/auth_callback";
 import Messages from "./routes/messages.tsx";
+import AdminRoute from "./components/admin_route";
+import AdminBroadcast from "./routes/admin-broadcast";
 import Support from "./routes/support";
 import FAQ from "./routes/faq";
 import LiveTranslation from "./routes/live_translation.tsx";
@@ -43,6 +45,14 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <Messages />
           </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin/broadcast",
+        element: (
+          <AdminRoute>
+            <AdminBroadcast />
+          </AdminRoute>
         ),
       },
       { path: "support", element: <Support /> },
