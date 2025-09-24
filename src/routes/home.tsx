@@ -1,5 +1,6 @@
 import { styled } from "styled-components";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/i18n";
 
 const Wrapper = styled.div`
@@ -365,6 +366,7 @@ const RatingText = styled.span`
 
 export function Home() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [recommendedIndex, setRecommendedIndex] = useState(0);
   const [hotDealsIndex, setHotDealsIndex] = useState(0);
@@ -382,8 +384,8 @@ export function Home() {
     },
     {
       id: 3,
-      title: t("compatibility"),
-      icon: "💕"
+      title: t("nearbySearch"),
+      icon: "🗺️"
     },
     {
       id: 4,
@@ -476,42 +478,42 @@ export function Home() {
       image: "추천 서비스 1"
     },
     {
-      id: 2,
+      id: 1,
       title: t("compatibilityAnalysisPro"),
       price: getPrice(44900),
       rating: 4.7,
       image: "추천 서비스 2"
     },
     {
-      id: 3,
+      id: 1,
       title: t("nameCreationPro"),
       price: getPrice(54900),
       rating: 4.8,
       image: "추천 서비스 3"
     },
     {
-      id: 4,
+      id: 1,
       title: t("tarotReading"),
       price: getPrice(24900),
       rating: 4.6,
       image: "추천 서비스 4"
     },
     {
-      id: 5,
+      id: 1,
       title: t("dreamConsultation"),
       price: getPrice(34900),
       rating: 4.7,
       image: "추천 서비스 5"
     },
     {
-      id: 6,
+      id: 1,
       title: t("fortuneAnalysis"),
       price: getPrice(49900),
       rating: 4.9,
       image: "추천 서비스 6"
     },
     {
-      id: 7,
+      id: 1,
       title: t("sajuMyeongri"),
       price: getPrice(64900),
       rating: 4.8,
@@ -530,7 +532,7 @@ export function Home() {
       image: "핫딜 서비스 1"
     },
     {
-      id: 2,
+      id: 1,
       title: t("annualSaju"),
       price: getPrice(199900),
       originalPrice: getPrice(299900),
@@ -539,7 +541,7 @@ export function Home() {
       image: "핫딜 서비스 2"
     },
     {
-      id: 3,
+      id: 1,
       title: t("newMemberBenefit"),
       price: getPrice(9900),
       originalPrice: getPrice(29900),
@@ -548,7 +550,7 @@ export function Home() {
       image: "핫딜 서비스 3"
     },
     {
-      id: 4,
+      id: 1,
       title: t("premiumSaju"),
       price: getPrice(79900),
       originalPrice: getPrice(99900),
@@ -557,7 +559,7 @@ export function Home() {
       image: "핫딜 서비스 4"
     },
     {
-      id: 5,
+      id: 1,
       title: t("businessSaju"),
       price: getPrice(149900),
       originalPrice: getPrice(199900),
@@ -566,7 +568,7 @@ export function Home() {
       image: "핫딜 서비스 5"
     },
     {
-      id: 6,
+      id: 1,
       title: t("sajuMasterPack"),
       price: getPrice(299900),
       originalPrice: getPrice(399900),
@@ -575,7 +577,7 @@ export function Home() {
       image: "핫딜 서비스 6"
     },
     {
-      id: 7,
+      id: 1,
       title: t("sajuStarterPack"),
       price: getPrice(14900),
       originalPrice: getPrice(24900),
@@ -627,6 +629,10 @@ export function Home() {
     console.log('더보기 클릭');
   };
 
+  const handleBusinessClick = (businessId: number) => {
+    navigate(`/business/${businessId}`);
+  };
+
   const handleScrollToServices = () => {
     const aiServicesSection = document.getElementById('ai-services-section');
     if (aiServicesSection) {
@@ -635,6 +641,13 @@ export function Home() {
         block: 'start'
       });
     }
+  };
+
+  const handleAIServiceClick = (serviceId: number) => {
+    if (serviceId === 3) { // 근처 찾기 (id: 3)
+      navigate('/locations');
+    }
+    // 다른 서비스들은 필요에 따라 추가 처리
   };
 
   const renderStars = (rating: number) => {
@@ -689,7 +702,7 @@ export function Home() {
         <SectionTitle>{t("aiServices")}</SectionTitle>
         <AIServicesContainer>
           {aiServices.map((service) => (
-            <AIServiceCard key={service.id}>
+            <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
               <AIServiceIcon>
                 {service.icon}
               </AIServiceIcon>
@@ -714,7 +727,7 @@ export function Home() {
             <CardsInner>
               <CardsWrapper translateX={translateX}>
                 {popularServices.map((service) => (
-                  <PopularCard key={service.id}>
+                  <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
                     <CardImage>{service.image}</CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
@@ -763,7 +776,7 @@ export function Home() {
             <CardsInner>
               <CardsWrapper translateX={recommendedTranslateX}>
                 {recommendedServices.map((service) => (
-                  <PopularCard key={service.id}>
+                  <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
                     <CardImage>{service.image}</CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
@@ -812,7 +825,7 @@ export function Home() {
             <CardsInner>
               <CardsWrapper translateX={hotDealsTranslateX}>
                 {hotDealsServices.map((service) => (
-                  <HotDealsCard key={service.id}>
+                  <HotDealsCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
                     <CardImage>{service.image}</CardImage>
                     <CardContent>
                       <DiscountBadge>{service.discount} 할인</DiscountBadge>
