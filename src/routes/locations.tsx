@@ -34,6 +34,10 @@ const Container = styled.div<{ $expanded?: boolean }>`
   width: 100%;
   padding: 12px 16px;
   background: #ffffff;
+  @media (max-width: 768px) {
+    padding: 0;
+    background: #ffffff;
+  }
 `;
 
 const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
@@ -42,6 +46,10 @@ const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
   margin-right: ${p => (
     p.$expanded ? 0 : `calc(${(((p.$mapRatio ?? 0.4) * 100).toFixed(3))}vw + 16px)`
   )};
+  @media (max-width: 768px) {
+    display: block;
+    margin-right: 0;
+  }
 `;
 
 const MapPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
@@ -60,6 +68,20 @@ const MapPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   z-index: ${p => (p.$expanded ? 50 : 1)};
+  @media (max-width: 768px) {
+    position: ${p => (p.$expanded ? "fixed" : "sticky")};
+    top: ${p => (p.$expanded ? 0 : "86px")};
+    right: 0;
+    left: 0;
+    bottom: auto;
+    float: none;
+    margin-left: 0;
+    width: 100%;
+    height: ${p => (p.$expanded ? "100vh" : "40vh")};
+    border-radius: 0px;
+    box-shadow: none;
+    z-index: ${p => (p.$expanded ? 50 : 2)};
+  }
 `;
 
 const ListHeader = styled.div`
@@ -83,6 +105,9 @@ const Cards = styled.div<{ $mode: "list" | "grid" }>`
   grid-template-columns: ${p => (p.$mode === "grid" ? "repeat(2, 1fr)" : "1fr")};
   gap: 12px;
   padding: 12px;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Card = styled.button<{ $active?: boolean }>`
@@ -194,6 +219,9 @@ const Resizer = styled.div<{ $mapRatio: number; $visible: boolean }>`
   z-index: 10;
   display: ${p => (p.$visible ? "block" : "none")};
   background: transparent;
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 // DB-only rendering. If no data exists, the page will show an empty state.
@@ -387,6 +415,24 @@ export default function Locations() {
 
   return (
     <Container $expanded={expanded}>
+      <MapPane $expanded={expanded} $mapRatio={mapRatio}>
+        <MapControls>
+          <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.min((mapObj.current.getZoom?.() ?? 12) + 1, 20)); }} aria-label="Zoom in">
+            <PlusIcon width={18} height={18} color="#111827" />
+          </ControlButton>
+          <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.max((mapObj.current.getZoom?.() ?? 12) - 1, 3)); }} aria-label="Zoom out">
+            <MinusIcon width={18} height={18} color="#111827" />
+          </ControlButton>
+          <ControlButton onClick={() => setExpanded(v => !v)} aria-label="Toggle expand">
+            {expanded ? (
+              <ArrowsPointingInIcon width={18} height={18} color="#111827" />
+            ) : (
+              <ArrowsPointingOutIcon width={18} height={18} color="#111827" />
+            )}
+          </ControlButton>
+        </MapControls>
+        <MapDiv ref={mapRef} />
+      </MapPane>
       <Resizer
         $mapRatio={mapRatio}
         $visible={!expanded}
@@ -410,24 +456,6 @@ export default function Locations() {
           window.addEventListener("mouseup", onUp);
         }}
       />
-      <MapPane $expanded={expanded} $mapRatio={mapRatio}>
-        <MapControls>
-          <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.min((mapObj.current.getZoom?.() ?? 12) + 1, 20)); }} aria-label="Zoom in">
-            <PlusIcon width={18} height={18} color="#111827" />
-          </ControlButton>
-          <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.max((mapObj.current.getZoom?.() ?? 12) - 1, 3)); }} aria-label="Zoom out">
-            <MinusIcon width={18} height={18} color="#111827" />
-          </ControlButton>
-          <ControlButton onClick={() => setExpanded(v => !v)} aria-label="Toggle expand">
-            {expanded ? (
-              <ArrowsPointingInIcon width={18} height={18} color="#111827" />
-            ) : (
-              <ArrowsPointingOutIcon width={18} height={18} color="#111827" />
-            )}
-          </ControlButton>
-        </MapControls>
-        <MapDiv ref={mapRef} />
-      </MapPane>
       <ListPane $expanded={expanded} $mapRatio={mapRatio}>
         <ListHeader>
           <div>

@@ -48,7 +48,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/broadcast",
+        path: "d",
         element: (
           <AdminRoute>
             <AdminBroadcast />
