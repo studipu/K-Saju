@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod --yes"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
