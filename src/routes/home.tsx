@@ -5,6 +5,12 @@ import { useI18n } from "../i18n/i18n";
 import { supabase } from "../supabase";
 import starBg from "../assets/star_bg.png";
 import heroBg from "../assets/hero_bg.jpg";
+import { 
+  SparklesIcon, 
+  PencilSquareIcon, 
+  MicrophoneIcon, 
+  MapPinIcon 
+} from '@heroicons/react/24/outline';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -178,20 +184,38 @@ const HotDealsSection = styled.section`
   }
 `;
 
+const SectionTitleContainer = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
 const SectionTitle = styled.h2`
   font-size: 1.8rem;
   font-weight: 700;
-  text-align: left;
-  margin-bottom: 1.5rem;
   color: #ffffff;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
+  margin: 0;
+  white-space: nowrap;
+`;
+
+const Divider = styled.div`
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 70%,
+    transparent 100%
+  );
 `;
 
 
@@ -363,10 +387,9 @@ const OriginalPrice = styled.div`
 `;
 
 const AIServicesSection = styled.section`
-  height: 20vh;
+  height: 35vh;
   padding: 1.5rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -374,62 +397,109 @@ const AIServicesSection = styled.section`
 `;
 
 const AIServicesContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
   max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 2;
   
   @media (max-width: 768px) {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 `;
 
+const AIServicesGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const AIServiceCard = styled.div`
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.3s ease;
-  position: relative;
-  z-index: 2;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
   
   &:hover {
-    transform: translateY(-4px);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
   }
 `;
 
 const AIServiceIcon = styled.div`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  color: white;
   margin-bottom: 0.75rem;
-  box-shadow: 0 8px 25px -5px rgba(102, 126, 234, 0.3);
   transition: all 0.3s ease;
-  position: relative;
-  z-index: 2;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+  }
   
   &:hover {
-    box-shadow: 0 12px 35px -5px rgba(102, 126, 234, 0.4);
+    transform: scale(1.05);
   }
 `;
 
 const AIServiceTitle = styled.h3`
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #1f2937;
-  position: relative;
-  z-index: 2;
+  margin: 0;
+`;
+
+const AIServicesContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 1.5rem;
+  
+  @media (max-width: 768px) {
+    padding-left: 0;
+    text-align: center;
+  }
+`;
+
+const AIServicesTitle = styled.h2`
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const AIServicesSubtitle = styled.p`
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
 `;
 
 
@@ -586,22 +656,22 @@ export function Home() {
     {
       id: 1,
       title: t("todayFortune"),
-      icon: "🍀"
+      icon: SparklesIcon
     },
     {
       id: 2,
       title: t("nameCreation"),
-      icon: "✍️"
+      icon: PencilSquareIcon
     },
     {
       id: 3,
       title: "실시간 통역",
-      icon: "🎙️"
+      icon: MicrophoneIcon
     },
     {
       id: 4,
       title: t("nearbySearch"),
-      icon: "🗺️"
+      icon: MapPinIcon
     }
   ];
   
@@ -786,19 +856,37 @@ export function Home() {
       
       <AIServicesSection id="ai-services-section">
         <AIServicesContainer>
-          {aiServices.map((service) => (
-            <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
-              <AIServiceIcon>
-                {service.icon}
-              </AIServiceIcon>
-              <AIServiceTitle>{service.title}</AIServiceTitle>
-            </AIServiceCard>
-          ))}
+          <AIServicesGrid>
+            {aiServices.map((service) => {
+              const IconComponent = service.icon;
+              return (
+                <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
+                  <AIServiceIcon>
+                    <IconComponent />
+                  </AIServiceIcon>
+                  <AIServiceTitle>{service.title}</AIServiceTitle>
+                </AIServiceCard>
+              );
+            })}
+          </AIServicesGrid>
+          
+          <AIServicesContent>
+            <AIServicesTitle>AI-Powered Saju Services</AIServicesTitle>
+            <AIServicesSubtitle>
+              Experience the future of Korean fortune telling with our advanced AI technology. 
+              Get instant insights, personalized readings, and connect with traditional wisdom 
+              through modern innovation.
+            </AIServicesSubtitle>
+          </AIServicesContent>
         </AIServicesContainer>
       </AIServicesSection>
       
       <PopularSection>
-        <SectionTitle>{t("popularServices")}</SectionTitle>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("popularServices")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
@@ -849,7 +937,11 @@ export function Home() {
       </PopularSection>
 
               <RecommendedSection>
-        <SectionTitle>{t("recommendedBy")}</SectionTitle>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("recommendedBy")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
@@ -900,7 +992,11 @@ export function Home() {
               </RecommendedSection>
 
       <HotDealsSection>
-        <SectionTitle>{t("hotDeals")}</SectionTitle>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("hotDeals")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
