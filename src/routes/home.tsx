@@ -1,7 +1,8 @@
 import { styled } from "styled-components";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/i18n";
+import { supabase } from "../supabase";
 
 const Wrapper = styled.div`
   width: 100%;
@@ -85,6 +86,14 @@ const BackgroundPattern = styled.div`
 const PopularSection = styled.section`
   padding: 4rem 2rem;
   background: #f8fafc;
+  
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 2rem 0.5rem;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -93,6 +102,16 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 3rem;
   color: #1f2937;
+  
+  @media (max-width: 768px) {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const CardsContainer = styled.div`
@@ -103,23 +122,45 @@ const CardsContainer = styled.div`
   position: relative;
   max-width: 100%;
   width: 100%;
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0;
+  }
 `;
 
 const CardsViewport = styled.div`
   width: 100%;
-  max-width: 1500px; /* 4개 카드 + 3개 간격 + 화살표 공간 */
+  max-width: 1500px;
   margin: 0 auto;
   position: relative;
-  overflow: visible; /* 화살표가 보이도록 */
-  padding: 0 100px; /* 화살표 버튼을 위한 충분한 좌우 패딩 */
+  overflow: hidden;
+  padding: 0 100px;
+  
+  @media (max-width: 1200px) {
+    padding: 0 80px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0 60px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 50px;
+  }
 `;
 
 const CardsInner = styled.div`
-  width: 1296px; /* 정확한 계산: 4개 카드(300px × 4 = 1200px) + 3개 간격(32px × 3 = 96px) = 1296px */
+  width: 100%;
+  max-width: 1296px;
   margin: 0 auto;
   overflow: hidden;
   position: relative;
-  padding: 1rem 0; /* 상하 패딩 추가로 hover 시 잘림 방지 */
+  padding: 1rem 0;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0;
+  }
 `;
 
 const CardsWrapper = styled.div<{ translateX: number }>`
@@ -128,6 +169,10 @@ const CardsWrapper = styled.div<{ translateX: number }>`
   transform: translateX(${props => props.translateX}px);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   width: fit-content;
+  
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
 `;
 
 const NavButton = styled.button<{ position: 'left' | 'right' }>`
@@ -162,6 +207,20 @@ const NavButton = styled.button<{ position: 'left' | 'right' }>`
     cursor: not-allowed;
     transform: translateY(-50%);
   }
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    ${props => props.position === 'left' ? 'left: 20px;' : 'right: 20px;'}
+  }
+  
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+    ${props => props.position === 'left' ? 'left: 15px;' : 'right: 15px;'}
+  }
 `;
 
 const MoreCard = styled.div`
@@ -185,6 +244,26 @@ const MoreCard = styled.div`
   &:hover {
     transform: translateY(-2px);
     box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: 1200px) {
+    width: 280px;
+    padding: 1.75rem;
+  }
+  
+  @media (max-width: 768px) {
+    width: 200px;
+    padding: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 180px;
+    padding: 1.25rem;
+  }
+  
+  @media (max-width: 360px) {
+    width: 160px;
+    padding: 1rem;
   }
 `;
 
@@ -221,6 +300,22 @@ const HotDealsCard = styled.div`
     transform: translateY(-4px);
     box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
   }
+  
+  @media (max-width: 1200px) {
+    width: 280px;
+  }
+  
+  @media (max-width: 768px) {
+    width: 200px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 180px;
+  }
+  
+  @media (max-width: 360px) {
+    width: 160px;
+  }
 `;
 
 const DiscountBadge = styled.div`
@@ -244,6 +339,14 @@ const OriginalPrice = styled.div`
 const AIServicesSection = styled.section`
   padding: 4rem 2rem;
   background: #f8fafc;
+  
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 2rem 0.5rem;
+  }
 `;
 
 const AIServicesContainer = styled.div`
@@ -253,9 +356,20 @@ const AIServicesContainer = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
+  @media (max-width: 1200px) {
     gap: 3rem;
+  }
+  
+  @media (max-width: 768px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 600px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 1.5rem;
+    max-width: 400px;
   }
 `;
 
@@ -269,6 +383,14 @@ const AIServiceCard = styled.div`
   
   &:hover {
     transform: translateY(-4px);
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    width: 100%;
   }
 `;
 
@@ -289,12 +411,40 @@ const AIServiceIcon = styled.div`
   &:hover {
     box-shadow: 0 12px 35px -5px rgba(102, 126, 234, 0.4);
   }
+  
+  @media (max-width: 1200px) {
+    width: 120px;
+    height: 120px;
+    font-size: 3rem;
+  }
+  
+  @media (max-width: 768px) {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 70px;
+    height: 70px;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const AIServiceTitle = styled.h3`
   font-size: 1.25rem;
   font-weight: 600;
   color: #1f2937;
+  
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
 `;
 
 // "왜 K-Saju인가요?" 섹션 스타일
@@ -303,6 +453,14 @@ const WhySection = styled.section`
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   position: relative;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 2rem 0.5rem;
+  }
 `;
 
 const WhyContainer = styled.div`
@@ -336,9 +494,19 @@ const FeaturesGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
   
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 `;
 
@@ -354,6 +522,16 @@ const FeatureCard = styled.div`
     transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
 `;
 
 const FeatureHeader = styled.div`
@@ -361,6 +539,16 @@ const FeatureHeader = styled.div`
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const FeatureIcon = styled.div`
@@ -373,6 +561,18 @@ const FeatureIcon = styled.div`
   justify-content: center;
   font-size: 1.8rem;
   flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
 `;
 
 const FeatureTitle = styled.h3`
@@ -380,6 +580,14 @@ const FeatureTitle = styled.h3`
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const FeatureDescription = styled.p`
@@ -387,6 +595,16 @@ const FeatureDescription = styled.p`
   line-height: 1.6;
   font-size: 1rem;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
 `;
 
 const PopularCard = styled.div`
@@ -403,22 +621,71 @@ const PopularCard = styled.div`
     transform: translateY(-4px);
     box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
   }
+  
+  @media (max-width: 1200px) {
+    width: 280px;
+  }
+  
+  @media (max-width: 768px) {
+    width: 200px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 180px;
+  }
+  
+  @media (max-width: 360px) {
+    width: 160px;
+  }
 `;
 
-const CardImage = styled.div`
+const CardImage = styled.div<{ $imageUrl?: string }>`
   width: 100%;
   height: 200px;
-  background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+  background: ${props => props.$imageUrl 
+    ? `url(${props.$imageUrl})` 
+    : 'linear-gradient(45deg, #f3f4f6, #e5e7eb)'
+  };
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   color: #6b7280;
   font-weight: 600;
+  
+  @media (max-width: 768px) {
+    height: 180px;
+    font-size: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    height: 160px;
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 360px) {
+    height: 140px;
+    font-size: 0.9rem;
+  }
 `;
 
 const CardContent = styled.div`
   padding: 1.5rem;
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+  }
+  
+  @media (max-width: 360px) {
+    padding: 0.75rem;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -426,6 +693,18 @@ const CardTitle = styled.h3`
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: #1f2937;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 360px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const CardPrice = styled.div`
@@ -433,6 +712,18 @@ const CardPrice = styled.div`
   font-weight: 700;
   color: #059669;
   margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.2rem;
+  }
+  
+  @media (max-width: 360px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const CardRating = styled.div`
@@ -449,11 +740,35 @@ const Stars = styled.div`
 const Star = styled.span`
   color: #fbbf24;
   font-size: 1.2rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 360px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const RatingText = styled.span`
   color: #6b7280;
   font-size: 0.9rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
+  
+  @media (max-width: 360px) {
+    font-size: 0.75rem;
+  }
 `;
 
 export function Home() {
@@ -462,6 +777,33 @@ export function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [recommendedIndex, setRecommendedIndex] = useState(0);
   const [hotDealsIndex, setHotDealsIndex] = useState(0);
+  const [locationsData, setLocationsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Supabase에서 locations 데이터 가져오기
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('locations')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching locations:', error);
+        } else {
+          setLocationsData(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   // "왜 K-Saju인가요?" 기능 데이터
   const whyFeatures = [
@@ -549,185 +891,76 @@ export function Home() {
     }
   };
 
-  const popularServices = [
-    {
-      id: 1,
-      title: t("aiSajuAnalysis"),
-      price: getPrice(29900),
-      rating: 4.8,
-      image: "사주 서비스 1"
-    },
-    {
-      id: 2,
-      title: t("compatibilityAnalysis"),
-      price: getPrice(19900),
-      rating: 4.5,
-      image: "사주 서비스 2"
-    },
-    {
-      id: 3,
-      title: t("nameCreationService"),
-      price: getPrice(39900),
-      rating: 4.9,
-      image: "사주 서비스 3"
-    },
-    {
-      id: 4,
-      title: t("tarotCard"),
-      price: getPrice(49900),
-      rating: 4.7,
-      image: "사주 서비스 4"
-    },
-    {
-      id: 5,
-      title: t("todayFortuneService"),
-      price: getPrice(34900),
-      rating: 4.6,
-      image: "사주 서비스 5"
-    },
-    {
-      id: 6,
-      title: t("sajuConsultation"),
-      price: getPrice(59900),
-      rating: 4.9,
-      image: "사주 서비스 6"
-    },
-    {
-      id: 7,
-      title: t("dreamInterpretation"),
-      price: getPrice(69900),
-      rating: 4.8,
-      image: "사주 서비스 7"
-    }
-  ];
+  // locations 데이터를 사용한 인기 서비스
+  const popularServices = locationsData.slice(0, 7).map((location, index) => ({
+    id: location.id || index + 1,
+    title: location.name || location.title || `사주 서비스 ${index + 1}`,
+    price: getPrice(location.price || 29900),
+    rating: location.rating || 4.5 + (index * 0.1),
+    image: location.image_url || location.main_image_url || `사주 서비스 ${index + 1}`
+  }));
 
-  const recommendedServices = [
-    {
-      id: 1,
-      title: t("aiSajuConsultation"),
-      price: getPrice(39900),
-      rating: 4.9,
-      image: "추천 서비스 1"
-    },
-    {
-      id: 1,
-      title: t("compatibilityAnalysisPro"),
-      price: getPrice(44900),
-      rating: 4.7,
-      image: "추천 서비스 2"
-    },
-    {
-      id: 1,
-      title: t("nameCreationPro"),
-      price: getPrice(54900),
-      rating: 4.8,
-      image: "추천 서비스 3"
-    },
-    {
-      id: 1,
-      title: t("tarotReading"),
-      price: getPrice(24900),
-      rating: 4.6,
-      image: "추천 서비스 4"
-    },
-    {
-      id: 1,
-      title: t("dreamConsultation"),
-      price: getPrice(34900),
-      rating: 4.7,
-      image: "추천 서비스 5"
-    },
-    {
-      id: 1,
-      title: t("fortuneAnalysis"),
-      price: getPrice(49900),
-      rating: 4.9,
-      image: "추천 서비스 6"
-    },
-    {
-      id: 1,
-      title: t("sajuMyeongri"),
-      price: getPrice(64900),
-      rating: 4.8,
-      image: "추천 서비스 7"
-    }
-  ];
+  // locations 데이터를 사용한 추천 서비스 (7-13번째)
+  const recommendedServices = locationsData.slice(7, 14).map((location, index) => ({
+    id: location.id || index + 8,
+    title: location.name || location.title || `추천 서비스 ${index + 1}`,
+    price: getPrice(location.price || 39900),
+    rating: location.rating || 4.6 + (index * 0.1),
+    image: location.image_url || location.main_image_url || `추천 서비스 ${index + 1}`
+  }));
 
-  const hotDealsServices = [
-    {
-      id: 1,
-      title: t("sajuPackage"),
-      price: getPrice(99900),
-      originalPrice: getPrice(149900),
-      discount: "33%",
-      rating: 4.9,
-      image: "핫딜 서비스 1"
-    },
-    {
-      id: 1,
-      title: t("annualSaju"),
-      price: getPrice(199900),
-      originalPrice: getPrice(299900),
-      discount: "33%",
-      rating: 4.8,
-      image: "핫딜 서비스 2"
-    },
-    {
-      id: 1,
-      title: t("newMemberBenefit"),
-      price: getPrice(9900),
-      originalPrice: getPrice(29900),
-      discount: "67%",
-      rating: 4.7,
-      image: "핫딜 서비스 3"
-    },
-    {
-      id: 1,
-      title: t("premiumSaju"),
-      price: getPrice(79900),
-      originalPrice: getPrice(99900),
-      discount: "20%",
-      rating: 4.9,
-      image: "핫딜 서비스 4"
-    },
-    {
-      id: 1,
-      title: t("businessSaju"),
-      price: getPrice(149900),
-      originalPrice: getPrice(199900),
-      discount: "25%",
-      rating: 4.8,
-      image: "핫딜 서비스 5"
-    },
-    {
-      id: 1,
-      title: t("sajuMasterPack"),
-      price: getPrice(299900),
-      originalPrice: getPrice(399900),
-      discount: "25%",
-      rating: 4.9,
-      image: "핫딜 서비스 6"
-    },
-    {
-      id: 1,
-      title: t("sajuStarterPack"),
-      price: getPrice(14900),
-      originalPrice: getPrice(24900),
-      discount: "40%",
-      rating: 4.6,
-      image: "핫딜 서비스 7"
-    }
-  ];
+  // locations 데이터를 사용한 핫딜 서비스 (14-20번째)
+  const hotDealsServices = locationsData.slice(14, 21).map((location, index) => {
+    const originalPrice = location.price ? location.price * 1.5 : 149900;
+    const discountPercent = Math.floor((1 - (location.price || 99900) / originalPrice) * 100);
+    
+    return {
+      id: location.id || index + 15,
+      title: location.name || location.title || `핫딜 서비스 ${index + 1}`,
+      price: getPrice(location.price || 99900),
+      originalPrice: getPrice(originalPrice),
+      discount: `${discountPercent}%`,
+      rating: location.rating || 4.7 + (index * 0.1),
+      image: location.image_url || location.main_image_url || `핫딜 서비스 ${index + 1}`
+    };
+  });
 
-  const cardsPerView = 4;
-  const cardWidth = 300; // min-width of each card
-  const cardGap = 32; // 2rem = 32px
+  // 반응형 카드 개수 설정
+  const getCardsPerView = () => {
+    if (window.innerWidth <= 480) return 1;
+    if (window.innerWidth <= 768) return 2;
+    if (window.innerWidth <= 1024) return 3;
+    return 4;
+  };
+  
+  const [cardsPerView, setCardsPerView] = useState(getCardsPerView());
+  
+  // 화면 크기 변경 감지
+  useEffect(() => {
+    const handleResize = () => {
+      setCardsPerView(getCardsPerView());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  const getCardWidth = () => {
+    if (window.innerWidth <= 360) return 160;
+    if (window.innerWidth <= 480) return 180;
+    if (window.innerWidth <= 768) return 200;
+    if (window.innerWidth <= 1200) return 280;
+    return 300;
+  };
+  
+  const cardWidth = getCardWidth();
+  const cardGap = window.innerWidth <= 768 ? 16 : 32; // 1rem = 16px, 2rem = 32px
   const totalCardWidth = cardWidth + cardGap;
   
   const totalCards = popularServices.length + 1; // +1 for more card
   const maxIndex = Math.max(0, Math.ceil(totalCards / cardsPerView) - 1);
   
-  // 4개씩만 보이도록 슬라이드 계산
+  // 반응형 슬라이드 계산
   const translateX = -currentIndex * cardsPerView * totalCardWidth;
   const recommendedTranslateX = -recommendedIndex * cardsPerView * totalCardWidth;
   const hotDealsTranslateX = -hotDealsIndex * cardsPerView * totalCardWidth;
@@ -807,6 +1040,24 @@ export function Home() {
     
     return stars;
   };
+
+  // 로딩 중일 때 표시
+  if (loading) {
+    return (
+      <Wrapper>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '1.2rem',
+          color: '#6b7280'
+        }}>
+          로딩 중...
+        </div>
+      </Wrapper>
+    );
+  }
 
   return (
     <Wrapper>
@@ -889,7 +1140,9 @@ export function Home() {
               <CardsWrapper translateX={translateX}>
                 {popularServices.map((service) => (
                   <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image}>
+                      {!service.image && service.image}
+                    </CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
                       <CardPrice>{service.price}</CardPrice>
@@ -938,7 +1191,9 @@ export function Home() {
               <CardsWrapper translateX={recommendedTranslateX}>
                 {recommendedServices.map((service) => (
                   <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image}>
+                      {!service.image && service.image}
+                    </CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
                       <CardPrice>{service.price}</CardPrice>
@@ -987,7 +1242,9 @@ export function Home() {
               <CardsWrapper translateX={hotDealsTranslateX}>
                 {hotDealsServices.map((service) => (
                   <HotDealsCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image}>
+                      {!service.image && service.image}
+                    </CardImage>
                     <CardContent>
                       <DiscountBadge>{service.discount} 할인</DiscountBadge>
                       <CardTitle>{service.title}</CardTitle>
