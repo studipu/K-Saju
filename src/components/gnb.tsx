@@ -17,7 +17,8 @@ const Bar = styled.header`
 
 const Inner = styled.div`
   margin: 0 auto;
-  padding: 12px 20px;
+  width: 100%;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
