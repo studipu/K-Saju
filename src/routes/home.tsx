@@ -1,7 +1,16 @@
 import { styled } from "styled-components";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/i18n";
+import { supabase } from "../supabase";
+import starBg from "../assets/star_bg.png";
+import heroBg from "../assets/hero_bg.jpg";
+import { 
+  SparklesIcon, 
+  PencilSquareIcon, 
+  MicrophoneIcon, 
+  MapPinIcon 
+} from '@heroicons/react/24/outline';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -12,42 +21,47 @@ const Wrapper = styled.div`
 
 const HeroSection = styled.section`
   width: 100%;
-  height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 60vh;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  background-image: url(${heroBg});
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
 `;
 
 const HeroContent = styled.div`
   text-align: center;
   color: white;
-  z-index: 2;
+  z-index: 1;
   max-width: 800px;
   padding: 0 2rem;
+  position: relative;
 `;
 
 const HeroTitle = styled.h1`
-  font-size: 3.5rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   line-height: 1.2;
   
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 `;
 
 const HeroSubtitle = styled.p`
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
   opacity: 0.9;
-  line-height: 1.6;
+  line-height: 1.5;
   
   @media (max-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -55,8 +69,8 @@ const CTAButton = styled.button`
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
   font-weight: 600;
   border-radius: 50px;
   cursor: pointer;
@@ -77,22 +91,142 @@ const BackgroundPattern = styled.div`
   width: 100%;
   height: 100%;
   background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
   z-index: 1;
 `;
 
 const PopularSection = styled.section`
-  padding: 4rem 2rem;
-  background: #f8fafc;
+  height: 50vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url(${starBg});
+  background-size: cover;
+  background-position: top;
+  background-repeat: no-repeat;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(46, 16, 101, 0.85);
+    z-index: 1;
+    pointer-events: none;
+  }
+`;
+
+const RecommendedSection = styled.section`
+  height: 50vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url(${starBg});
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(46, 16, 101, 0.85) 0%,
+      rgba(25, 25, 35, 0.9) 70%,
+      rgba(15, 15, 15, 0.9) 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+`;
+
+const HotDealsSection = styled.section`
+  height: 50vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url(${starBg}) !important;
+  background-size: cover !important;
+  background-position: bottom !important;
+  background-repeat: no-repeat !important;
+  background-attachment: local !important;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(15, 15, 15, 0.9) 0%,
+      rgba(0, 0, 0, 0.95) 100%
+    ) !important;
+    z-index: 1;
+    pointer-events: none;
+  }
+`;
+
+const SectionTitleContainer = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 2.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  white-space: nowrap;
+`;
+
+const Divider = styled.div`
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 70%,
+    transparent 100%
+  );
+`;
+
+
+const AIServicesSectionTitle = styled.h2`
+  font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   color: #1f2937;
+  position: relative;
+  z-index: 2;
 `;
 
 const CardsContainer = styled.div`
@@ -103,23 +237,24 @@ const CardsContainer = styled.div`
   position: relative;
   max-width: 100%;
   width: 100%;
+  z-index: 2;
 `;
 
 const CardsViewport = styled.div`
   width: 100%;
-  max-width: 1500px; /* 4개 카드 + 3개 간격 + 화살표 공간 */
+  max-width: 1200px; /* Smaller cards need less space */
   margin: 0 auto;
   position: relative;
   overflow: visible; /* 화살표가 보이도록 */
-  padding: 0 100px; /* 화살표 버튼을 위한 충분한 좌우 패딩 */
+  padding: 0 80px; /* Reduced padding for smaller layout */
 `;
 
 const CardsInner = styled.div`
-  width: 1296px; /* 정확한 계산: 4개 카드(300px × 4 = 1200px) + 3개 간격(32px × 3 = 96px) = 1296px */
+  width: 976px; /* Updated calculation: 4개 카드(220px × 4 = 880px) + 3개 간격(32px × 3 = 96px) = 976px */
   margin: 0 auto;
   overflow: hidden;
   position: relative;
-  padding: 1rem 0; /* 상하 패딩 추가로 hover 시 잘림 방지 */
+  padding: 0.75rem 0; /* Reduced padding for smaller components */
 `;
 
 const CardsWrapper = styled.div<{ translateX: number }>`
@@ -135,8 +270,9 @@ const NavButton = styled.button<{ position: 'left' | 'right' }>`
   top: 50%;
   transform: translateY(-50%);
   ${props => props.position === 'left' ? 'left: 30px;' : 'right: 30px;'}
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(229, 231, 235, 0.5);
   border-radius: 50%;
   width: 48px;
   height: 48px;
@@ -147,7 +283,7 @@ const NavButton = styled.button<{ position: 'left' | 'right' }>`
   transition: all 0.3s ease;
   font-size: 1.2rem;
   color: #6b7280;
-  z-index: 10;
+  z-index: 3;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   
   &:hover {
@@ -155,6 +291,7 @@ const NavButton = styled.button<{ position: 'left' | 'right' }>`
     color: #3b82f6;
     transform: translateY(-50%) scale(1.05);
     box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
   }
   
   &:disabled {
@@ -165,10 +302,11 @@ const NavButton = styled.button<{ position: 'left' | 'right' }>`
 `;
 
 const MoreCard = styled.div`
-  width: 300px;
+  width: 220px;
   flex-shrink: 0;
-  background: #f3f4f6;
-  border-radius: 16px;
+  background: rgba(243, 244, 246, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
   box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -178,48 +316,55 @@ const MoreCard = styled.div`
   align-items: center;
   justify-content: center;
   color: #374151;
-  padding: 2rem;
+  padding: 1.25rem;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  position: relative;
+  z-index: 2;
   
   &:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background: rgba(243, 244, 246, 0.95);
   }
 `;
 
 const MoreCardIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
   color: #9ca3af;
 `;
 
 const MoreCardTitle = styled.h3`
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   color: #374151;
 `;
 
 const MoreCardSubtitle = styled.p`
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: #6b7280;
 `;
 
 const HotDealsCard = styled.div`
-  width: 300px;
+  width: 220px;
   flex-shrink: 0;
-  background: white;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   border: 2px solid #f59e0b;
+  position: relative;
+  z-index: 2;
   
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.98);
   }
 `;
 
@@ -242,99 +387,24 @@ const OriginalPrice = styled.div`
 `;
 
 const AIServicesSection = styled.section`
-  padding: 4rem 2rem;
-  background: #f8fafc;
+  height: 35vh;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #ffffff;
 `;
 
 const AIServicesContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 4rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    gap: 3rem;
-  }
-`;
-
-const AIServiceCard = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-4px);
-  }
-`;
-
-const AIServiceIcon = styled.div`
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.5rem;
-  color: white;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 25px -5px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
-  
-  &:hover {
-    box-shadow: 0 12px 35px -5px rgba(102, 126, 234, 0.4);
-  }
-`;
-
-const AIServiceTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-`;
-
-// "왜 K-Saju인가요?" 섹션 스타일
-const WhySection = styled.section`
-  padding: 4rem 2rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  position: relative;
-  overflow: hidden;
-`;
-
-const WhyContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const WhyHeader = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
-`;
-
-const WhyTitle = styled.h2`
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-`;
-
-const WhyIcon = styled.span`
-  font-size: 2rem;
-  color: #8b5cf6;
-`;
-
-const FeaturesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -342,97 +412,175 @@ const FeaturesGrid = styled.div`
   }
 `;
 
-const FeatureCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
-  transition: all 0.3s ease;
+const AIServicesGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const FeatureHeader = styled.div`
+const AIServiceCard = styled.div`
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+  }
 `;
 
-const FeatureIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+const AIServiceIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
-  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+  }
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
-const FeatureTitle = styled.h3`
-  font-size: 1.3rem;
+const AIServiceTitle = styled.h3`
+  font-size: 0.8rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
 `;
 
-const FeatureDescription = styled.p`
-  color: #6b7280;
-  line-height: 1.6;
-  font-size: 1rem;
-  margin: 0;
-`;
-
-const PopularCard = styled.div`
-  width: 300px;
-  flex-shrink: 0;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
+const AIServicesContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 1.5rem;
   
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+  @media (max-width: 768px) {
+    padding-left: 0;
+    text-align: center;
   }
 `;
 
-const CardImage = styled.div`
+const AIServicesTitle = styled.h2`
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const AIServicesSubtitle = styled.p`
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+`;
+
+
+const PopularCard = styled.div`
+  width: 220px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.98);
+  }
+`;
+
+// Special card style for AI Services section (white background)
+const AIServicesCard = styled.div`
+  width: 220px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
+    background: #f9fafb;
+  }
+`;
+
+const CardImage = styled.div<{ $imageUrl?: string }>`
   width: 100%;
-  height: 200px;
-  background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+  height: 120px;
+  background: ${props => 
+    props.$imageUrl 
+      ? `url(${props.$imageUrl})`
+      : 'linear-gradient(45deg, #f3f4f6, #e5e7eb)'
+  };
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 0.9rem;
   color: #6b7280;
   font-weight: 600;
 `;
 
 const CardContent = styled.div`
-  padding: 1.5rem;
+  padding: 1rem;
 `;
 
 const CardTitle = styled.h3`
-  font-size: 1.25rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   color: #1f2937;
+  line-height: 1.3;
 `;
 
 const CardPrice = styled.div`
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #059669;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const CardRating = styled.div`
@@ -456,73 +604,74 @@ const RatingText = styled.span`
   font-size: 0.9rem;
 `;
 
+// Types for Supabase data
+interface LocationService {
+  id: number;
+  title: string;
+  tagline?: string;
+  image_url?: string;
+  price_krw: number;
+  activity_level?: string;
+  skill_level?: string;
+  max_guests_total?: number;
+  min_age?: number;
+  place_id: number;
+}
+
 export function Home() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [recommendedIndex, setRecommendedIndex] = useState(0);
   const [hotDealsIndex, setHotDealsIndex] = useState(0);
+  
+  // State for Supabase data
+  const [services, setServices] = useState<LocationService[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // "왜 K-Saju인가요?" 기능 데이터
-  const whyFeatures = [
-    {
-      id: 1,
-      title: "다국어 지원",
-      icon: "🌍",
-      description: "영어, 중국어, 일본어, 스페인어로 실시간 번역 서비스를 제공하여 언어 장벽 없이 정확한 사주 풀이를 받으실 수 있습니다."
-    },
-    {
-      id: 2,
-      title: "전통 사주풀이",
-      icon: "🏮",
-      description: "수백 년의 역사를 가진 한국 전통 사주풀이 기법으로 당신의 운명과 미래를 정확하게 해석해드립니다."
-    },
-    {
-      id: 3,
-      title: "검증된 업체",
-      icon: "🤝",
-      description: "엄선된 전문 사주풀이 업체들과 매칭되어 신뢰할 수 있는 고품질의 상담 서비스를 경험하세요."
-    },
-    {
-      id: 4,
-      title: "맞춤형 매칭",
-      icon: "🎯",
-      description: "당신의 위치, 선호도, 예산에 맞는 최적의 사주 풀이 업체를 AI가 추천해드립니다."
-    },
-    {
-      id: 5,
-      title: "프리미엄 경험",
-      icon: "💎",
-      description: "한국 문화의 깊이를 느낄 수 있는 특별한 경험과 기억에 남을 문화 체험을 제공합니다."
-    },
-    {
-      id: 6,
-      title: "편리한 예약",
-      icon: "📱",
-      description: "간편한 온라인 예약 시스템으로 언제 어디서나 쉽게 사주풀이 상담을 예약하실 수 있습니다."
-    }
-  ];
+  // Fetch services from Supabase
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('locations')
+          .select('id, title, tagline, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id');
+        
+        if (error) {
+          console.error('Error fetching services:', error);
+        } else if (data) {
+          setServices(data);
+        }
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   const aiServices = [
     {
       id: 1,
       title: t("todayFortune"),
-      icon: "🍀"
+      icon: SparklesIcon
     },
     {
       id: 2,
       title: t("nameCreation"),
-      icon: "✍️"
+      icon: PencilSquareIcon
     },
     {
       id: 3,
       title: "실시간 통역",
-      icon: "🎙️"
+      icon: MicrophoneIcon
     },
     {
       id: 4,
       title: t("nearbySearch"),
-      icon: "🗺️"
+      icon: MapPinIcon
     }
   ];
   
@@ -549,178 +698,33 @@ export function Home() {
     }
   };
 
-  const popularServices = [
-    {
-      id: 1,
-      title: t("aiSajuAnalysis"),
-      price: getPrice(29900),
-      rating: 4.8,
-      image: "사주 서비스 1"
-    },
-    {
-      id: 2,
-      title: t("compatibilityAnalysis"),
-      price: getPrice(19900),
-      rating: 4.5,
-      image: "사주 서비스 2"
-    },
-    {
-      id: 3,
-      title: t("nameCreationService"),
-      price: getPrice(39900),
-      rating: 4.9,
-      image: "사주 서비스 3"
-    },
-    {
-      id: 4,
-      title: t("tarotCard"),
-      price: getPrice(49900),
-      rating: 4.7,
-      image: "사주 서비스 4"
-    },
-    {
-      id: 5,
-      title: t("todayFortuneService"),
-      price: getPrice(34900),
-      rating: 4.6,
-      image: "사주 서비스 5"
-    },
-    {
-      id: 6,
-      title: t("sajuConsultation"),
-      price: getPrice(59900),
-      rating: 4.9,
-      image: "사주 서비스 6"
-    },
-    {
-      id: 7,
-      title: t("dreamInterpretation"),
-      price: getPrice(69900),
-      rating: 4.8,
-      image: "사주 서비스 7"
-    }
-  ];
+  // Generate random rating for demo purposes
+  const getRandomRating = () => {
+    return Math.round((Math.random() * 1.5 + 3.5) * 10) / 10; // Between 3.5 and 5.0
+  };
 
-  const recommendedServices = [
-    {
-      id: 1,
-      title: t("aiSajuConsultation"),
-      price: getPrice(39900),
-      rating: 4.9,
-      image: "추천 서비스 1"
-    },
-    {
-      id: 1,
-      title: t("compatibilityAnalysisPro"),
-      price: getPrice(44900),
-      rating: 4.7,
-      image: "추천 서비스 2"
-    },
-    {
-      id: 1,
-      title: t("nameCreationPro"),
-      price: getPrice(54900),
-      rating: 4.8,
-      image: "추천 서비스 3"
-    },
-    {
-      id: 1,
-      title: t("tarotReading"),
-      price: getPrice(24900),
-      rating: 4.6,
-      image: "추천 서비스 4"
-    },
-    {
-      id: 1,
-      title: t("dreamConsultation"),
-      price: getPrice(34900),
-      rating: 4.7,
-      image: "추천 서비스 5"
-    },
-    {
-      id: 1,
-      title: t("fortuneAnalysis"),
-      price: getPrice(49900),
-      rating: 4.9,
-      image: "추천 서비스 6"
-    },
-    {
-      id: 1,
-      title: t("sajuMyeongri"),
-      price: getPrice(64900),
-      rating: 4.8,
-      image: "추천 서비스 7"
-    }
-  ];
+  // Transform Supabase data for display
+  const transformServiceData = (service: LocationService, index: number) => ({
+    id: service.id,
+    title: service.title,
+    price: getPrice(service.price_krw),
+    rating: getRandomRating(),
+    image: service.image_url || `사주 서비스 ${index + 1}`,
+    tagline: service.tagline
+  });
 
-  const hotDealsServices = [
-    {
-      id: 1,
-      title: t("sajuPackage"),
-      price: getPrice(99900),
-      originalPrice: getPrice(149900),
-      discount: "33%",
-      rating: 4.9,
-      image: "핫딜 서비스 1"
-    },
-    {
-      id: 1,
-      title: t("annualSaju"),
-      price: getPrice(199900),
-      originalPrice: getPrice(299900),
-      discount: "33%",
-      rating: 4.8,
-      image: "핫딜 서비스 2"
-    },
-    {
-      id: 1,
-      title: t("newMemberBenefit"),
-      price: getPrice(9900),
-      originalPrice: getPrice(29900),
-      discount: "67%",
-      rating: 4.7,
-      image: "핫딜 서비스 3"
-    },
-    {
-      id: 1,
-      title: t("premiumSaju"),
-      price: getPrice(79900),
-      originalPrice: getPrice(99900),
-      discount: "20%",
-      rating: 4.9,
-      image: "핫딜 서비스 4"
-    },
-    {
-      id: 1,
-      title: t("businessSaju"),
-      price: getPrice(149900),
-      originalPrice: getPrice(199900),
-      discount: "25%",
-      rating: 4.8,
-      image: "핫딜 서비스 5"
-    },
-    {
-      id: 1,
-      title: t("sajuMasterPack"),
-      price: getPrice(299900),
-      originalPrice: getPrice(399900),
-      discount: "25%",
-      rating: 4.9,
-      image: "핫딜 서비스 6"
-    },
-    {
-      id: 1,
-      title: t("sajuStarterPack"),
-      price: getPrice(14900),
-      originalPrice: getPrice(24900),
-      discount: "40%",
-      rating: 4.6,
-      image: "핫딜 서비스 7"
-    }
-  ];
+  // Split services into categories
+  const popularServices = services.slice(0, 7).map(transformServiceData);
+  const recommendedServices = services.slice(7, 14).map(transformServiceData);
+  const hotDealsServices = services.slice(14, 21).map((service, index) => ({
+    ...transformServiceData(service, index),
+    originalPrice: getPrice(service.price_krw * 1.5), // Simulate original price
+    discount: "33%"
+  }));
+
 
   const cardsPerView = 4;
-  const cardWidth = 300; // min-width of each card
+  const cardWidth = 220; // Updated width for smaller cards
   const cardGap = 32; // 2rem = 32px
   const totalCardWidth = cardWidth + cardGap;
   
@@ -808,6 +812,20 @@ export function Home() {
     return stars;
   };
 
+  // Show loading state while fetching data
+  if (loading) {
+    return (
+      <Wrapper>
+        <HeroSection>
+          <BackgroundPattern />
+          <HeroContent>
+            <HeroTitle>Loading...</HeroTitle>
+          </HeroContent>
+        </HeroSection>
+      </Wrapper>
+    );
+  }
+
   return (
     <Wrapper>
       <HeroSection>
@@ -835,46 +853,40 @@ export function Home() {
         </HeroContent>
       </HeroSection>
       
-      {/* "왜 K-Saju인가요?" 섹션 */}
-      <WhySection>
-        <WhyContainer>
-          <WhyHeader>
-            <WhyTitle>
-              <WhyIcon>⭐</WhyIcon>
-              왜 K-Saju인가요?
-            </WhyTitle>
-          </WhyHeader>
-          
-          <FeaturesGrid>
-            {whyFeatures.map((feature) => (
-              <FeatureCard key={feature.id}>
-                <FeatureHeader>
-                  <FeatureIcon>{feature.icon}</FeatureIcon>
-                  <FeatureTitle>{feature.title}</FeatureTitle>
-                </FeatureHeader>
-                <FeatureDescription>{feature.description}</FeatureDescription>
-              </FeatureCard>
-            ))}
-          </FeaturesGrid>
-        </WhyContainer>
-      </WhySection>
       
       <AIServicesSection id="ai-services-section">
-        <SectionTitle>{t("aiServices")}</SectionTitle>
         <AIServicesContainer>
-          {aiServices.map((service) => (
-            <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
-              <AIServiceIcon>
-                {service.icon}
-              </AIServiceIcon>
-              <AIServiceTitle>{service.title}</AIServiceTitle>
-            </AIServiceCard>
-          ))}
+          <AIServicesGrid>
+            {aiServices.map((service) => {
+              const IconComponent = service.icon;
+              return (
+                <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
+                  <AIServiceIcon>
+                    <IconComponent />
+                  </AIServiceIcon>
+                  <AIServiceTitle>{service.title}</AIServiceTitle>
+                </AIServiceCard>
+              );
+            })}
+          </AIServicesGrid>
+          
+          <AIServicesContent>
+            <AIServicesTitle>AI-Powered Saju Services</AIServicesTitle>
+            <AIServicesSubtitle>
+              Experience the future of Korean fortune telling with our advanced AI technology. 
+              Get instant insights, personalized readings, and connect with traditional wisdom 
+              through modern innovation.
+            </AIServicesSubtitle>
+          </AIServicesContent>
         </AIServicesContainer>
       </AIServicesSection>
       
       <PopularSection>
-        <SectionTitle>{t("popularServices")}</SectionTitle>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("popularServices")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
@@ -889,7 +901,9 @@ export function Home() {
               <CardsWrapper translateX={translateX}>
                 {popularServices.map((service) => (
                   <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
+                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
+                    </CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
                       <CardPrice>{service.price}</CardPrice>
@@ -922,8 +936,12 @@ export function Home() {
         </CardsContainer>
       </PopularSection>
 
-      <PopularSection>
-        <SectionTitle>{t("recommendedBy")}</SectionTitle>
+              <RecommendedSection>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("recommendedBy")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
@@ -938,7 +956,9 @@ export function Home() {
               <CardsWrapper translateX={recommendedTranslateX}>
                 {recommendedServices.map((service) => (
                   <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
+                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
+                    </CardImage>
                     <CardContent>
                       <CardTitle>{service.title}</CardTitle>
                       <CardPrice>{service.price}</CardPrice>
@@ -969,10 +989,14 @@ export function Home() {
             </NavButton>
           </CardsViewport>
         </CardsContainer>
-      </PopularSection>
+              </RecommendedSection>
 
-      <PopularSection>
-        <SectionTitle>{t("hotDeals")}</SectionTitle>
+      <HotDealsSection>
+        <SectionTitleContainer>
+          <Divider />
+          <SectionTitle>{t("hotDeals")}</SectionTitle>
+          <Divider />
+        </SectionTitleContainer>
         <CardsContainer>
           <CardsViewport>
             <NavButton 
@@ -987,7 +1011,9 @@ export function Home() {
               <CardsWrapper translateX={hotDealsTranslateX}>
                 {hotDealsServices.map((service) => (
                   <HotDealsCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage>{service.image}</CardImage>
+                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
+                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
+                    </CardImage>
                     <CardContent>
                       <DiscountBadge>{service.discount} 할인</DiscountBadge>
                       <CardTitle>{service.title}</CardTitle>
@@ -1020,7 +1046,7 @@ export function Home() {
             </NavButton>
           </CardsViewport>
         </CardsContainer>
-      </PopularSection>
+      </HotDealsSection>
     </Wrapper>
   );
 }

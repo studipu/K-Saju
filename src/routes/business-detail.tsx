@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useI18n } from '../i18n/i18n';
+import { supabase } from '../supabase';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -10,6 +11,7 @@ const Container = styled.div`
   margin: 0;
   width: 100%;
   position: relative;
+  overflow-x: hidden;
   
   /* 전체 화면 너비 확보 */
   &::before {
@@ -23,9 +25,13 @@ const Container = styled.div`
     background: #f8fafc;
     z-index: -1;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0;
+  }
 `;
 
-const ContentWrapper = styled.div`
+const ContentWrapper = styled.div<{ isNavFixed: boolean }>`
   max-width: 1200px;
   margin: 0 auto;
   background: white;
@@ -35,14 +41,48 @@ const ContentWrapper = styled.div`
   margin-top: 2rem;
   margin-bottom: 2rem;
   padding: 0 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: margin-top 0.3s ease;
+  
+  /* nav bar가 고정될 때 콘텐츠가 밀리지 않도록 조정 */
+  ${props => props.isNavFixed && `
+    margin-top: 0;
+  `}
+  
+  @media (max-width: 768px) {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 0 1rem;
+    border-radius: 0;
+    
+    ${props => props.isNavFixed && `
+      margin-top: 0;
+    `}
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 0.5rem;
+  }
 `;
 
 // 이미지 갤러리
 const ImageGallery = styled.div`
   position: relative;
-  height: 300px;
+  height: 220px; /* PC에서 높이 줄임 */
   overflow: hidden;
   margin-top: 2rem;
+  margin-bottom: 0; /* PC에서 사진 하단 margin 완전 제거 */
+  
+  @media (max-width: 768px) {
+    height: 160px; /* 모바일에서 높이 더 줄임 */
+    margin-bottom: 0; /* 모바일에서 margin 완전 제거 */
+  }
+  
+  @media (max-width: 480px) {
+    height: 140px; /* 소형 모바일에서 더 작게 */
+    margin-bottom: 0; /* 소형 모바일에서 margin 완전 제거 */
+  }
 `;
 
 const GalleryContainer = styled.div<{ translateX: number }>`
@@ -53,8 +93,6 @@ const GalleryContainer = styled.div<{ translateX: number }>`
 `;
 
 const GalleryImage = styled.div`
-  width: calc((100% - 16px) / 3);
-  flex-shrink: 0;
   background: #e5e7eb;
   border-radius: 8px;
   position: relative;
@@ -64,7 +102,7 @@ const GalleryImage = styled.div`
   color: #9ca3af;
   font-size: 1rem;
   font-weight: 500;
-  height: 300px;
+  height: 200px;
   cursor: pointer;
   transition: all 0.3s ease;
   
@@ -72,27 +110,118 @@ const GalleryImage = styled.div`
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+  
+  @media (max-width: 768px) {
+    height: 150px;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    height: 120px;
+    font-size: 0.8rem;
+  }
 `;
 
-const MoreImagesButton = styled.div<{ $isVisible?: boolean }>`
-  width: calc((100% - 16px) / 3);
-  flex-shrink: 0;
-  background: ${props => props.$isVisible ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+const StaticImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    
+    /* 모바일에서 3번째, 4번째 사진 숨김 */
+    & > div:nth-child(3),
+    & > div:nth-child(4) {
+      display: none;
+    }
+  }
+`;
+
+const GalleryImageWithMore = styled.div`
+  background: #e5e7eb;
   border-radius: 8px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #9ca3af;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
+  height: 200px;
   cursor: pointer;
   transition: all 0.3s ease;
-  height: 300px;
   
   &:hover {
     transform: scale(1.02);
-    box-shadow: ${props => props.$isVisible ? '0 4px 12px rgba(156, 163, 175, 0.3)' : '0 4px 12px rgba(102, 126, 234, 0.3)'};
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  @media (max-width: 768px) {
+    height: 150px;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    height: 120px;
+    font-size: 0.8rem;
+  }
+`;
+
+const MoreOverlayButton = styled.button`
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+  }
+  
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
+    bottom: 6px;
+    right: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    font-size: 0.6rem;
+    bottom: 4px;
+    right: 4px;
+  }
+`;
+
+const MoreOverlayButtonPC = styled(MoreOverlayButton)`
+  /* PC에서만 표시 */
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const MoreOverlayButtonMobile = styled(MoreOverlayButton)`
+  /* 모바일에서만 표시 */
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
   }
 `;
 
@@ -173,25 +302,64 @@ const BusinessHours = styled.div`
 `;
 
 // 스크롤 네비게이션
-const ScrollNavigation = styled.div`
+const ScrollNavigation = styled.div<{ isFixed: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 2rem;
-  position: sticky;
-  top: 0;
+  margin-top: 0; /* PC에서 nav bar 상단 margin 제거 */
+  position: ${props => props.isFixed ? 'fixed' : 'sticky'};
+  top: ${props => props.isFixed ? '60px' : '60px'}; /* K-SAJU main nav bar 높이만큼 조정 */
+  padding-top: 0 !important;
+  left: 0;
+  right: 0;
   background: white;
-  z-index: 10;
-  padding: 1.5rem 0;
+  z-index: 100;
+  padding: 0.8rem 2rem;
+  box-shadow: ${props => props.isFixed ? '0 2px 10px rgba(0, 0, 0, 0.1)' : 'none'};
+  transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    top: ${props => props.isFixed ? '60px' : '60px'}; /* 모바일에서 main nav bar 높이 조정 */
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.8rem;
+    gap: 0.3rem;
+    top: ${props => props.isFixed ? '50px' : '50px'}; /* 소형 모바일에서 main nav bar 높이 조정 */
+  }
 `;
 
 const NavButtons = styled.div`
   display: flex;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+    padding: 0 0.3rem;
+    order: 1; /* 위쪽에 배치 */
+    
+    /* 스크롤바 숨기기 */
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.3rem;
+    padding: 0 0.2rem;
+  }
 `;
 
 const NavButton = styled.button`
-  padding: 0.75rem 2rem;
+  padding: 0.5rem 1.5rem;
   border: none;
   background: none;
   color: #6b7280;
@@ -199,22 +367,62 @@ const NavButton = styled.button`
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
   
   &:hover {
     color: #3b82f6;
+    background: #f3f4f6;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
   }
 `;
 
-const NavPriceSection = styled.div`
+const NavPriceSection = styled.div<{ showBottomPrice: boolean }>`
   display: flex;
   align-items: center;
   gap: 1rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    padding: 0.6rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-top: 0.3rem;
+    order: 2; /* 아래쪽에 배치 */
+    display: ${props => props.showBottomPrice ? 'none' : 'flex'}; /* 하단 버튼이 표시되면 숨김 */
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: row;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    justify-content: space-between;
+    margin-top: 0.2rem;
+  }
 `;
 
 const NavPrice = styled.div`
   color: #059669;
   font-weight: 700;
   font-size: 1.4rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
 `;
 
 const NavBookingButton = styled.button`
@@ -232,6 +440,133 @@ const NavBookingButton = styled.button`
     background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    width: auto;
+    min-width: 100px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    width: auto;
+    min-width: 80px;
+  }
+`;
+
+// 하단 고정 가격 및 예약 버튼
+const BottomPriceSection = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 200;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 0.8rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.6rem 0.8rem;
+  }
+`;
+
+const BottomPrice = styled.div`
+  color: #059669;
+  font-weight: 700;
+  font-size: 1.4rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const BottomBookingButton = styled.button`
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 2rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.9rem;
+  }
+`;
+
+// 위로 올라가기 버튼
+const ScrollToTopButton = styled.button<{ visible: boolean }>`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s ease;
+  opacity: ${props => props.visible ? 1 : 0};
+  visibility: ${props => props.visible ? 'visible' : 'hidden'};
+  transform: ${props => props.visible ? 'translateY(0)' : 'translateY(20px)'};
+  z-index: 1000;
+  
+  &:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    bottom: 5rem; /* 하단 고정 버튼 위에 배치 */
+    right: 1.5rem;
+    width: 45px;
+    height: 45px;
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    bottom: 4.5rem; /* 하단 고정 버튼 위에 배치 */
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 `;
 
@@ -1167,6 +1502,10 @@ export default function BusinessDetail() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reviews, setReviews] = useState<BusinessReview[]>([]);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [isNavFixed, setIsNavFixed] = useState(false);
+  const [showBottomPrice, setShowBottomPrice] = useState(false);
   
   // 구글 맵 관련
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
@@ -1180,13 +1519,14 @@ export default function BusinessDetail() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const loaded = useGoogleMaps(apiKey);
   
-  // 총 7개의 이미지
-  const totalImages = 7;
-  const maxIndex = 3; // 사진 4,5,더보기를 보여주는 인덱스
+  // 총 5개의 이미지 (사진 5개 + 더보기)
+  const totalImages = 5;
+  const maxIndex = 4; // 사진 4개까지 보이고 5번째에 더보기
   
   // 슬라이드 계산 (개별 사진 단위로)
   const getTranslateX = () => {
-    return -currentImageIndex * (100 / 3); // 3개씩 보이므로 100/3씩 이동
+    const isMobile = window.innerWidth <= 768;
+    return -currentImageIndex * (100 / (isMobile ? 2 : 4)); // 모바일: 2개씩, PC: 4개씩 보이므로
   };
 
   useEffect(() => {
@@ -1194,24 +1534,70 @@ export default function BusinessDetail() {
       try {
         setLoading(true);
         
-        // TODO: Supabase에서 실제 데이터 가져오기
-        // const { data, error } = await supabase
-        //   .from('businesses')
-        //   .select(`
-        //     *,
-        //     features:business_features(*),
-        //     reviews:business_reviews(*)
-        //   `)
-        //   .eq('id', id)
-        //   .single();
-        
-        // 임시로 mock 데이터 사용
-        if (id && mockBusinessData[id as keyof typeof mockBusinessData]) {
-          const mockData = mockBusinessData[id as keyof typeof mockBusinessData];
-          setBusiness(mockData);
-        } else {
+        // Supabase에서 locations 데이터 가져오기
+        const { data: locationData, error: locationError } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (locationError) {
+          console.error('Error fetching location:', locationError);
           setBusiness(null);
+          return;
         }
+
+        if (!locationData) {
+          setBusiness(null);
+          return;
+        }
+
+        // location_reviews에서 리뷰 데이터 가져오기
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('location_reviews')
+          .select('*')
+          .eq('location_id', id)
+          .order('created_at', { ascending: false });
+
+        if (reviewsError) {
+          console.error('Error fetching reviews:', reviewsError);
+        }
+
+        // Business 인터페이스에 맞게 데이터 변환
+        const businessData: Business = {
+          id: locationData.id,
+          title: locationData.name || locationData.title || '사주 서비스',
+          subtitle: locationData.subtitle || '전통 사주와 현대 기술의 만남',
+          description: locationData.description || '정확하고 상세한 사주 분석을 제공합니다.',
+          main_image_url: locationData.main_image_url || locationData.image_url,
+          gallery_images: locationData.gallery_images || [],
+          icon: locationData.icon || '🔮',
+          features: locationData.features || [],
+          base_price: locationData.base_price || locationData.price || 29000,
+          price_description: locationData.price_description || '1회 상담 기준',
+          currency: locationData.currency || 'KRW',
+          rating: locationData.rating || 4.5,
+          review_count: locationData.review_count || 0,
+          contact: {
+            phone: locationData.phone || '02-1234-5678',
+            email: locationData.email || 'info@saju.com',
+            address: locationData.address || '서울특별시 강남구 역삼동',
+            website: locationData.website
+          },
+          business_hours: locationData.business_hours || 'Open 09:00 - 21:00',
+          reviews: (reviewsData || []).map((review: any) => ({
+            id: review.id,
+            name: review.name,
+            date: review.date,
+            rating: review.rating,
+            text: review.text
+          })),
+          created_at: locationData.created_at,
+          updated_at: locationData.updated_at
+        };
+
+        setBusiness(businessData);
+        setReviews(businessData.reviews);
       } catch (error) {
         console.error('Error fetching business:', error);
         setBusiness(null);
@@ -1225,34 +1611,104 @@ export default function BusinessDetail() {
     }
   }, [id]);
 
+  // 스크롤 감지 useEffect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollToTop(scrollTop > 300); // 300px 이상 스크롤하면 버튼 표시
+      
+      // nav bar가 화면에서 사라질 정도로 스크롤했을 때 고정
+      // K-SAJU main nav bar 높이 + nav bar 자체 높이를 고려하여 200px로 설정
+      setIsNavFixed(scrollTop > 200);
+      
+      // 가격과 예약 버튼을 하단에 고정 (nav bar가 사라질 정도로 스크롤했을 때)
+      setShowBottomPrice(scrollTop > 200);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleBack = () => {
     navigate(-1);
   };
 
-  const handleBook = () => {
-    // 예약 페이지로 이동
-    navigate(`/business/${id}/booking`);
+  const handleScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleBook = async () => {
+    try {
+      // 로그인 상태 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // 로그인되지 않은 경우 alert 표시 후 로그인 페이지로 리다이렉트
+        alert('예약을 위해서는 로그인이 필요합니다. 로그인해주세요.');
+        navigate('/sign-in');
+        return;
+      }
+      
+      // 로그인된 경우 예약 페이지로 이동
+      navigate(`/business/${id}/booking`);
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      // 에러 발생 시에도 alert 표시 후 로그인 페이지로 리다이렉트
+      alert('예약을 위해서는 로그인이 필요합니다. 로그인해주세요.');
+      navigate('/sign-in');
+    }
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev > 0 ? prev - 1 : prev
-    );
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // 모바일: 2개씩 이동 (0 → 2 → 4)
+      setCurrentImageIndex((prev) => {
+        if (prev >= 2) return prev - 2;
+        if (prev >= 1) return 0;
+        return 0;
+      });
+    } else {
+      // PC: 4개씩 이동 (0 → 4)
+      setCurrentImageIndex((prev) => {
+        if (prev >= 4) return prev - 4;
+        return 0;
+      });
+    }
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev < maxIndex ? prev + 1 : prev
-    );
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // 모바일: 2개씩 이동 (0 → 2 → 4)
+      setCurrentImageIndex((prev) => {
+        if (prev === 0) return 2;
+        if (prev === 2) return 4;
+        return prev;
+      });
+    } else {
+      // PC: 4개씩 이동 (0 → 4)
+      setCurrentImageIndex((prev) => {
+        if (prev === 0) return 4;
+        return prev;
+      });
+    }
   };
 
   const handleMoreImages = () => {
-    alert('더 많은 사진을 보시려면 업체에 직접 문의해주세요!');
+    // 더보기 버튼 클릭 시 첫 번째 사진을 팝업으로 표시
+    setSelectedImageIndex(0);
+    setIsImageModalOpen(true);
   };
 
   const handleImageClick = (index: number) => {
-    // 더보기 버튼을 클릭한 경우 (index 5) 6번 사진을 선택
-    const actualIndex = index === 5 ? 5 : index;
+    // 더보기 버튼을 클릭한 경우 (index 4) 첫 번째 사진을 선택
+    const actualIndex = index === 4 ? 0 : index;
     setSelectedImageIndex(actualIndex);
     setIsImageModalOpen(true);
   };
@@ -1403,11 +1859,11 @@ export default function BusinessDetail() {
 
   // 리뷰 페이지네이션 로직
   const reviewsPerPage = 3;
-  const totalReviews = business?.reviews.length || 0;
+  const totalReviews = reviews.length;
   const totalPages = Math.ceil(totalReviews / reviewsPerPage);
   const startIndex = (currentReviewPage - 1) * reviewsPerPage;
   const endIndex = startIndex + reviewsPerPage;
-  const currentReviews = business?.reviews.slice(startIndex, endIndex) || [];
+  const currentReviews = reviews.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentReviewPage(page);
@@ -1609,49 +2065,36 @@ export default function BusinessDetail() {
 
   return (
     <Container>
-      <ContentWrapper>
+      <ContentWrapper isNavFixed={isNavFixed}>
         {/* 이미지 갤러리 */}
         <ImageGallery>
-            <GalleryContainer translateX={getTranslateX()}>
-              {/* 사진 1, 2, 3 */}
+          <StaticImageGrid>
+              {/* PC: 사진 1, 2, 3, 4 / 모바일: 사진 1, 2 */}
               <GalleryImage onClick={() => handleImageClick(0)}>사진 1</GalleryImage>
-              <GalleryImage onClick={() => handleImageClick(1)}>사진 2</GalleryImage>
+              <GalleryImageWithMore onClick={() => handleImageClick(1)}>
+                사진 2
+                <MoreOverlayButtonMobile onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoreImages();
+                }}>
+                  ...
+                </MoreOverlayButtonMobile>
+              </GalleryImageWithMore>
               <GalleryImage onClick={() => handleImageClick(2)}>사진 3</GalleryImage>
-              
-              {/* 사진 4, 5 */}
-              <GalleryImage onClick={() => handleImageClick(3)}>사진 4</GalleryImage>
-              <GalleryImage onClick={() => handleImageClick(4)}>사진 5</GalleryImage>
-              
-              {/* 더보기 버튼 */}
-              <MoreImagesButton 
-                $isVisible={currentImageIndex >= 2}
-                onClick={() => handleImageClick(5)}
-              >
-                더보기
-              </MoreImagesButton>
-              
-              {/* 사진 6, 7 */}
-              <GalleryImage onClick={() => handleImageClick(5)}>사진 6</GalleryImage>
-              <GalleryImage onClick={() => handleImageClick(6)}>사진 7</GalleryImage>
-            </GalleryContainer>
-          
-          {/* 왼쪽 화살표 (첫 번째가 아닐 때만 표시) */}
-          {currentImageIndex > 0 && (
-            <GalleryNavButton position="left" onClick={handlePrevImage}>
-              ‹
-            </GalleryNavButton>
-          )}
-          
-          {/* 오른쪽 화살표 (사진 5까지는 표시, 더보기 슬라이드 후에는 숨김) */}
-          {currentImageIndex < 3 && (
-            <GalleryNavButton position="right" onClick={handleNextImage}>
-              ›
-            </GalleryNavButton>
-          )}
+              <GalleryImageWithMore onClick={() => handleImageClick(3)}>
+                사진 4
+                <MoreOverlayButtonPC onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoreImages();
+                }}>
+                  ...
+                </MoreOverlayButtonPC>
+              </GalleryImageWithMore>
+            </StaticImageGrid>
         </ImageGallery>
 
         {/* 스크롤 네비게이션 */}
-        <ScrollNavigation>
+        <ScrollNavigation isFixed={isNavFixed}>
           <NavButtons>
             <NavButton onClick={() => scrollToSection('overview')}>
               개요
@@ -1670,7 +2113,7 @@ export default function BusinessDetail() {
             </NavButton>
           </NavButtons>
           
-          <NavPriceSection>
+          <NavPriceSection showBottomPrice={showBottomPrice}>
             <NavPrice>{formatPrice(business.base_price, business.currency)}</NavPrice>
             <NavBookingButton onClick={handleBook}>
               예약하기
@@ -1726,19 +2169,72 @@ export default function BusinessDetail() {
             <ContentSection id="services">
               <SectionHeader>주요 서비스</SectionHeader>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                {business.features.map((feature) => (
-                  <div key={feature.id} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.75rem',
-                    padding: '1rem',
-                    background: '#f9fafb',
-                    borderRadius: '8px'
-                  }}>
-                    <span style={{ fontSize: '1.5rem' }}>{feature.icon}</span>
-                    <span style={{ color: '#374151', fontWeight: '500' }}>{feature.text}</span>
-                  </div>
-                ))}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>🔮</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>정확한 사주 상담</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>💫</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>운세 분석</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>🌟</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>궁합 상담</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>직업 운세</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>💕</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>연애 운세</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>💰</span>
+                  <span style={{ color: '#374151', fontWeight: '500' }}>재물 운세</span>
+                </div>
               </div>
             </ContentSection>
           </LeftColumn>
@@ -1814,22 +2310,50 @@ export default function BusinessDetail() {
         <Content>
           {/* 이용후기 상세 섹션 */}
           <ContentSection id="reviews">
-            <SectionHeader>💬 {t("customerReviews")}</SectionHeader>
-            <ReviewsList>
-              {currentReviews.map((review) => (
-                <ReviewCard key={review.id}>
-                  <ReviewHeader>
-                    <ReviewerName>{review.name}</ReviewerName>
-                    <ReviewDate>{review.date}</ReviewDate>
-                  </ReviewHeader>
-                  <ReviewRating>
-                    {renderStars(review.rating)}
-                  </ReviewRating>
-                  <ReviewText>{review.text}</ReviewText>
-                </ReviewCard>
-              ))}
-            </ReviewsList>
-            {renderPagination()}
+            <SectionHeader>💬 고객 후기</SectionHeader>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ 
+                background: '#f9fafb', 
+                padding: '1rem', 
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <strong>김사주</strong>
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>2024.01.15</span>
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>⭐⭐⭐⭐⭐</div>
+                <p style={{ margin: 0, color: '#374151' }}>정말 정확한 분석이었습니다. AI가 이렇게 정밀할 줄 몰랐어요!</p>
+              </div>
+              
+              <div style={{ 
+                background: '#f9fafb', 
+                padding: '1rem', 
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <strong>이운세</strong>
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>2024.01.10</span>
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>⭐⭐⭐⭐⭐</div>
+                <p style={{ margin: 0, color: '#374151' }}>친구 추천으로 받았는데 정말 만족스럽습니다. 상세한 설명도 좋고요.</p>
+              </div>
+              
+              <div style={{ 
+                background: '#f9fafb', 
+                padding: '1rem', 
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <strong>박점술</strong>
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>2024.01.08</span>
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>⭐⭐⭐⭐</div>
+                <p style={{ margin: 0, color: '#374151' }}>가격 대비 품질이 좋습니다. 다음에도 이용하고 싶어요.</p>
+              </div>
+            </div>
           </ContentSection>
 
           {/* 위치 섹션 */}
@@ -1892,6 +2416,21 @@ export default function BusinessDetail() {
           </ImageModalThumbnails>
         </ImageModalOverlay>
       )}
+      
+      {/* 하단 고정 가격 및 예약 버튼 (스크롤 시에만 표시) */}
+      {showBottomPrice && (
+        <BottomPriceSection>
+          <BottomPrice>{formatPrice(business.base_price, business.currency)}</BottomPrice>
+          <BottomBookingButton onClick={handleBook}>
+            예약하기
+          </BottomBookingButton>
+        </BottomPriceSection>
+      )}
+      
+      {/* 위로 올라가기 버튼 */}
+      <ScrollToTopButton visible={showScrollToTop} onClick={handleScrollToTop}>
+        ↑
+      </ScrollToTopButton>
     </Container>
   );
 }

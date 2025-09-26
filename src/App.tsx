@@ -24,6 +24,7 @@ import Booking from "./routes/booking";
 import Payment from "./routes/payment";
 import TodayFortune from "./routes/today-fortune";
 import NameCreation from "./routes/name-creation"; // Added import
+import { Intro } from "./routes/intro";
 
 const router = createBrowserRouter([
   {
@@ -48,13 +49,14 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/broadcast",
+        path: "d",
         element: (
           <AdminRoute>
             <AdminBroadcast />
           </AdminRoute>
         ),
       },
+      { path: "intro", element: <Intro /> },
       { path: "support", element: <Support /> },
       { path: "faq", element: <FAQ /> },
       { path: "live-translation", element: <LiveTranslation /> },
