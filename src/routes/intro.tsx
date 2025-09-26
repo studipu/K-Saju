@@ -274,13 +274,13 @@ export function Intro() {
         <BackgroundPattern />
         <HeroContent>
           <HeroTitle>
-            {t("whyChooseUs", "Why Choose K-Saju?")}
+            {"Why Choose K-Saju?"}
           </HeroTitle>
           <HeroSubtitle>
-            {t("introSubtitle", "Discover the ancient wisdom of Korean fortune telling with modern convenience and multilingual support.")}
+            {"Discover the ancient wisdom of Korean fortune telling with modern convenience and multilingual support."}
           </HeroSubtitle>
           <CTAButton onClick={handleGetStarted}>
-            {t("getStarted", "Get Started")}
+            {t("start")}
           </CTAButton>
         </HeroContent>
       </HeroSection>

@@ -2042,7 +2042,7 @@ export default function BusinessDetail() {
   if (loading) {
     return (
       <Container>
-        <ContentWrapper>
+        <ContentWrapper isNavFixed={isNavFixed}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
             <p>로딩 중...</p>
           </div>
@@ -2054,7 +2054,7 @@ export default function BusinessDetail() {
   if (!business) {
     return (
       <Container>
-        <ContentWrapper>
+        <ContentWrapper isNavFixed={isNavFixed}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
             <p>{t("businessNotFound")}</p>
           </div>

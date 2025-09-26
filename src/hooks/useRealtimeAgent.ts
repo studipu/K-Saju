@@ -174,7 +174,7 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
             silenceDurationMs: 500, // 더 빠르게 응답
           },
           // 말하기 속도와 톤 조절 (가능한 경우)
-          maxResponseOutputTokens: 150, // 간결한 번역을 위해 토큰 제한
+          // maxResponseOutputTokens: 150, // 간결한 번역을 위해 토큰 제한 (API에서 지원하지 않는 속성)
         },
       });
 
@@ -320,12 +320,12 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
               .join('') || '';
 
             if (content.trim()) {
-              const message = {
+              const message: ChatMessage = {
                 id: `${messageItem.role}-${Date.now()}-${Math.random()}`,
-                role: messageItem.role,
+                role: messageItem.role as 'user' | 'assistant',
                 content: content.trim(),
                 timestamp: Date.now(),
-                type: 'text',
+                type: 'text' as const,
               };
 
               console.log('💬 Adding message to history:', message);
@@ -349,7 +349,7 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         if (error && typeof error === 'object' && 'error' in error) {
           console.error('❌ Inner error:', (error as any).error);
         }
-        setError('세션 오류: ' + (error?.message || JSON.stringify(error)));
+        setError('세션 오류: ' + ((error as any)?.message || JSON.stringify(error)));
       });
 
       // 모든 가능한 이벤트들 리스닝
