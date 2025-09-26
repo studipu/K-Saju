@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
+import { useRealtimeAgent } from "../hooks/useRealtimeAgent";
 
 const Page = styled.div`
   padding: 20px;
@@ -29,7 +30,6 @@ const SubTitle = styled.p`
   margin: 0;
   font-weight: 400;
 `;
-
 
 const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
   appearance: none;
@@ -262,6 +262,7 @@ const CustomerLangBox = styled.div`
   justify-content: space-between;
   gap: 16px;
   transition: all 0.3s ease;
+  margin-bottom: 20px;
 
   &:hover {
     border-color: rgba(102, 126, 234, 0.3);
@@ -318,11 +319,120 @@ const MessageItem = styled.div`
   margin-bottom: 20px;
 `;
 
-const ProfileIcon = styled.div<{ $speaker: "customer" | "business" }>`
+const TranslationPair = styled.div`
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.3);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+  }
+`;
+
+const PairHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(107, 114, 128, 0.1);
+`;
+
+const LanguageTag = styled.span<{ $isSource?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: ${props => props.$isSource
+    ? 'linear-gradient(135deg, #e0e7ff, #c7d2fe)'
+    : 'linear-gradient(135deg, #dcfce7, #bbf7d0)'};
+  color: ${props => props.$isSource ? '#4338ca' : '#166534'};
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const TranslationArrow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  color: white;
+  font-size: 16px;
+  margin: 0 8px;
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+`;
+
+const PairContent = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+`;
+
+const LanguageMessage = styled.div<{ $isSource?: boolean }>`
+  padding: 16px 20px;
+  background: ${props => props.$isSource
+    ? 'linear-gradient(135deg, #f8fafc, #e8f2ff)'
+    : 'linear-gradient(135deg, #f0fdf4, #ecfdf5)'};
+  border: 2px solid ${props => props.$isSource
+    ? 'rgba(79, 172, 254, 0.2)'
+    : 'rgba(34, 197, 94, 0.2)'};
+  border-radius: 16px;
+  position: relative;
+`;
+
+const LanguageLabel = styled.div<{ $isSource?: boolean }>`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${props => props.$isSource ? '#4338ca' : '#166534'};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+`;
+
+const MessageTextStyled = styled.div`
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.6;
+  font-size: 16px;
+`;
+
+const ProfileIcon = styled.div<{ $speaker: "user" | "assistant" }>`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: ${(p) => p.$speaker === "customer"
+  background: ${(p) => p.$speaker === "user"
     ? "linear-gradient(135deg, #4facfe, #00f2fe)"
     : "linear-gradient(135deg, #43e97b, #38f9d7)"};
   display: flex;
@@ -332,14 +442,14 @@ const ProfileIcon = styled.div<{ $speaker: "customer" | "business" }>`
   font-weight: 700;
   font-size: 16px;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px ${(p) => p.$speaker === "customer"
+  box-shadow: 0 8px 24px ${(p) => p.$speaker === "user"
     ? "rgba(79, 172, 254, 0.3)"
     : "rgba(67, 233, 123, 0.3)"};
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 32px ${(p) => p.$speaker === "customer"
+    box-shadow: 0 12px 32px ${(p) => p.$speaker === "user"
       ? "rgba(79, 172, 254, 0.4)"
       : "rgba(67, 233, 123, 0.4)"};
   }
@@ -361,22 +471,11 @@ const MessageContent = styled.div`
   }
 `;
 
-const OriginalText = styled.div`
-  font-weight: 700;
-  margin-bottom: 12px;
+const MessageText = styled.div`
+  font-weight: 500;
   color: #111827;
   line-height: 1.5;
   font-size: 16px;
-`;
-
-const KoreanText = styled.div`
-  font-size: 15px;
-  color: #6b7280;
-  font-style: italic;
-  line-height: 1.5;
-  padding-top: 12px;
-  border-top: 2px solid #f1f5f9;
-  font-weight: 500;
 `;
 
 const RecordingButtons = styled.div`
@@ -392,22 +491,28 @@ const RecordingButtons = styled.div`
   }
 `;
 
-const StatusIndicator = styled.div<{ $isRecording: boolean }>`
+const StatusIndicator = styled.div<{ $isConnected: boolean; $isRecording: boolean; $isConnecting?: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: ${(p) => p.$isRecording
-    ? "linear-gradient(135deg, #ff6b6b, #ff8e53)"
-    : "linear-gradient(135deg, #e0e7ff, #c7d2fe)"};
+  background: ${(p) => {
+    if (p.$isRecording) return "linear-gradient(135deg, #ff6b6b, #ff8e53)";
+    if (p.$isConnecting) return "linear-gradient(135deg, #fbbf24, #f59e0b)";
+    if (p.$isConnected) return "linear-gradient(135deg, #43e97b, #38f9d7)";
+    return "linear-gradient(135deg, #e0e7ff, #c7d2fe)";
+  }};
   border-radius: 25px;
-  color: ${(p) => p.$isRecording ? "white" : "#4338ca"};
+  color: ${(p) => (p.$isRecording || p.$isConnected || p.$isConnecting) ? "white" : "#4338ca"};
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 16px ${(p) => p.$isRecording
-    ? "rgba(255, 107, 107, 0.3)"
-    : "rgba(67, 56, 202, 0.1)"};
+  box-shadow: 0 4px 16px ${(p) => {
+    if (p.$isRecording) return "rgba(255, 107, 107, 0.3)";
+    if (p.$isConnecting) return "rgba(251, 191, 36, 0.3)";
+    if (p.$isConnected) return "rgba(67, 233, 123, 0.3)";
+    return "rgba(67, 56, 202, 0.1)";
+  }};
 `;
 
 const WaveIcon = styled.div<{ $animate: boolean }>`
@@ -440,228 +545,49 @@ const WaveIcon = styled.div<{ $animate: boolean }>`
     0%, 100% { transform: scaleY(1); }
     50% { transform: scaleY(1.5); }
   }
-`
+`;
+
+const ErrorMessage = styled.div`
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+  font-size: 14px;
+  text-align: center;
+`;
+
 
 type SpeechLang = "en-US" | "ko-KR" | "ja-JP" | "zh-CN" | "es-ES";
 
-const LANG_OPTIONS: Array<{ code: SpeechLang; label: string; icon: string }> = [
-  { code: "en-US", label: "English (US)", icon: "🇺🇸" },
-  { code: "ko-KR", label: "한국어", icon: "🇰🇷" },
-  { code: "zh-CN", label: "中文(简体)", icon: "🇨🇳" },
-  { code: "ja-JP", label: "日本語", icon: "🇯🇵" },
-  { code: "es-ES", label: "Español", icon: "🇪🇸" },
+const LANG_OPTIONS: Array<{ code: SpeechLang; label: string; icon: string; name: string }> = [
+  { code: "en-US", label: "English (US)", icon: "🇺🇸", name: "English" },
+  { code: "ko-KR", label: "한국어", icon: "🇰🇷", name: "Korean" },
+  { code: "zh-CN", label: "中文(简体)", icon: "🇨🇳", name: "Chinese" },
+  { code: "ja-JP", label: "日本語", icon: "🇯🇵", name: "Japanese" },
+  { code: "es-ES", label: "Español", icon: "🇪🇸", name: "Spanish" },
 ];
-
-type FinalMessage = {
-  id: string;
-  originalText: string;
-  koreanText: string;
-  timestamp: number;
-  speaker: "customer" | "business";
-};
-
-function useRecorderSpeech(translations: {
-  testVoiceInput: string;
-  testVoiceRecorded: string;
-  offlineRecordingComplete: string;
-  offlineRecordingSuccess: string;
-}) {
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const supported = true;
-  const [listening, setListening] = useState(false);
-  const [currentSpeaker, setCurrentSpeaker] = useState<"customer" | "business" | null>(null);
-  const [interim, setInterim] = useState("");
-  const [messages, setMessages] = useState<FinalMessage[]>([]);
-  const [recordingTime, setRecordingTime] = useState(0);
-
-  const startRecording = useCallback(async (speaker: "customer" | "business", customerLang: SpeechLang) => {
-    setInterim("");
-    setRecordingTime(0);
-    setCurrentSpeaker(speaker);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = mr;
-
-      const audioChunks: Blob[] = [];
-
-      mr.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
-        }
-      };
-
-      mr.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-
-        try {
-          // Supabase Edge Function 사용
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-          if (!supabaseUrl || !supabaseAnonKey) {
-            throw new Error('Supabase configuration missing');
-          }
-
-          // 오디오를 base64로 변환
-          const reader = new FileReader();
-          const audioBase64 = await new Promise<string>((resolve, reject) => {
-            reader.onload = () => {
-              const base64 = (reader.result as string).split(',')[1];
-              resolve(base64);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(audioBlob);
-          });
-
-          // 언어 코드 매핑
-          const langMap: Record<string, string> = {
-            'en-US': 'en',
-            'ko-KR': 'ko',
-            'zh-CN': 'zh',
-            'ja-JP': 'ja',
-            'es-ES': 'es'
-          };
-
-          const customerLanguageCode = langMap[customerLang] || 'en';
-
-          // 고객이면 선택된 언어에서 한국어로, 업체면 한국어에서 선택된 언어로
-          const targetLang = speaker === 'customer' ? 'ko' : customerLanguageCode;
-          const sourceLang = speaker === 'customer' ? customerLanguageCode : 'ko';
-
-          console.log(`Speaker: ${speaker}, Customer Lang: ${customerLang} -> ${customerLanguageCode}, Source: ${sourceLang}, Target: ${targetLang}`);
-
-          const response = await fetch(`${supabaseUrl}/functions/v1/translate-audio`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseAnonKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              audio_data: audioBase64,
-              target_language: targetLang,
-              source_language: sourceLang,
-              include_terms: true
-            }),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-            // 고객: 원문(고객언어) + 한국어, 업체: 번역(고객언어) + 원문(한국어)
-            let displayOriginal, displayKorean;
-
-            if (speaker === 'customer') {
-              // 고객: 원문(고객언어) 위에, 한국어 아래에
-              displayOriginal = result.original_text;
-              displayKorean = result.translated_text;
-            } else {
-              // 업체: 번역(고객언어) 위에, 원문(한국어) 아래에
-              displayOriginal = result.translated_text;
-              displayKorean = result.original_text;
-            }
-
-            setMessages((prev) => [
-              ...prev,
-              {
-                id,
-                originalText: displayOriginal,
-                koreanText: displayKorean,
-                timestamp: Date.now(),
-                speaker
-              },
-            ]);
-          } else {
-            // Fallback
-            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            setMessages((prev) => [
-              ...prev,
-              {
-                id,
-                originalText: translations.testVoiceInput,
-                koreanText: translations.testVoiceRecorded,
-                timestamp: Date.now(),
-                speaker
-              },
-            ]);
-          }
-        } catch (error) {
-          console.error('API 오류:', error);
-          const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id,
-              originalText: translations.offlineRecordingComplete,
-              koreanText: translations.offlineRecordingSuccess,
-              timestamp: Date.now(),
-              speaker
-            },
-          ]);
-        }
-
-        stream.getTracks().forEach(track => track.stop());
-        setListening(false);
-        setCurrentSpeaker(null);
-      };
-
-      mr.start();
-      setListening(true);
-
-      recordingTimeoutRef.current = setTimeout(() => {
-        if (mr.state === 'recording') {
-          mr.stop();
-        }
-      }, 10000);
-
-      const interval = setInterval(() => {
-        setRecordingTime(prev => {
-          if (prev >= 10) {
-            clearInterval(interval);
-            return 10;
-          }
-          return prev + 0.1;
-        });
-      }, 100);
-
-    } catch (error) {
-      console.error('녹음 시작 실패:', error);
-      setListening(false);
-    }
-  }, []);
-
-  const stop = useCallback(() => {
-    if (recordingTimeoutRef.current) {
-      clearTimeout(recordingTimeoutRef.current);
-      recordingTimeoutRef.current = null;
-    }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
-    setListening(false);
-    setCurrentSpeaker(null);
-    setInterim("");
-    setRecordingTime(0);
-  }, []);
-
-  return { supported, listening, interim, messages, startRecording, stop, recordingTime, currentSpeaker };
-}
 
 export default function LiveTranslation() {
   const { t } = useI18n();
+  const conversationRef = useRef<HTMLDivElement | null>(null);
   const [customerLang, setCustomerLang] = useState<SpeechLang>("en-US");
-
-  // Get translations for use in callbacks
-  const translations = {
-    testVoiceInput: t('testVoiceInput'),
-    testVoiceRecorded: t('testVoiceRecorded'),
-    offlineRecordingComplete: t('offlineRecordingComplete'),
-    offlineRecordingSuccess: t('offlineRecordingSuccess'),
-  };
   const [openLangMenu, setOpenLangMenu] = useState(false);
+
+  // selectedLang 먼저 정의
+  const selectedLang = LANG_OPTIONS.find(lang => lang.code === customerLang);
+
+  const {
+    isConnected,
+    isRecording,
+    messages,
+    error,
+    isConnecting,
+    startRecording,
+    stopRecording,
+  } = useRealtimeAgent({
+    customerLanguage: selectedLang?.name || 'English'
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -676,24 +602,19 @@ export default function LiveTranslation() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const recorder = useRecorderSpeech(translations);
-
-  const handleCustomerRecord = () => {
-    recorder.startRecording('customer', customerLang);
-  };
-
-  const handleBusinessRecord = () => {
-    recorder.startRecording('business', customerLang);
-  };
-
-  const running = recorder.listening;
-  const conversationRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
-  }, [recorder.messages]);
+  }, [messages]);
+
+  const handleStartRecording = () => {
+    if (!isRecording) {
+      startRecording(); // 자동으로 연결도 처리됨
+    } else {
+      stopRecording();
+    }
+  };
 
   const renderLangPicker = () => (
     <LangPicker data-lang-picker>
@@ -703,7 +624,7 @@ export default function LiveTranslation() {
         aria-label="Language"
       >
         <span style={{ fontSize: 18 }}>
-          {LANG_OPTIONS.find((o) => o.code === customerLang)?.icon}
+          {selectedLang?.icon}
         </span>
         <svg
           width="12"
@@ -748,7 +669,7 @@ export default function LiveTranslation() {
     <Page>
       <Header>
         <MainTitle>{t("liveTranslationTitle")}</MainTitle>
-        <SubTitle>{t("liveTranslationSubtitle")}</SubTitle>
+        <SubTitle>OpenAI Agent SDK로 실시간 사주풀이 번역</SubTitle>
       </Header>
 
       <Grid>
@@ -759,28 +680,21 @@ export default function LiveTranslation() {
               🌍 {t("customerLanguageSettings")}
             </PanelTitle>
           </PanelHeader>
+
           <CustomerLangBox>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#4338ca" }}>
               💬 {t("customerLanguage")}
             </div>
             {renderLangPicker()}
           </CustomerLangBox>
-          {!recorder.supported && (
-            <div
-              style={{
-                marginTop: 12,
-                fontSize: 14,
-                color: "#ef4444",
-                lineHeight: 1.4,
-                padding: "12px 16px",
-                background: "rgba(239, 68, 68, 0.1)",
-                borderRadius: "12px",
-                border: "1px solid rgba(239, 68, 68, 0.2)"
-              }}
-            >
-              ⚠️ {t("webSpeechNotSupported")}
-            </div>
+
+
+          {error && (
+            <ErrorMessage>
+              {error}
+            </ErrorMessage>
           )}
+
         </Panel>
 
         {/* Right column: conversation area */}
@@ -791,37 +705,35 @@ export default function LiveTranslation() {
             </PanelTitle>
           </PanelHeader>
 
-          <StatusIndicator $isRecording={running}>
-            <WaveIcon $animate={running} />
-            {running
-              ? `🔴 ${recorder.currentSpeaker === "customer" ? t("customerVoice").replace("🎤 ", "") : t("businessVoice").replace("🎯 ", "")} - ${Math.ceil(10 - recorder.recordingTime)} ${t("secondsLeft")}`
-              : t("waitingMessage")}
+          <StatusIndicator $isConnected={isConnected} $isRecording={isRecording} $isConnecting={isConnecting}>
+            <WaveIcon $animate={isRecording || isConnecting} />
+            {isRecording
+              ? "🎤 음성 번역 중..."
+              : isConnecting
+                ? "🔄 번역기 연결 중..."
+                : isConnected
+                  ? "✅ 번역기 준비됨"
+                  : "🎯 녹음 버튼을 눌러 시작하세요"}
           </StatusIndicator>
 
           <RecordingButtons>
             <Button
-              onClick={handleCustomerRecord}
-              $customer
-              $recording={running && recorder.currentSpeaker === "customer"}
-              disabled={running}
+              onClick={handleStartRecording}
+              $customer={!isRecording}
+              $danger={isRecording}
+              $recording={isRecording}
+              disabled={isConnecting}
             >
-              {t("customerVoice")}
-            </Button>
-            <Button
-              onClick={handleBusinessRecord}
-              $business
-              $recording={running && recorder.currentSpeaker === "business"}
-              disabled={running}
-            >
-              {t("businessVoice")}
-            </Button>
-            <Button onClick={recorder.stop} $danger disabled={!running}>
-              ⏹️ {t("stop")}
+              {isConnecting
+                ? "🔄 연결 중..."
+                : isRecording
+                  ? "🛑 녹음 중지"
+                  : "🎤 음성 번역하기"}
             </Button>
           </RecordingButtons>
 
           <ConversationArea ref={conversationRef}>
-            {recorder.messages.length === 0 && (
+            {messages.length === 0 && (
               <div style={{
                 textAlign: "center",
                 padding: "60px 20px",
@@ -829,34 +741,76 @@ export default function LiveTranslation() {
                 fontSize: "16px",
                 lineHeight: 1.6
               }}>
-                {t("noConversationYet")}<br/>
-                <span style={{ fontSize: "14px" }}>{t("pressButtonToStart")}</span>
+                🎤 음성 버튼을 클릭하고 번역을 시작하세요<br/>
+                <span style={{ fontSize: "14px" }}>
+                  한국어나 {selectedLang?.name || 'English'}로 말씀하시면 즉시 번역해드립니다
+                </span>
               </div>
             )}
 
-            {recorder.messages.map((message) => (
-              <MessageItem key={message.id}>
-                <ProfileIcon $speaker={message.speaker}>
-                  {message.speaker === "customer" ? "🙋" : "👩‍💼"}
-                </ProfileIcon>
-                <MessageContent>
-                  <OriginalText>{message.originalText}</OriginalText>
-                  <KoreanText>🇰🇷 {message.koreanText}</KoreanText>
-                </MessageContent>
-              </MessageItem>
-            ))}
+            {messages.map((message, index) => {
+              // Check if this is a user message followed by an assistant message (translation pair)
+              const nextMessage = messages[index + 1];
+              const isTranslationPair = message.role === 'user' && nextMessage?.role === 'assistant';
 
-            {/* Interim message during recording */}
-            {recorder.interim && (
-              <MessageItem>
-                <ProfileIcon $speaker="customer">
-                  🎤
-                </ProfileIcon>
-                <MessageContent>
-                  <OriginalText style={{ opacity: 0.7 }}>{recorder.interim}</OriginalText>
-                </MessageContent>
-              </MessageItem>
-            )}
+              if (isTranslationPair) {
+                // Detect languages based on content
+                const userIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(message.content);
+                const assistantIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(nextMessage.content);
+
+                const originalLang = userIsKorean ? 'Korean' : selectedLang?.name || 'English';
+                const translatedLang = assistantIsKorean ? 'Korean' : selectedLang?.name || 'English';
+
+                return (
+                  <TranslationPair key={`pair-${message.id}`}>
+                    <PairHeader>
+                      <LanguageTag $isSource>
+                        🔤 Original
+                      </LanguageTag>
+                      <TranslationArrow>→</TranslationArrow>
+                      <LanguageTag>
+                        🌍 Translation
+                      </LanguageTag>
+                    </PairHeader>
+
+                    <PairContent>
+                      <LanguageMessage $isSource>
+                        <LanguageLabel $isSource>
+                          {originalLang}
+                        </LanguageLabel>
+                        <MessageTextStyled>{message.content}</MessageTextStyled>
+                      </LanguageMessage>
+
+                      <TranslationArrow>↔</TranslationArrow>
+
+                      <LanguageMessage>
+                        <LanguageLabel>
+                          {translatedLang}
+                        </LanguageLabel>
+                        <MessageTextStyled>{nextMessage.content}</MessageTextStyled>
+                      </LanguageMessage>
+                    </PairContent>
+                  </TranslationPair>
+                );
+              }
+
+              // Skip assistant messages that were already shown in pairs
+              if (message.role === 'assistant' && messages[index - 1]?.role === 'user') {
+                return null;
+              }
+
+              // Single message
+              return (
+                <MessageItem key={message.id}>
+                  <ProfileIcon $speaker={message.role}>
+                    {message.role === "user" ? "🗣️" : "🔄"}
+                  </ProfileIcon>
+                  <MessageContent>
+                    <MessageText>{message.content}</MessageText>
+                  </MessageContent>
+                </MessageItem>
+              );
+            })}
           </ConversationArea>
         </Panel>
       </Grid>
