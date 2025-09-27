@@ -1,11 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
 
-const FooterContainer = styled.footer`
+const FooterContainer = styled.footer<{ $isLocationsPage?: boolean }>`
   background: #f7f7f7;
   border-top: 1px solid #e5e7eb;
   margin-top: auto;
+  
+  @media (max-width: 768px) {
+    /* Hide footer completely on locations page mobile */
+    display: ${p => p.$isLocationsPage ? 'none' : 'block'};
+  }
 `;
 
 const FooterContent = styled.div`
@@ -95,9 +100,11 @@ const SocialLink = styled.a`
 
 export default function Footer() {
   const { t } = useI18n();
+  const location = useLocation();
+  const isLocationsPage = location.pathname === '/locations';
   
   return (
-    <FooterContainer>
+    <FooterContainer $isLocationsPage={isLocationsPage}>
       <FooterContent>
         <FooterGrid>
           <FooterSection>

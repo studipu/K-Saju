@@ -94,7 +94,7 @@ const HeroSection = styled.section`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background: #000000;
+  background: #0F0026;
   
   @media (max-width: 960px) {
     height: auto;
@@ -585,14 +585,18 @@ const AIServicesGrid = styled.div`
   @media (max-width: 768px) {
     flex-direction: row;
     gap: 1.5rem;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* center items across the row */
+    align-items: center;     /* center items vertically in row */
     flex-wrap: wrap;
+    width: 100%;             /* take full width to allow centering */
+    align-self: center;      /* override parent's align-items: flex-start */
+    margin: 0 auto;          /* ensure centering in parent flex column */
   }
   
   @media (max-width: 480px) {
-    flex-direction: column;
+    flex-direction: column;  /* stack on very small screens */
     gap: 1.5rem;
+    align-items: center;     /* center stacked items */
   }
 `;
 
@@ -854,11 +858,6 @@ export function Home() {
     }
   };
 
-  // Show loading state while fetching data
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <Wrapper $language={language}>
       <HeroSection>
@@ -979,6 +978,7 @@ export function Home() {
           </CTAButton>
         </ClosingContainer>
       </ClosingSection>
+      {loading && <LoadingScreen />}
     </Wrapper>
   );
 }

@@ -113,7 +113,8 @@ function App() {
   return (
     <Wrapper>
       <GlobalStyles />
-      {isLoading ? <LoadingScreen /> : <RouterProvider router={router} />}
+      <RouterProvider router={router} />
+      {isLoading && <LoadingScreen />}
     </Wrapper>
   );
 }

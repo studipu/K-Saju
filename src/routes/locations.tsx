@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { PlusIcon, MinusIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, Squares2X2Icon, Bars3Icon } from "@heroicons/react/24/outline";
 import { supabase } from "../supabase";
+import starBg from "../assets/star_bg.png";
+import { ServiceCard } from "../components/service_card";
 
 type Place = {
   id: string;
@@ -28,27 +30,70 @@ type LocationItem = {
   placeId: string;
 };
 
+const Background = styled.div`
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  background-image: url(${starBg});
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(30, 9, 50, 0.6) 0%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+    z-index: 0;
+    pointer-events: none;
+  }
+`;
+
 const Container = styled.div<{ $expanded?: boolean }>`
   position: relative;
   display: block;
   width: 100%;
   padding: 12px 16px;
-  background: #ffffff;
+  background: transparent;
+  z-index: 1;
   @media (max-width: 768px) {
     padding: 0;
-    background: #ffffff;
+    background: transparent;
   }
 `;
 
-const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
+const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number; $sheetExpanded?: boolean }>`
   background: transparent;
-  display: ${p => (p.$expanded ? "none" : "block")};
+  display: ${p => (p.$expanded ? "none" : "flex")};
+  flex-direction: column;
   margin-right: ${p => (
     p.$expanded ? 0 : `calc(${(((p.$mapRatio ?? 0.4) * 100).toFixed(3))}vw + 16px)`
   )};
+  height: calc(100vh - 86px);
+  overflow: hidden;
   @media (max-width: 768px) {
-    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
     margin-right: 0;
+    background: #ffffff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
+    height: ${p => (p.$sheetExpanded ? '85vh' : '40vh')};
+    z-index: 6; /* above map mobile */
+    overflow: hidden;
+    flex-direction: column;
+    transition: height 0.3s ease;
   }
 `;
 
@@ -77,7 +122,7 @@ const MapPane = styled.div<{ $expanded?: boolean; $mapRatio?: number }>`
     float: none;
     margin-left: 0;
     width: 100%;
-    height: ${p => (p.$expanded ? "100vh" : "40vh")};
+    height: ${p => (p.$expanded ? "100vh" : "60vh")};
     border-radius: 0px;
     box-shadow: none;
     z-index: ${p => (p.$expanded ? 50 : 2)};
@@ -89,38 +134,67 @@ const ListHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+  background: transparent;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 `;
 
-const Count = styled.div`
-  font-size: 14px;
-  color: #6b7280;
-`;
 
 const CardsWrap = styled.div`
-  overflow: visible;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* Make scrollbar transparent */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  
+  /* Smooth scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
 `;
 
 const Cards = styled.div<{ $mode: "list" | "grid" }>`
   display: grid;
-  grid-template-columns: ${p => (p.$mode === "grid" ? "repeat(2, 1fr)" : "1fr")};
+  grid-template-columns: ${p => (p.$mode === "grid" ? "repeat(3, 1fr)" : "1fr")};
   gap: 12px;
   padding: 12px;
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 8px 12px;
+    justify-items: center; /* center items within each grid cell */
   }
 `;
 
-const Card = styled.button<{ $active?: boolean }>`
-  text-align: left;
-  padding: 12px;
-  border: 1px solid ${p => (p.$active ? "#111827" : "#e5e7eb")};
-  border-radius: 12px;
-  background: #ffffff;
+// Wrapper to host the ServiceCard with click semantics
+const ServiceCardWrap = styled.div<{ $active?: boolean }>`
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 6px 0;
   cursor: pointer;
-  display: grid;
-  gap: 8px;
-  transition: border-color 120ms ease, transform 120ms ease;
-  &:hover { border-color: #111827; transform: translateY(-1px); }
+  border-radius: 12px;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  ${p => p.$active ? "transform: translateY(-1px);" : ""}
+  @media (max-width: 768px) {
+    justify-content: center; /* center the card content on mobile */
+  }
 `;
 
 const Title = styled.div`
@@ -208,6 +282,55 @@ const ViewBtn = styled.button<{ $active?: boolean }>`
   &:focus-visible { outline: 2px solid #111827; outline-offset: 2px; }
 `;
 
+// Sort/Filter UI
+const ControlsBar = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FilterButton = styled.button`
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  &:hover { background: #f9fafb; }
+`;
+
+const SortMenu = styled.div`
+  position: absolute;
+  top: 40px;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  overflow: hidden;
+  min-width: 180px;
+  z-index: 10;
+`;
+
+const SortItem = styled.button<{ $active?: boolean }>`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: ${p => (p.$active ? "#f3f4f6" : "#ffffff")};
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  &:hover { background: #f9fafb; }
+`;
+
 const Resizer = styled.div<{ $mapRatio: number; $visible: boolean }>`
   position: absolute;
   top: 86px;
@@ -221,6 +344,60 @@ const Resizer = styled.div<{ $mapRatio: number; $visible: boolean }>`
   background: transparent;
   @media (max-width: 768px) {
     display: none;
+  }
+`;
+
+// Bottom sheet handle (mobile)
+const SheetHandle = styled.div<{ $expanded?: boolean }>`
+  display: none;
+  @media (max-width: 768px) {
+    display: block;
+    width: 100%;
+    padding: 12px 0 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #ffffff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    transition: background-color 0.15s ease;
+    position: relative;
+    
+    &:hover {
+      background: #f9fafb;
+    }
+    
+    &:active {
+      background: #f3f4f6;
+    }
+  }
+  &::before {
+    content: "";
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background: ${p => p.$expanded ? '#6b7280' : '#9ca3af'};
+    display: block;
+    transition: all 0.15s ease;
+    transform: ${p => p.$expanded ? 'rotate(180deg)' : 'rotate(0deg)'};
+  }
+  
+  &:hover::before {
+    background: #6b7280;
+  }
+  
+  &::after {
+    content: "${p => p.$expanded ? '↓' : '↑'}";
+    position: absolute;
+    right: 16px;
+    font-size: 12px;
+    color: #9ca3af;
+    transition: color 0.15s ease;
+  }
+  
+  &:hover::after {
+    color: #6b7280;
   }
 `;
 
@@ -256,12 +433,18 @@ export default function Locations() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const [places, setPlaces] = useState<Place[]>([]);
   const [locations, setLocations] = useState<LocationItem[]>([]);
-  const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.3 ~ 0.5
+  const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.4 ~ 0.5
   const placesById = useMemo(() => new Map(places.map(p => [p.id, p])), [places]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const listRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+  const listRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [showSort, setShowSort] = useState(false);
+  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "title-asc" | "title-desc">("price-asc");
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+  const cardsWrapRef = useRef<HTMLDivElement>(null);
+  const lastToggleTsRef = useRef<number>(0);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<any>(null);
@@ -280,6 +463,21 @@ export default function Locations() {
     { featureType: "transit", stylers: [{ visibility: "off" }] },
     { featureType: "water", elementType: "geometry", stylers: [{ color: "#bae6fd" }] }
   ]);
+
+  const sortedLocations = useMemo(() => {
+    const copy = [...locations];
+    switch (sortBy) {
+      case "price-asc":
+        copy.sort((a,b) => a.priceKRW - b.priceKRW); break;
+      case "price-desc":
+        copy.sort((a,b) => b.priceKRW - a.priceKRW); break;
+      case "title-asc":
+        copy.sort((a,b) => a.title.localeCompare(b.title)); break;
+      case "title-desc":
+        copy.sort((a,b) => b.title.localeCompare(a.title)); break;
+    }
+    return copy;
+  }, [locations, sortBy]);
 
   // Fetch from Supabase
   useEffect(() => {
@@ -413,8 +611,132 @@ export default function Locations() {
     mapObj.current.setZoom(14);
   }, [selectedId, placesById, locations]);
 
+  // Auto-expand/contract bottom sheet based on scroll direction
+  useEffect(() => {
+    const cardsWrap = cardsWrapRef.current;
+    if (!cardsWrap) return;
+
+    const handleScroll = () => {
+      const scrollTop = cardsWrap.scrollTop;
+      const scrollDirection = scrollTop > lastScrollTop ? 'down' : 'up';
+      
+      // Only trigger on mobile
+      if (window.innerWidth <= 768) {
+        if (scrollDirection === 'down' && scrollTop > 30 && !sheetExpanded) {
+          // Expand sheet when scrolling down within the list to browse more
+          setSheetExpanded(true);
+          if ('vibrate' in navigator) navigator.vibrate(50);
+        } else if (scrollDirection === 'up' && scrollTop < 80 && sheetExpanded) {
+          // Contract sheet when scrolling up near the top (intent to see more map)
+          setSheetExpanded(false);
+          if ('vibrate' in navigator) navigator.vibrate(30);
+        }
+      }
+      
+      setLastScrollTop(scrollTop);
+    };
+
+    // Throttle scroll events for better performance
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    cardsWrap.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    
+    return () => {
+      cardsWrap.removeEventListener('scroll', throttledHandleScroll);
+    };
+  }, [lastScrollTop, sheetExpanded]);
+
+  // Reset sheet expansion on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768 && sheetExpanded) {
+        setSheetExpanded(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sheetExpanded]);
+
+  // Global gesture detection (touch/wheel) to expand/collapse anywhere on screen (mobile only)
+  useEffect(() => {
+    if (window.innerWidth > 768) return;
+
+    const cooldownMs = 500;
+    const canToggle = () => Date.now() - lastToggleTsRef.current > cooldownMs;
+
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < 10) return;
+      if (e.deltaY > 0 && !sheetExpanded && canToggle()) {
+        // Wheel down → expand to browse more
+        setSheetExpanded(true);
+        lastToggleTsRef.current = Date.now();
+        if ('vibrate' in navigator) navigator.vibrate(50);
+      } else if (e.deltaY < 0 && sheetExpanded && canToggle()) {
+        // Wheel up near top → collapse to reveal more map
+        const top = cardsWrapRef.current?.scrollTop ?? 0;
+        if (top <= 10) {
+          setSheetExpanded(false);
+          lastToggleTsRef.current = Date.now();
+          if ('vibrate' in navigator) navigator.vibrate(30);
+        }
+      }
+    };
+
+    const touchStart = { y: 0, active: false } as { y: number; active: boolean };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStart.y = e.touches[0].clientY;
+      touchStart.active = true;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchStart.active) return;
+      const dy = e.touches[0].clientY - touchStart.y; // down is positive, up is negative
+      if (Math.abs(dy) < 20) return;
+      if (dy > 0 && !sheetExpanded && canToggle()) {
+        // Swipe down → expand
+        setSheetExpanded(true);
+        lastToggleTsRef.current = Date.now();
+        if ('vibrate' in navigator) navigator.vibrate(50);
+      } else if (dy < 0 && sheetExpanded && canToggle()) {
+        // Swipe up near top → collapse
+        const top = cardsWrapRef.current?.scrollTop ?? 0;
+        if (top <= 10) {
+          setSheetExpanded(false);
+          lastToggleTsRef.current = Date.now();
+          if ('vibrate' in navigator) navigator.vibrate(30);
+        }
+      }
+    };
+    const onTouchEnd = () => {
+      touchStart.active = false;
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [sheetExpanded]);
+
   return (
-    <Container $expanded={expanded}>
+    <Background>
+      <Container $expanded={expanded}>
       <MapPane $expanded={expanded} $mapRatio={mapRatio}>
         <MapControls>
           <ControlButton onClick={() => { if (mapObj.current) mapObj.current.setZoom(Math.min((mapObj.current.getZoom?.() ?? 12) + 1, 20)); }} aria-label="Zoom in">
@@ -445,7 +767,7 @@ export default function Locations() {
             // viewport 기준으로 근사치 변환: 1920px 화면 기준 1vw ≈ 19.2px
             const pxPerVw = Math.max(window.innerWidth, 320) / 100;
             const deltaRatio = (delta / (pxPerVw * 100));
-            const next = Math.min(Math.max(startRatio + deltaRatio, 0.3), 0.5);
+            const next = Math.min(Math.max(startRatio + deltaRatio, 0.4), 0.5);
             setMapRatio(next);
           };
           const onUp = () => {
@@ -456,57 +778,65 @@ export default function Locations() {
           window.addEventListener("mouseup", onUp);
         }}
       />
-      <ListPane $expanded={expanded} $mapRatio={mapRatio}>
+      <ListPane $expanded={expanded} $mapRatio={mapRatio} $sheetExpanded={sheetExpanded}>
+        <SheetHandle $expanded={sheetExpanded} onClick={() => setSheetExpanded(v => !v)} />
         <ListHeader>
           <div>
-            <div style={{ fontWeight: 700, color: "#111827" }}>Seoul stays & experiences</div>
-            <Count>{locations.length} locations • {new Date().toLocaleDateString()}</Count>
+            <div style={{ fontWeight: 700, color: "#ffffff" }}>Look through 100+ locations</div>
           </div>
-          <ViewSwitch>
-            <ViewBtn onClick={() => setViewMode("list")} $active={viewMode === "list"} aria-label="List view">
-              <Bars3Icon width={18} height={18} color={viewMode === "list" ? "#111827" : "#6b7280"} />
-            </ViewBtn>
-            <ViewBtn onClick={() => setViewMode("grid")} $active={viewMode === "grid"} aria-label="Grid view">
-              <Squares2X2Icon width={18} height={18} color={viewMode === "grid" ? "#111827" : "#6b7280"} />
-            </ViewBtn>
-          </ViewSwitch>
+          <ControlsBar style={{ position: "relative" }}>
+            <FilterButton onClick={() => setShowSort(v => !v)} aria-label="Filter & Sort">
+              Sort
+              <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ width: 16, height: 16, marginLeft: 6 }}>
+                <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z" fill="#6b7280" />
+              </svg>
+            </FilterButton>
+            {showSort && (
+              <SortMenu>
+                <SortItem $active={sortBy === 'price-asc'} onClick={() => { setSortBy('price-asc'); setShowSort(false); }}>Price: Low to High</SortItem>
+                <SortItem $active={sortBy === 'price-desc'} onClick={() => { setSortBy('price-desc'); setShowSort(false); }}>Price: High to Low</SortItem>
+                <SortItem $active={sortBy === 'title-asc'} onClick={() => { setSortBy('title-asc'); setShowSort(false); }}>Title: A → Z</SortItem>
+                <SortItem $active={sortBy === 'title-desc'} onClick={() => { setSortBy('title-desc'); setShowSort(false); }}>Title: Z → A</SortItem>
+              </SortMenu>
+            )}
+            <ViewSwitch>
+              <ViewBtn onClick={() => setViewMode("list")} $active={viewMode === "list"} aria-label="List view">
+                <Bars3Icon width={18} height={18} color={viewMode === "list" ? "#111827" : "#6b7280"} />
+              </ViewBtn>
+              <ViewBtn onClick={() => setViewMode("grid")} $active={viewMode === "grid"} aria-label="Grid view">
+                <Squares2X2Icon width={18} height={18} color={viewMode === "grid" ? "#111827" : "#6b7280"} />
+              </ViewBtn>
+            </ViewSwitch>
+          </ControlsBar>
         </ListHeader>
         {!apiKey && (
           <Notice>
             Set VITE_GOOGLE_MAPS_API_KEY in your environment to view the map. The list still works.
           </Notice>
         )}
-        <CardsWrap>
-        {locations.length === 0 ? (
+        <CardsWrap ref={cardsWrapRef}>
+        {sortedLocations.length === 0 ? (
           <Notice>등록된 체험이 없습니다. Supabase에 시드 데이터를 추가해 주세요.</Notice>
         ) : (
         <Cards $mode={viewMode}>
-          {locations.map((loc) => {
+          {sortedLocations.map((loc) => {
             const place = placesById.get(loc.placeId);
+            const service = {
+              id: Number(loc.id) || 0,
+              title: loc.title,
+              price: new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(loc.priceKRW),
+              rating: Math.round((Math.random() * 1.5 + 3.5) * 10) / 10,
+              image: loc.imageUrl,
+            };
             return (
-              <Card
+              <ServiceCardWrap
                 key={loc.id}
                 ref={(el) => { listRefs.current[loc.id] = el; }}
                 onClick={() => setSelectedId(loc.id)}
                 $active={selectedId === loc.id}
               >
-                <CardImage
-                  src={loc.imageUrl}
-                  alt={loc.title}
-                  loading="lazy"
-                  onError={(e) => {
-                    const t = e.target as HTMLImageElement;
-                    t.onerror = null;
-                    t.src = "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=1600&auto=format&fit=crop";
-                  }}
-                />
-                <Title>{loc.title}</Title>
-                <Sub>
-                  {place?.city}{place?.district ? ` · ${place.district}` : ""}
-                  {loc.tagline ? ` · ${loc.tagline}` : ""}
-                </Sub>
-                <Price>{formatKRW(loc.priceKRW)}</Price>
-              </Card>
+                <ServiceCard service={service} variant="popular" />
+              </ServiceCardWrap>
             );
           })}
         </Cards>
@@ -514,6 +844,7 @@ export default function Locations() {
         </CardsWrap>
       </ListPane>
     </Container>
+    </Background>
   );
 }
 

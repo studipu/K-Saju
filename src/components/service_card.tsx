@@ -73,17 +73,6 @@ const Card = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
       z-index: 1;
     }
     
-    &::after {
-      content: '✦';
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #d4af37;
-      font-size: 16px;
-      z-index: 3;
-      opacity: 0.7;
-    }
   `}
   
   &:hover {
@@ -103,10 +92,6 @@ const Card = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
         background: linear-gradient(45deg, transparent 20%, rgba(244, 208, 63, 0.15) 50%, transparent 80%);
       }
       
-      &::after {
-        opacity: 1;
-        text-shadow: 0 0 8px rgba(212, 175, 55, 0.8);
-      }
     `}
   }
   
@@ -181,18 +166,6 @@ const CardContent = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
       : 'linear-gradient(180deg, transparent 0%, rgba(212, 175, 55, 0.03) 100%)'
   };
   
-  ${props => props.$variant !== 'ai' && `
-    &::before {
-      content: '◆';
-      position: absolute;
-      top: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #d4af37;
-      font-size: 12px;
-      opacity: 0.6;
-    }
-  `}
   
   @media (max-width: 768px) {
     padding: 0.75rem;
@@ -268,56 +241,13 @@ const CardPrice = styled.div<{ $language: string; $variant?: 'popular' | 'hotdea
   text-shadow: ${props => props.$variant === 'ai' ? 'none' : '0 1px 2px rgba(139, 69, 19, 0.3)'};
   position: relative;
   
-  ${props => props.$variant !== 'ai' && `
-    &::before {
-      content: '❋';
-      position: absolute;
-      left: -20px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #d4af37;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-    
-    &::after {
-      content: '❋';
-      position: absolute;
-      right: -20px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #d4af37;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-  `}
   
   @media (max-width: 768px) {
     font-size: 1rem;
-    
-    &::before,
-    &::after {
-      font-size: 0.7rem;
-      left: -15px;
-      right: -15px;
-    }
-    
-    &::before {
-      left: -15px;
-    }
-    
-    &::after {
-      right: -15px;
-    }
   }
   
   @media (max-width: 480px) {
     font-size: 0.95rem;
-    
-    &::before,
-    &::after {
-      display: none;
-    }
   }
 `;
 
