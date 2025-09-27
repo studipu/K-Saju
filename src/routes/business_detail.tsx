@@ -1628,23 +1628,23 @@ export default function BusinessDetail() {
 
   const handleBook = async () => {
     try {
-      // 로그인 상태 확인
-      const { data: { session } } = await supabase.auth.getSession();
+      // TEMPORARY: Skip login check for development
+      // TODO: Re-enable authentication before production
       
-      if (!session) {
-                // 로그인되지 않은 경우 alert 표시 후 로그인 페이지로 리다이렉트
-        alert('Please log in to make a reservation.');
-        navigate('/sign-in');
-        return;
-      }
+      // Original authentication code (commented out):
+      // const { data: { session } } = await supabase.auth.getSession();
+      // if (!session) {
+      //   alert('Please log in to make a reservation.');
+      //   navigate('/sign-in');
+      //   return;
+      // }
       
-      // 로그인된 경우 예약 페이지로 이동
+      // Directly navigate to booking page (no auth required)
       navigate(`/business/${id}/booking`);
     } catch (error) {
-      console.error('Error checking authentication:', error);
-      // 에러 발생 시에도 alert 표시 후 로그인 페이지로 리다이렉트
-      alert('Please log in to make a reservation.');
-      navigate('/sign-in');
+      console.error('Error navigating to booking:', error);
+      // Still navigate to booking page even if there's an error
+      navigate(`/business/${id}/booking`);
     }
   };
 
