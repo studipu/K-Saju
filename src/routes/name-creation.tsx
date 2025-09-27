@@ -210,33 +210,26 @@ const Button = styled.button<{ $variant?: 'primary' }>`
   }
 `;
 
-const LoadingContainer = styled.div`
-  text-align: center;
-  padding: 3rem 2rem;
-`;
-
-const LoadingText = styled.p`
-  font-size: 1.1rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
-`;
-
-const ShimmerEffect = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  animation: shimmer 1s linear infinite;
-  margin: 0 auto 1rem;
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 200px;
   
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-radius: 50%;
+    border-top-color: #8b5cf6;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 `;
 
@@ -497,10 +490,7 @@ const NameCreation: React.FC = () => {
             <Subtitle>AI가 당신에게 맞는 한국 이름을 만들고 있습니다...</Subtitle>
           </Header>
           
-          <LoadingContainer>
-            <ShimmerEffect />
-            <LoadingText>AI가 당신의 성격과 특성을 분석하여<br />완벽한 한국 이름을 생성하고 있습니다</LoadingText>
-          </LoadingContainer>
+          <LoadingSpinner />
         </ContentWrapper>
       </Container>
     );
