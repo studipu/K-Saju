@@ -40,7 +40,7 @@ const getFontFamily = (language: string, type: 'heading' | 'body' | 'accent' | '
 };
 
 const Card = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
   background: ${props => props.$variant === 'ai' ? '#ffffff' : 'linear-gradient(145deg, #f8f6f0 0%, #f0ede5 100%)'};
   border: ${props => props.$variant === 'ai' ? '1px solid #e5e7eb' : '3px solid #8b7355'};
@@ -96,7 +96,7 @@ const Card = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
   }
   
   @media (max-width: 768px) {
-    width: 180px;
+    width: 190px;
     
     &:hover {
       transform: translateY(-4px) scale(1.01);
@@ -104,13 +104,13 @@ const Card = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
   }
   
   @media (max-width: 480px) {
-    width: 160px;
+    width: 180px;
   }
 `;
 
 const CardImage = styled.div<{ $imageUrl?: string; $variant?: 'popular' | 'hotdeals' | 'ai' }>`
   width: ${props => props.$variant === 'ai' ? '100%' : 'calc(100% - 16px)'};
-  height: ${props => props.$variant === 'ai' ? '100px' : '120px'};
+  height: ${props => props.$variant === 'ai' ? '110px' : '140px'};
   margin: ${props => props.$variant === 'ai' ? '0' : '8px'};
   background: ${props => 
     props.$imageUrl 
@@ -146,12 +146,12 @@ const CardImage = styled.div<{ $imageUrl?: string; $variant?: 'popular' | 'hotde
   `}
   
   @media (max-width: 768px) {
-    height: 100px;
+    height: 120px;
     font-size: 0.8rem;
   }
   
   @media (max-width: 480px) {
-    height: 90px;
+    height: 110px;
     font-size: 0.75rem;
   }
 `;
@@ -174,6 +174,16 @@ const CardContent = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
   @media (max-width: 480px) {
     padding: 0.6rem;
   }
+`;
+
+const SymbolMark = styled.div<{ $variant?: 'popular' | 'hotdeals' | 'ai' }>`
+  font-size: 0.9rem;
+  line-height: 1;
+  text-align: center;
+  color: ${props => props.$variant === 'ai' ? '#6b7280' : '#8b7355'};
+  text-shadow: ${props => props.$variant === 'ai' ? 'none' : '0 1px 2px rgba(0,0,0,0.12)'};
+  margin: 0 auto 0.35rem auto;
+  user-select: none;
 `;
 
 const DiscountBadge = styled.div<{ $language: string }>`
@@ -200,7 +210,7 @@ const DiscountBadge = styled.div<{ $language: string }>`
 
 const CardTitle = styled.h3<{ $language: string; $variant?: 'popular' | 'hotdeals' | 'ai' }>`
   font-family: ${props => getFontFamily(props.$language, 'accent')};
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: ${props => props.$variant === 'ai' ? '#1f2937' : '#2c1810'};
@@ -210,12 +220,12 @@ const CardTitle = styled.h3<{ $language: string; $variant?: 'popular' | 'hotdeal
   letter-spacing: 0.5px;
   
   @media (max-width: 768px) {
-    font-size: 0.9rem;
+    font-size: 0.98rem;
     margin-bottom: 0.4rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 0.85rem;
+    font-size: 0.92rem;
   }
 `;
 
@@ -334,6 +344,7 @@ export function ServiceCard({ service, variant = 'popular', onClick }: ServiceCa
         {!service.image || !service.image.startsWith('http') ? service.image || t("noImage") : ''}
       </CardImage>
       <CardContent $variant={variant}>
+        <SymbolMark $variant={variant}>✦</SymbolMark>
         {variant === 'hotdeals' && service.discount && (
           <DiscountBadge $language={language}>
             {service.discount} {t("discount")}
