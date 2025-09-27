@@ -3,16 +3,17 @@ import { styled } from "styled-components";
 import { supabase } from "../supabase";
 import { useI18n } from "../i18n/i18n";
 import { useEffect, useState } from "react";
-import temporaryLogo from "../assets/temporary_logo.png";
+import logo from "../assets/logo.png";
 
-const Bar = styled.header`
+const Bar = styled.header<{ $isScrolled: boolean }>`
   position: sticky;
   top: 0;
   z-index: 50;
   width: 100%;
   backdrop-filter: saturate(180%) blur(8px);
-  background: #ffffff;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  background: ${props => props.$isScrolled ? '#ffffff' : '#000000'};
+  border-bottom: 1px solid ${props => props.$isScrolled ? 'rgba(17, 24, 39, 0.06)' : 'rgba(255, 255, 255, 0.1)'};
+  transition: all 0.3s ease;
 `;
 
 const Inner = styled.div`
@@ -37,11 +38,11 @@ const Right = styled.div`
   gap: 10px;
 `;
 
-const WhatIsSajuText = styled.button`
+const WhatIsSajuText = styled.button<{ $isScrolled: boolean }>`
   appearance: none;
   border: none;
   background: transparent;
-  color: #111827;
+  color: ${props => props.$isScrolled ? '#111827' : '#ffffff'};
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -50,26 +51,28 @@ const WhatIsSajuText = styled.button`
   transition: all 0.15s ease;
   
   &:hover {
-    background: #f3f4f6;
-    color: #374151;
+    background: ${props => props.$isScrolled ? '#f3f4f6' : 'rgba(255, 255, 255, 0.1)'};
+    color: ${props => props.$isScrolled ? '#374151' : '#ffffff'};
   }
 `;
 
-const Logo = styled(Link)`
+const Logo = styled(Link)<{ $isScrolled: boolean }>`
   display: flex;
   align-items: center;
 
   img {
     height: 28px;
     width: auto;
+    filter: ${props => props.$isScrolled ? 'invert(1)' : 'invert(0)'};
+    transition: filter 0.3s ease;
   }
 `;
 
-const IconButton = styled.button`
+const IconButton = styled.button<{ $isScrolled: boolean }>`
   appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
+  border: 1px solid ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
+  background: ${props => props.$isScrolled ? '#ffffff' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.$isScrolled ? '#111827' : '#ffffff'};
   height: 38px;
   padding: 0 14px;
   border-radius: 999px;
@@ -83,15 +86,15 @@ const IconButton = styled.button`
     height: 18px;
   }
   &:hover {
-    background: #f9fafb;
+    background: ${props => props.$isScrolled ? '#f9fafb' : 'rgba(255, 255, 255, 0.2)'};
   }
 `;
 
-const ProfileImg = styled.img`
+const ProfileImg = styled.img<{ $isScrolled: boolean }>`
   width: 38px;
   height: 38px;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
   display: block;
 `;
 
@@ -106,20 +109,20 @@ const ProfileButton = styled.button`
   cursor: pointer;
 `;
 
-const Divider = styled.span`
+const Divider = styled.span<{ $isScrolled: boolean }>`
   display: inline-block;
   width: 1px;
   height: 20px;
-  background: #e5e7eb;
+  background: ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
   margin: 0 4px;
 `;
 
-// Search Locations button with white background
-const SearchButton = styled.button`
+// Search Locations button with responsive background
+const SearchButton = styled.button<{ $isScrolled: boolean }>`
   appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
+  border: 1px solid ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
+  background: ${props => props.$isScrolled ? '#ffffff' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.$isScrolled ? '#111827' : '#ffffff'};
   height: 38px;
   padding: 0 14px;
   border-radius: 999px;
@@ -130,7 +133,7 @@ const SearchButton = styled.button`
   transition: all 0.15s ease;
 
   &:hover {
-    background: #f9fafb;
+    background: ${props => props.$isScrolled ? '#f9fafb' : 'rgba(255, 255, 255, 0.2)'};
   }
 `;
 
@@ -141,6 +144,7 @@ export default function GNB() {
   const [user, setUser] = useState<null | { id: string; user_metadata?: any; user_metadata_photo?: string; }>(null);
   const [openLang, setOpenLang] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -163,6 +167,17 @@ export default function GNB() {
       setLanguage(pref as any);
     }
   }, [user, setLanguage]);
+
+  // Handle scroll to change background color
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -202,27 +217,27 @@ export default function GNB() {
   };
 
   return (
-    <Bar>
+    <Bar $isScrolled={isScrolled}>
       <Inner>
         <Left>
-          <Logo to="/">
-            <img src={temporaryLogo} alt="K-Saju" />
+          <Logo $isScrolled={isScrolled} to="/">
+            <img src={logo} alt="K-Saju" />
           </Logo>
         </Left>
         <Right>
           {/* What is Saju? text */}
-          <WhatIsSajuText onClick={onWhatIsSaju}>
+          <WhatIsSajuText $isScrolled={isScrolled} onClick={onWhatIsSaju}>
             What is Saju?
           </WhatIsSajuText>
           
           {/* Search Locations button placed to the left of language control */}
-          <SearchButton onClick={onSearchLocations} aria-label={t("searchLocations")}>
+          <SearchButton $isScrolled={isScrolled} onClick={onSearchLocations} aria-label={t("searchLocations")}>
             {"📍 "}{t("searchLocations")}
           </SearchButton>
 
           {!((user?.user_metadata as any)?.preferred_language) && (
           <div style={{ position: "relative" }} data-dropdown>
-            <IconButton onClick={onToggleLang} aria-label={t("language")}>
+            <IconButton $isScrolled={isScrolled} onClick={onToggleLang} aria-label={t("language")}>
               <span style={{ fontSize: 20 }}>
                 {language === "en" && "🇺🇸"}
                 {language === "ko" && "🇰🇷"}
@@ -238,7 +253,7 @@ export default function GNB() {
               >
                 <path
                   d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z"
-                  fill="#6b7280"
+                  fill={isScrolled ? "#6b7280" : "#ffffff"}
                 />
               </svg>
             </IconButton>
@@ -290,7 +305,7 @@ export default function GNB() {
           )}
 
           {user && (
-            <IconButton onClick={onMessages} aria-label={t("messages")}>
+            <IconButton $isScrolled={isScrolled} onClick={onMessages} aria-label={t("messages")}>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -298,24 +313,24 @@ export default function GNB() {
               >
                 <path
                   d="M7 8h10M7 12h7"
-                  stroke="#111827"
+                  stroke={isScrolled ? "#111827" : "#ffffff"}
                   strokeWidth="1.5"
                   strokeLinecap="round"
                 />
                 <path
                   d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5.586a2 2 0 0 0-1.414.586L8 21v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
-                  stroke="#111827"
+                  stroke={isScrolled ? "#111827" : "#ffffff"}
                   strokeWidth="1.5"
                 />
               </svg>
             </IconButton>
           )}
-          <Divider />
+          <Divider $isScrolled={isScrolled} />
           {user ? (
             <div style={{ position: "relative" }} data-dropdown>
               <ProfileButton onClick={onToggleProfile} aria-label={t("profile")}>
                 {(user.user_metadata?.avatar_url || (user as any).photoURL) ? (
-                  <ProfileImg src={user.user_metadata?.avatar_url || (user as any).photoURL} alt="profile" />
+                  <ProfileImg $isScrolled={isScrolled} src={user.user_metadata?.avatar_url || (user as any).photoURL} alt="profile" />
                 ) : (
                   <svg
                     viewBox="0 0 20 20"
@@ -325,7 +340,7 @@ export default function GNB() {
                   >
                     <path
                       d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z"
-                      fill="#111827"
+                      fill={isScrolled ? "#111827" : "#ffffff"}
                     />
                   </svg>
                 )}
@@ -457,12 +472,13 @@ export default function GNB() {
             </div>
           ) : (
             <IconButton
+              $isScrolled={isScrolled}
               onClick={onSignIn}
               aria-label={t("signIn")}
               style={{
-                background: "#181818", // black
-                color: "#ffffff",
-                borderColor: "#181818",
+                background: isScrolled ? "#181818" : "#ffffff",
+                color: isScrolled ? "#ffffff" : "#181818",
+                borderColor: isScrolled ? "#181818" : "#ffffff",
               }}
             >
               <span style={{ fontSize: 14, fontWeight: 600 }}>
