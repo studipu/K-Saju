@@ -1,7 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
 import { useRealtimeAgent } from "../hooks/useRealtimeAgent";
+import { useUserProfile } from "../hooks/useUserProfile";
+
+// ChatMessage 타입 정의 (useRealtimeAgent에서 가져옴)
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  type: 'text' | 'audio';
+  isTranscription?: boolean;
+  audioData?: ArrayBuffer;
+}
 
 const Page = styled.div`
   padding: 20px;
@@ -24,12 +36,6 @@ const MainTitle = styled.h1`
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-const SubTitle = styled.p`
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
-  margin: 0;
-  font-weight: 400;
-`;
 
 const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
   appearance: none;
@@ -109,16 +115,6 @@ const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?
   `}
 `;
 
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 32px;
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-`;
-
 const Panel = styled.div`
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
@@ -156,119 +152,6 @@ const PanelTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 12px;
-`;
-
-const LangPicker = styled.div`
-  position: relative;
-`;
-
-const LangButton = styled.button`
-  appearance: none;
-  border: 2px solid #e0e7ff;
-  background: linear-gradient(135deg, #ffffff, #f8fafc);
-  color: #4338ca;
-  height: 48px;
-  padding: 0 20px;
-  border-radius: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 16px rgba(67, 56, 202, 0.1);
-
-  &:hover {
-    background: linear-gradient(135deg, #f8fafc, #e0e7ff);
-    border-color: #c7d2fe;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(67, 56, 202, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const LangMenu = styled.div`
-  position: absolute;
-  right: 0;
-  top: 56px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  width: 220px;
-  overflow: hidden;
-  z-index: 10;
-  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-`;
-
-const LangMenuItem = styled.button`
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  text-align: left;
-  color: #374151;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-    color: #4338ca;
-    transform: translateX(4px);
-  }
-
-  &:first-child {
-    border-radius: 16px 16px 0 0;
-  }
-
-  &:last-child {
-    border-radius: 0 0 16px 16px;
-  }
-
-  span:first-child {
-    font-size: 20px;
-  }
-`;
-
-const CustomerLangBox = styled.div`
-  background: linear-gradient(135deg, #f8fafc, #e8f2ff);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
-
-  &:hover {
-    border-color: rgba(102, 126, 234, 0.3);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
-  }
 `;
 
 const ConversationArea = styled.div`
@@ -319,114 +202,6 @@ const MessageItem = styled.div`
   margin-bottom: 20px;
 `;
 
-const TranslationPair = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-    border-color: rgba(102, 126, 234, 0.3);
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-  }
-`;
-
-const PairHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(107, 114, 128, 0.1);
-`;
-
-const LanguageTag = styled.span<{ $isSource?: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: ${props => props.$isSource
-    ? 'linear-gradient(135deg, #e0e7ff, #c7d2fe)'
-    : 'linear-gradient(135deg, #dcfce7, #bbf7d0)'};
-  color: ${props => props.$isSource ? '#4338ca' : '#166534'};
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const TranslationArrow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 50%;
-  color: white;
-  font-size: 16px;
-  margin: 0 8px;
-  animation: pulse 2s infinite;
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-  }
-`;
-
-const PairContent = styled.div`
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
-  align-items: center;
-`;
-
-const LanguageMessage = styled.div<{ $isSource?: boolean }>`
-  padding: 16px 20px;
-  background: ${props => props.$isSource
-    ? 'linear-gradient(135deg, #f8fafc, #e8f2ff)'
-    : 'linear-gradient(135deg, #f0fdf4, #ecfdf5)'};
-  border: 2px solid ${props => props.$isSource
-    ? 'rgba(79, 172, 254, 0.2)'
-    : 'rgba(34, 197, 94, 0.2)'};
-  border-radius: 16px;
-  position: relative;
-`;
-
-const LanguageLabel = styled.div<{ $isSource?: boolean }>`
-  font-size: 11px;
-  font-weight: 700;
-  color: ${props => props.$isSource ? '#4338ca' : '#166534'};
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 8px;
-  opacity: 0.8;
-`;
-
-const MessageTextStyled = styled.div`
-  font-weight: 500;
-  color: #111827;
-  line-height: 1.6;
-  font-size: 16px;
-`;
 
 const ProfileIcon = styled.div<{ $speaker: "user" | "assistant" }>`
   width: 48px;
@@ -476,6 +251,28 @@ const MessageText = styled.div`
   color: #111827;
   line-height: 1.5;
   font-size: 16px;
+`;
+
+const TranslationContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const PrimaryLanguage = styled.div`
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.5;
+  font-size: 16px;
+`;
+
+const SecondaryLanguage = styled.div`
+  font-weight: 400;
+  color: #6b7280;
+  line-height: 1.4;
+  font-size: 14px;
+  opacity: 0.7;
+  font-style: italic;
 `;
 
 const RecordingButtons = styled.div`
@@ -558,24 +355,20 @@ const ErrorMessage = styled.div`
 `;
 
 
-type SpeechLang = "en-US" | "ko-KR" | "ja-JP" | "zh-CN" | "es-ES";
-
-const LANG_OPTIONS: Array<{ code: SpeechLang; label: string; icon: string; name: string }> = [
-  { code: "en-US", label: "English (US)", icon: "🇺🇸", name: "English" },
-  { code: "ko-KR", label: "한국어", icon: "🇰🇷", name: "Korean" },
-  { code: "zh-CN", label: "中文(简体)", icon: "🇨🇳", name: "Chinese" },
-  { code: "ja-JP", label: "日本語", icon: "🇯🇵", name: "Japanese" },
-  { code: "es-ES", label: "Español", icon: "🇪🇸", name: "Spanish" },
-];
+// 언어별 국기 매핑
+const LANGUAGE_ICONS: Record<string, string> = {
+  "English": "🇺🇸",
+  "Chinese": "🇨🇳",
+  "Japanese": "🇯🇵",
+  "Spanish": "🇪🇸",
+};
 
 export default function LiveTranslation() {
   const { t } = useI18n();
   const conversationRef = useRef<HTMLDivElement | null>(null);
-  const [customerLang, setCustomerLang] = useState<SpeechLang>("en-US");
-  const [openLangMenu, setOpenLangMenu] = useState(false);
 
-  // selectedLang 먼저 정의
-  const selectedLang = LANG_OPTIONS.find(lang => lang.code === customerLang);
+  // 유저 프로필에서 country 기반으로 언어 설정 가져오기
+  const { customerLanguage } = useUserProfile();
 
   const {
     isConnected,
@@ -586,21 +379,9 @@ export default function LiveTranslation() {
     startRecording,
     stopRecording,
   } = useRealtimeAgent({
-    customerLanguage: selectedLang?.name || 'English'
+    customerLanguage: customerLanguage
   });
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest("[data-lang-picker]")) {
-        setOpenLangMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (conversationRef.current) {
@@ -616,88 +397,14 @@ export default function LiveTranslation() {
     }
   };
 
-  const renderLangPicker = () => (
-    <LangPicker data-lang-picker>
-      <LangButton
-        onClick={() => setOpenLangMenu(!openLangMenu)}
-        aria-haspopup="menu"
-        aria-label="Language"
-      >
-        <span style={{ fontSize: 18 }}>
-          {selectedLang?.icon}
-        </span>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{
-            transform: openLangMenu ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.15s ease",
-          }}
-        >
-          <path
-            d="M3 4.5L6 7.5L9 4.5"
-            stroke="#6b7280"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </LangButton>
-      {openLangMenu && (
-        <LangMenu>
-          {LANG_OPTIONS.map((opt) => (
-            <LangMenuItem
-              key={opt.code}
-              onClick={() => {
-                setCustomerLang(opt.code);
-                setOpenLangMenu(false);
-              }}
-            >
-              <span style={{ fontSize: 18 }}>{opt.icon}</span>
-              <span>{opt.label}</span>
-            </LangMenuItem>
-          ))}
-        </LangMenu>
-      )}
-    </LangPicker>
-  );
 
   return (
     <Page>
       <Header>
         <MainTitle>{t("liveTranslationTitle")}</MainTitle>
-        <SubTitle>OpenAI Agent SDK로 실시간 사주풀이 번역</SubTitle>
       </Header>
 
-      <Grid>
-        {/* Left column: language settings */}
-        <Panel>
-          <PanelHeader>
-            <PanelTitle>
-              🌍 {t("customerLanguageSettings")}
-            </PanelTitle>
-          </PanelHeader>
-
-          <CustomerLangBox>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#4338ca" }}>
-              💬 {t("customerLanguage")}
-            </div>
-            {renderLangPicker()}
-          </CustomerLangBox>
-
-
-          {error && (
-            <ErrorMessage>
-              {error}
-            </ErrorMessage>
-          )}
-
-        </Panel>
-
-        {/* Right column: conversation area */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <Panel>
           <PanelHeader>
             <PanelTitle>
@@ -712,9 +419,15 @@ export default function LiveTranslation() {
               : isConnecting
                 ? "🔄 번역기 연결 중..."
                 : isConnected
-                  ? "✅ 번역기 준비됨"
+                  ? `✅ 번역기 준비됨 (${customerLanguage} ↔ 한국어)`
                   : "🎯 녹음 버튼을 눌러 시작하세요"}
           </StatusIndicator>
+
+          {error && (
+            <ErrorMessage>
+              {error}
+            </ErrorMessage>
+          )}
 
           <RecordingButtons>
             <Button
@@ -743,77 +456,223 @@ export default function LiveTranslation() {
               }}>
                 🎤 음성 버튼을 클릭하고 번역을 시작하세요<br/>
                 <span style={{ fontSize: "14px" }}>
-                  한국어나 {selectedLang?.name || 'English'}로 말씀하시면 즉시 번역해드립니다
+                  한국어나 {customerLanguage}로 말씀하시면 즉시 번역해드립니다
                 </span>
               </div>
             )}
 
-            {messages.map((message, index) => {
-              // Check if this is a user message followed by an assistant message (translation pair)
-              const nextMessage = messages[index + 1];
-              const isTranslationPair = message.role === 'user' && nextMessage?.role === 'assistant';
+{(() => {
+              console.log('Processing messages:', messages.length);
 
-              if (isTranslationPair) {
-                // Detect languages based on content
-                const userIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(message.content);
-                const assistantIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(nextMessage.content);
+              // 메시지를 쌍으로 그룹화하는 로직 개선
+              const messageGroups: Array<{ user: ChatMessage; assistant?: ChatMessage; isComplete: boolean }> = [];
+              const processedIndexes = new Set<number>();
 
-                const originalLang = userIsKorean ? 'Korean' : selectedLang?.name || 'English';
-                const translatedLang = assistantIsKorean ? 'Korean' : selectedLang?.name || 'English';
+              // 먼저 메시지를 timestamp 순으로 정렬
+              const sortedMessages = [...messages].sort((a, b) => a.timestamp - b.timestamp);
 
-                return (
-                  <TranslationPair key={`pair-${message.id}`}>
-                    <PairHeader>
-                      <LanguageTag $isSource>
-                        🔤 Original
-                      </LanguageTag>
-                      <TranslationArrow>→</TranslationArrow>
-                      <LanguageTag>
-                        🌍 Translation
-                      </LanguageTag>
-                    </PairHeader>
+              // 언어 감지 함수
+              const isKorean = (text: string) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
 
-                    <PairContent>
-                      <LanguageMessage $isSource>
-                        <LanguageLabel $isSource>
-                          {originalLang}
-                        </LanguageLabel>
-                        <MessageTextStyled>{message.content}</MessageTextStyled>
-                      </LanguageMessage>
+              // 언어 기반 스마트 매칭
+              const findMatchingMessage = (currentMsg: ChatMessage, startIndex: number, direction: 'forward' | 'backward') => {
+                const currentIsKorean = isKorean(currentMsg.content);
+                const targetRole = currentMsg.role === 'user' ? 'assistant' : 'user';
 
-                      <TranslationArrow>↔</TranslationArrow>
+                const searchRange = direction === 'forward'
+                  ? Array.from({ length: Math.min(15, sortedMessages.length - startIndex - 1) }, (_, i) => startIndex + 1 + i)
+                  : Array.from({ length: Math.min(15, startIndex) }, (_, i) => startIndex - 1 - i);
 
-                      <LanguageMessage>
-                        <LanguageLabel>
-                          {translatedLang}
-                        </LanguageLabel>
-                        <MessageTextStyled>{nextMessage.content}</MessageTextStyled>
-                      </LanguageMessage>
-                    </PairContent>
-                  </TranslationPair>
-                );
+                let bestMatch = null;
+                let fallbackMatch = null;
+
+                for (const j of searchRange) {
+                  if (j < 0 || j >= sortedMessages.length || processedIndexes.has(j)) continue;
+
+                  const candidateMsg = sortedMessages[j];
+                  if (candidateMsg.role !== targetRole) continue;
+
+                  const candidateIsKorean = isKorean(candidateMsg.content);
+
+                  // 우선순위 1: 언어가 다른 경우 (정상적인 번역 쌍)
+                  if (currentIsKorean !== candidateIsKorean) {
+                    bestMatch = { message: candidateMsg, index: j };
+                    break; // 완벽한 매칭이므로 즉시 반환
+                  }
+
+                  // 우선순위 2: 같은 언어인 경우 (AI가 번역하지 않은 경우)
+                  if (!fallbackMatch && currentIsKorean === candidateIsKorean) {
+                    // 시간 차이가 5초 이내인 경우만 fallback으로 고려
+                    const timeDiff = Math.abs(currentMsg.timestamp - candidateMsg.timestamp);
+                    if (timeDiff <= 5000) { // 5초 이내
+                      fallbackMatch = { message: candidateMsg, index: j };
+                    }
+                  }
+                }
+
+                return bestMatch || fallbackMatch;
+              };
+
+              for (let i = 0; i < sortedMessages.length; i++) {
+                if (processedIndexes.has(i)) continue;
+
+                const message = sortedMessages[i];
+
+                if (message.role === 'user') {
+                  // 사용자 메시지에 대응하는 assistant 메시지를 찾음
+                  const match = findMatchingMessage(message, i, 'forward');
+
+                  if (match) {
+                    processedIndexes.add(match.index);
+                    messageGroups.push({
+                      user: message,
+                      assistant: match.message,
+                      isComplete: true
+                    });
+                  } else {
+                    messageGroups.push({
+                      user: message,
+                      assistant: undefined,
+                      isComplete: false
+                    });
+                  }
+                  processedIndexes.add(i);
+                } else if (message.role === 'assistant') {
+                  // assistant 메시지에 대응하는 user 메시지를 찾음
+                  const match = findMatchingMessage(message, i, 'backward');
+
+                  if (match) {
+                    processedIndexes.add(match.index);
+                    messageGroups.push({
+                      user: match.message,
+                      assistant: message,
+                      isComplete: true
+                    });
+                    processedIndexes.add(i);
+                  } else {
+                    // 앞뒤로 검색해서 매칭 시도
+                    const forwardMatch = findMatchingMessage(message, i, 'forward');
+
+                    if (forwardMatch) {
+                      processedIndexes.add(forwardMatch.index);
+                      messageGroups.push({
+                        user: forwardMatch.message,
+                        assistant: message,
+                        isComplete: true
+                      });
+                      processedIndexes.add(i);
+                    } else {
+                      // 정말로 고아가 된 assistant 메시지
+                      console.warn('Orphaned assistant message:', message.content);
+                      messageGroups.push({
+                        user: message as any,
+                        assistant: undefined,
+                        isComplete: false
+                      });
+                      processedIndexes.add(i);
+                    }
+                  }
+                }
               }
 
-              // Skip assistant messages that were already shown in pairs
-              if (message.role === 'assistant' && messages[index - 1]?.role === 'user') {
-                return null;
-              }
+              console.log('Message groups created:', messageGroups.length);
 
-              // Single message
-              return (
-                <MessageItem key={message.id}>
-                  <ProfileIcon $speaker={message.role}>
-                    {message.role === "user" ? "🗣️" : "🔄"}
-                  </ProfileIcon>
-                  <MessageContent>
-                    <MessageText>{message.content}</MessageText>
-                  </MessageContent>
-                </MessageItem>
-              );
-            })}
+              // 그룹을 timestamp 순으로 정렬
+              const sortedGroups = messageGroups.sort((a, b) => a.user.timestamp - b.user.timestamp);
+
+              return sortedGroups.map((group, groupIndex) => {
+                if (group.isComplete && group.assistant) {
+                  // 완전한 번역 쌍
+                  const userMessage = group.user;
+                  const assistantMessage = group.assistant;
+
+                  // 입력한 언어 감지 (사용자가 실제로 입력한 언어)
+                  const userIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(userMessage.content);
+                  const assistantIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(assistantMessage.content);
+
+                  // 메시지 쌍에서 한국어와 고객 언어 분리
+                  let customerText = '';
+                  let koreanText = '';
+                  let inputLanguageIcon = '';
+
+                  // 정상적인 번역 쌍인지 확인
+                  const isProperTranslation = userIsKorean !== assistantIsKorean;
+
+                  if (isProperTranslation) {
+                    // 정상적인 번역 쌍 처리
+                    if (userIsKorean) {
+                      // 사용자가 한국어로 입력 → AI가 고객 언어로 번역
+                      koreanText = userMessage.content;        // 입력: 한국어
+                      customerText = assistantMessage.content; // 번역: 고객 언어
+                      inputLanguageIcon = "🇰🇷";             // 한국어로 입력했음을 표시
+                    } else {
+                      // 사용자가 고객 언어로 입력 → AI가 한국어로 번역
+                      customerText = userMessage.content;      // 입력: 고객 언어
+                      koreanText = assistantMessage.content;   // 번역: 한국어
+                      inputLanguageIcon = LANGUAGE_ICONS[customerLanguage] || "🇺🇸"; // 고객 언어로 입력했음을 표시
+                    }
+                  } else {
+                    // AI가 같은 언어로 응답한 경우 (번역 실패)
+                    if (userIsKorean) {
+                      // 둘 다 한국어인 경우
+                      koreanText = userMessage.content;
+                      customerText = `[번역 필요: ${assistantMessage.content}]`; // 번역되지 않았음을 표시
+                      inputLanguageIcon = "🇰🇷";
+                    } else {
+                      // 둘 다 고객 언어인 경우
+                      customerText = userMessage.content;
+                      koreanText = `[번역 필요: ${assistantMessage.content}]`; // 번역되지 않았음을 표시
+                      inputLanguageIcon = LANGUAGE_ICONS[customerLanguage] || "🇺🇸";
+                    }
+                  }
+
+                  console.log(`Group ${groupIndex}: User(${userIsKorean ? 'KR' : 'EN'}): "${userMessage.content}" → AI: "${assistantMessage.content}"`);
+
+                  return (
+                    <MessageItem key={`group-${groupIndex}`}>
+                      <ProfileIcon $speaker="user">
+                        {inputLanguageIcon}
+                      </ProfileIcon>
+                      <MessageContent>
+                        <TranslationContainer>
+                          <PrimaryLanguage>{customerText}</PrimaryLanguage>
+                          <SecondaryLanguage>{koreanText}</SecondaryLanguage>
+                        </TranslationContainer>
+                      </MessageContent>
+                    </MessageItem>
+                  );
+                } else {
+                  // 불완전한 메시지 (번역이 아직 진행 중이거나 오류)
+                  const message = group.user;
+                  const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(message.content);
+
+                  console.warn(`Incomplete group ${groupIndex}: "${message.content}" (role: ${message.role})`);
+
+                  return (
+                    <MessageItem key={`incomplete-${groupIndex}`}>
+                      <ProfileIcon $speaker={message.role}>
+                        {message.role === "user"
+                          ? (isKorean ? "🇰🇷" : (LANGUAGE_ICONS[customerLanguage] || "🇺🇸"))
+                          : "🔄"}
+                      </ProfileIcon>
+                      <MessageContent>
+                        <MessageText>
+                          {message.content}
+                          {!group.isComplete && message.role === 'user' && (
+                            <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px' }}>
+                              번역 중...
+                            </div>
+                          )}
+                        </MessageText>
+                      </MessageContent>
+                    </MessageItem>
+                  );
+                }
+              });
+            })()}
           </ConversationArea>
         </Panel>
-      </Grid>
+      </div>
     </Page>
   );
 }

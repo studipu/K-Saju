@@ -12,13 +12,18 @@ const Shell = styled.div`
 `;
 
 const Container = styled.div`
-  width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: 1120px;
+  margin: 0 auto;
   padding: 20px;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const Sidebar = styled.nav`
@@ -222,7 +227,7 @@ export default function Profile() {
       if (u?.id) {
         const { data: row } = await supabase
           .from("profiles")
-          .select("first_name, last_name, gender, birthday, birth_hour, country")
+          .select("first_name, last_name, gender, birthday, birth_hour, country, preferred_language")
           .eq("id", u.id)
           .maybeSingle();
         if (row) {
@@ -234,6 +239,7 @@ export default function Profile() {
             birthday: (row.birthday as any) ?? f.birthday,
             birthHour: (row.birth_hour as any) ?? f.birthHour,
             country: row.country ?? f.country,
+            language: (row.preferred_language as any) ?? f.language,
           }));
         }
       }
@@ -314,6 +320,7 @@ export default function Profile() {
           birthday: form.birthday || null,
           birth_hour: form.birthHour ? Number(form.birthHour) : null,
           country: form.country || null,
+          preferred_language: form.language || null,
           updated_at: new Date().toISOString(),
         });
         if (derr) throw derr;

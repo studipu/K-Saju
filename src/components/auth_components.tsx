@@ -3,7 +3,7 @@ import { styled } from "styled-components";
 import { Link } from "react-router-dom";
 import AppleLogo from "../assets/apple_btn.png";
 import KakaoLogo from "../assets/kakao_btn.png";
-import temporaryLogo from "../assets/temporary_logo.png";
+import logo from "../assets/logo.png";
 import { useI18n } from "../i18n/i18n";
 
 const MOBILE_BP = "768px";
@@ -74,13 +74,15 @@ const LogoLink = styled(Link)`
   img {
     width: 120px;
     object-fit: contain;
+    filter: invert(1); /* Make logo black on white background */
+    transition: filter 0.3s ease;
   }
 `;
 
 export function LogoImage() {
   return (
     <LogoLink to="/">
-      <img src={temporaryLogo} alt="K-Saju" />
+      <img src={logo} alt="K-Saju" />
     </LogoLink>
   );
 }

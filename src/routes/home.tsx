@@ -94,7 +94,7 @@ const HeroSection = styled.section`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background: #000000;
+  background: #0F0026;
   
   @media (max-width: 960px) {
     height: auto;
@@ -585,14 +585,18 @@ const AIServicesGrid = styled.div`
   @media (max-width: 768px) {
     flex-direction: row;
     gap: 1.5rem;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* center items across the row */
+    align-items: center;     /* center items vertically in row */
     flex-wrap: wrap;
+    width: 100%;             /* take full width to allow centering */
+    align-self: center;      /* override parent's align-items: flex-start */
+    margin: 0 auto;          /* ensure centering in parent flex column */
   }
   
   @media (max-width: 480px) {
-    flex-direction: column;
+    flex-direction: column;  /* stack on very small screens */
     gap: 1.5rem;
+    align-items: center;     /* center stacked items */
   }
 `;
 
@@ -771,7 +775,6 @@ export function Home() {
   ];
   
   const getPrice = (basePrice: number) => {
-    const { language } = useI18n();
     const exchangeRates = {
       ko: 1, // 원화 기준
       en: 0.00075, // USD (1원 = 0.00075달러)
@@ -818,12 +821,15 @@ export function Home() {
   }));
 
   const handleMoreClick = () => {
-    // More button click handler
-    console.log('View all services clicked');
+    // More button also links to our sample business
+    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+    navigate(`/business/${sampleBusinessId}`);
   };
 
-  const handleBusinessClick = (businessId: number) => {
-    navigate(`/business/${businessId}`);
+  const handleBusinessClick = (_businessId: number) => {
+    // For now, all service cards link to our sample business
+    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+    navigate(`/business/${sampleBusinessId}`);
   };
 
   const handleSearchLocations = () => {
@@ -853,11 +859,6 @@ export function Home() {
       handleNameCreation();
     }
   };
-
-  // Show loading state while fetching data
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   return (
     <Wrapper $language={language}>
@@ -979,6 +980,7 @@ export function Home() {
           </CTAButton>
         </ClosingContainer>
       </ClosingSection>
+      {loading && <LoadingScreen />}
     </Wrapper>
   );
 }

@@ -95,7 +95,6 @@ const Title = styled.h3`
   font-size: 0.8rem;
   font-weight: 700;
   color: #ffffff;
-  margin: 0.5rem 0 0 0;
   line-height: 1.3;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   text-align: center;

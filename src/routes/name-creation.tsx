@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useI18n } from '../i18n/i18n';
 import { generateKoreanName, type NameGenerationResponse } from '../services/openai';
@@ -774,6 +774,7 @@ interface FormData {
 const NameCreation: React.FC = () => {
   const navigate = useNavigate();
   const { t, language } = useI18n();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState<FormData>({
     originalName: '',
     gender: '',
@@ -786,7 +787,16 @@ const NameCreation: React.FC = () => {
   useEffect(() => {
     // 페이지 진입 시 상단으로 스크롤
     window.scrollTo(0, 0);
-  }, []);
+    
+    // URL에서 name 파라미터를 읽어와서 폼에 미리 채우기
+    const nameFromUrl = searchParams.get('name');
+    if (nameFromUrl) {
+      setFormData(prev => ({
+        ...prev,
+        originalName: nameFromUrl
+      }));
+    }
+  }, [searchParams]);
 
   const handleInputChange = (field: keyof FormData, value: string | string[]) => {
     setFormData(prev => ({
