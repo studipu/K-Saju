@@ -11,6 +11,8 @@ interface ChatMessage {
   content: string;
   timestamp: number;
   type: 'text' | 'audio';
+  isTranscription?: boolean; // 음성 전사인지 표시
+  audioData?: ArrayBuffer; // 오디오 데이터 저장 (선택적)
 }
 
 export function useRealtimeAgent({ customerLanguage = 'English' }: RealtimeAgentConfig) {
@@ -18,9 +20,8 @@ export function useRealtimeAgent({ customerLanguage = 'English' }: RealtimeAgent
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
-  const [currentUserTranscript, setCurrentUserTranscript] = useState('');
-  const [currentAssistantTranscript, setCurrentAssistantTranscript] = useState('');
-  const [speechRecognition, setSpeechRecognition] = useState<SpeechRecognition | null>(null);
+  const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
+  const [isAssistantSpeaking, setIsAssistantSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -31,15 +32,11 @@ export function useRealtimeAgent({ customerLanguage = 'English' }: RealtimeAgent
   const playbackAudioContextRef = useRef<AudioContext | null>(null);
   const audioChunksRef = useRef<ArrayBuffer[]>([]);
   const isPlayingAudioRef = useRef<boolean>(false);
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const nextStartTimeRef = useRef<number>(0);
   const scheduledSourcesRef = useRef<AudioBufferSourceNode[]>([]);
 
   // 번역 에이전트 생성
   const createAgent = useCallback(() => {
-    const isEnglish = customerLanguage === 'English';
-    const isKoreanInput = true; // 기본적으로 한국어 입력으로 가정
-
     // customerLanguage에 따른 전문 프롬프트 생성
     const getTranslationInstructions = () => {
       // 언어별 용어집 매핑
@@ -90,11 +87,14 @@ Input: "${targetLang} greeting" → Output: "안녕하세요"`;
 You are a translation machine specialized in Saju (Four Pillars) fortune-telling. You MUST translate every single input without exception.
 
 MANDATORY RULES - NEVER BREAK THESE:
-1. Korean input → ALWAYS translate to ${customerLanguage}
+1. Korean input → ALWAYS translate to ${customerLanguage} ONLY
 2. ANY non-Korean input (${customerLanguage}, English, Chinese, Japanese, etc.) → ALWAYS translate to Korean ONLY
-3. NEVER answer questions, NEVER have conversations
+3. NEVER answer questions, NEVER have conversations, NEVER respond in the same language as input
 4. NEVER say things like "I can help you", "What would you like", etc.
-5. ONLY output the direct translation, nothing else
+5. NEVER repeat the input language - ALWAYS translate to the opposite language
+6. ONLY output the direct translation, nothing else
+
+CRITICAL: If input is Korean, output MUST be ${customerLanguage}. If input is ${customerLanguage}, output MUST be Korean. NO EXCEPTIONS.
 
 VOICE & TONE GUIDELINES:
 - Speak with a calm, mystical, and wise tone appropriate for fortune-telling
@@ -115,20 +115,27 @@ TRANSLATION EXAMPLES:
 Korean → ${customerLanguage}:
 Input: "안녕하세요" → Output: ${customerLanguage === 'English' ? '"Hello"' : customerLanguage === 'Chinese' ? '"您好"' : `"Hello" (in ${customerLanguage})`}
 Input: "오늘 운세 좀 봐주세요" → Output: ${customerLanguage === 'English' ? '"Please look at today\'s fortune"' : customerLanguage === 'Chinese' ? '"請看看今天的運勢"' : `"Please look at today's fortune" (in ${customerLanguage})`}
+Input: "내 이름은 코난 탐정이죠" → Output: ${customerLanguage === 'English' ? '"My name is Conan, I am a detective"' : customerLanguage === 'Chinese' ? '"我叫柯南，我是侦探"' : `"My name is Conan, I am a detective" (in ${customerLanguage})`}
 
 ANY Language → Korean:
 Input: "Hello" → Output: "안녕하세요"
 Input: "How are you?" → Output: "어떻게 지내세요?"
 Input: "What is my luck?" → Output: "제 운은 어떤가요?"
 ${customerLanguage === 'Chinese' ? `Input: "你好" → Output: "안녕하세요"
-Input: "今天運氣怎麼樣？" → Output: "오늘 운세는 어떤가요?"` : ''}
+Input: "今天運氣怎麼樣？" → Output: "오늘 운세는 어떤가요?"
+Input: "我叫柯南，我是侦探" → Output: "제 이름은 코난, 탐정입니다"` : ''}
 
 ABSOLUTELY FORBIDDEN:
 - Answering questions instead of translating
 - Having conversations or giving advice
 - Asking "What can I help you with?"
 - Explaining what you are or what you do
+- Responding in the same language as the input
 - ANY response that is not a direct translation
+
+LANGUAGE SWITCHING RULE:
+- Input Korean → Output ${customerLanguage.toUpperCase()} (NEVER Korean)
+- Input ${customerLanguage.toUpperCase()} → Output Korean (NEVER ${customerLanguage.toUpperCase()})
 
 YOU ARE A TRANSLATION MACHINE ONLY. TRANSLATE EVERYTHING.
 KOREAN → ${customerLanguage.toUpperCase()} | ALL OTHER LANGUAGES → KOREAN
@@ -170,9 +177,6 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
           voice: 'coral', // 사주풀이에 적합한 따뜻하고 차분한 여성 목소리
           inputAudioTranscription: {
             model: 'whisper-1'
-          },
-          outputAudioTranscription: {
-            enabled: true
           },
           turnDetection: {
             type: 'server_vad',
@@ -281,34 +285,19 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         }
       };
 
-      // 오디오 이벤트 처리 - 연속 스트리밍 + 임시 전사 메시지 추가
+      // 음성 출력 시작 이벤트
       session.on('audio', (audioEvent) => {
         console.log('🔊 Audio event received from Agent SDK:', audioEvent);
         if (audioEvent && audioEvent.data) {
           console.log('🎵 Scheduling audio chunk, size:', audioEvent.data.byteLength);
           scheduleAudioChunk(audioEvent.data);
 
-          // AI가 응답을 시작했다면 임시 메시지 추가
-          if (!currentAssistantTranscript) {
-            console.log('🤖 AI started speaking, adding placeholder message');
-            const assistantMessage: ChatMessage = {
-              id: `assistant-${Date.now()}`,
-              role: 'assistant',
-              content: '[AI가 응답 중...]',
-              timestamp: Date.now(),
-              type: 'audio'
-            };
-            setMessages(prev => {
-              // 이미 placeholder가 있는지 확인
-              const hasPlaceholder = prev.some(msg =>
-                msg.role === 'assistant' && msg.content === '[AI가 응답 중...]'
-              );
-              if (!hasPlaceholder) {
-                return [...prev, assistantMessage];
-              }
-              return prev;
-            });
-            setCurrentAssistantTranscript('[AI가 응답 중...]');
+          // AI가 응답을 시작했다면 턴 시작 표시 (placeholder 메시지 없이)
+          if (!isAssistantSpeaking) {
+            console.log('🤖 Assistant turn started (audio only)');
+            setIsAssistantSpeaking(true);
+            const turnId = `turn-${Date.now()}`;
+            setCurrentTurnId(turnId);
           }
         } else {
           console.log('⚠️ No audio data in event');
@@ -332,77 +321,137 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         scheduledSourcesRef.current = [];
         nextStartTimeRef.current = 0;
 
-        // AI 응답 완료 처리 - 실제 번역된 내용으로 추정
-        console.log('🤖 AI response completed, updating placeholder message');
+        // AI 응답 완료 처리
+        console.log('🤖 Assistant turn ended');
+        setIsAssistantSpeaking(false);
+        setCurrentTurnId(null);
+
+        // placeholder 메시지 제거 (더 이상 "[음성 응답 중...]"을 사용하지 않지만 기존 것들 정리)
         setMessages(prev => {
-          return prev.map(msg => {
-            if (msg.role === 'assistant' && msg.content === '[AI가 응답 중...]') {
-              // 사용자의 마지막 입력을 기반으로 번역 내용 추정
-              const lastUserMessage = prev.filter(m => m.role === 'user').pop();
-              let translatedContent = `${customerLanguage} 번역 완료`;
-
-              if (lastUserMessage && lastUserMessage.content !== '[사용자 음성 입력 중...]') {
-                // 간단한 번역 예시 (실제 번역이 아닌 표시용)
-                if (customerLanguage === 'English') {
-                  translatedContent = `"${lastUserMessage.content}"의 영어 번역이 음성으로 재생되었습니다`;
-                } else if (customerLanguage === 'Chinese') {
-                  translatedContent = `"${lastUserMessage.content}"의 중국어 번역이 음성으로 재생되었습니다`;
-                } else {
-                  translatedContent = `"${lastUserMessage.content}"의 ${customerLanguage} 번역이 음성으로 재생되었습니다`;
-                }
-              }
-
-              return {
-                ...msg,
-                content: translatedContent,
-                timestamp: Date.now()
-              };
-            }
-            return msg;
-          });
+          return prev.filter(msg =>
+            !msg.content.includes('[음성 응답 중...]') &&
+            !msg.content.includes('[음성 입력 중...]')
+          );
         });
-        setCurrentAssistantTranscript('');
 
         console.log('✅ All audio sources stopped');
       });
 
-      // 대화 내역 업데이트
+      // Agent SDK를 통한 대화 메시지 처리
       session.on('history_updated', (history) => {
         console.log('📝 History updated from Agent SDK:', history.length, 'items');
-        const newMessages: ChatMessage[] = [];
 
-        for (const item of history) {
-          console.log('📋 Processing history item:', item.type, item);
+        setMessages(prev => {
+          console.log('📝 Current messages before history update:', prev.length);
+          const newMessages: ChatMessage[] = [];
 
-          if (item.type === 'message' && (item as any).role && (item as any).content) {
-            const messageItem = item as any;
-            const content = messageItem.content
-              ?.map((c: any) => c.type === 'text' ? c.text : '')
-              .join('') || '';
+          // placeholder 메시지 제거 (음성 입력/응답 중 메시지들)
+          const existingMessages = prev.filter(msg => {
+            const isPlaceholder = msg.content.includes('[음성 입력 중...]') ||
+                                msg.content.includes('[음성 응답 중...]');
+            if (isPlaceholder) {
+              console.log('📝 Removing placeholder from history update:', msg.content);
+            }
+            return !isPlaceholder;
+          });
 
-            if (content.trim()) {
-              const message = {
-                id: `${messageItem.role}-${Date.now()}-${Math.random()}`,
-                role: messageItem.role,
-                content: content.trim(),
-                timestamp: Date.now(),
-                type: 'text',
-              };
+          for (const item of history) {
+            console.log('📋 Processing history item:', item.type, item);
+            console.log('📋 Full item structure:', JSON.stringify(item, null, 2));
 
-              console.log('💬 Adding message to history:', message);
-              newMessages.push(message);
+            if (item.type === 'message' && 'role' in item && 'content' in item) {
+              const messageItem = item as any;
+
+              console.log('📋 Message item content:', JSON.stringify(messageItem.content, null, 2));
+              console.log('📋 Content type:', typeof messageItem.content);
+              console.log('📋 Content is array:', Array.isArray(messageItem.content));
+
+              // 다양한 content 구조를 시도해봄
+              let textContent = '';
+
+              if (Array.isArray(messageItem.content)) {
+                // input_audio와 output_audio에서 transcript 추출
+                for (const contentItem of messageItem.content) {
+                  if (contentItem && contentItem.transcript && contentItem.transcript.trim()) {
+                    // transcript가 따옴표로 감싸져 있으면 제거
+                    let transcript = contentItem.transcript.trim();
+                    if (transcript.startsWith('"') && transcript.endsWith('"')) {
+                      transcript = transcript.slice(1, -1);
+                    }
+                    textContent = transcript;
+                    console.log('📋 Transcript extracted from', contentItem.type + ':', textContent);
+                    break; // 첫 번째 유효한 transcript 사용
+                  }
+                }
+
+                // 기존 text 타입도 여전히 지원
+                if (!textContent) {
+                  textContent = messageItem.content
+                    ?.filter((c: any) => c && c.type === 'text')
+                    ?.map((c: any) => c.text || '')
+                    ?.join('') || '';
+                  console.log('📋 Text content extracted:', textContent);
+                }
+              } else if (typeof messageItem.content === 'string') {
+                // 문자열 형태의 content
+                textContent = messageItem.content;
+                console.log('📋 String content extracted:', textContent);
+              } else if (messageItem.content && typeof messageItem.content === 'object') {
+                // 객체 형태의 content - text 속성 직접 확인
+                if (messageItem.content.text) {
+                  textContent = messageItem.content.text;
+                  console.log('📋 Object.text content extracted:', textContent);
+                } else if (messageItem.content.content) {
+                  textContent = messageItem.content.content;
+                  console.log('📋 Object.content content extracted:', textContent);
+                }
+              }
+
+              // 추가로 messageItem에서 직접 text 확인
+              if (!textContent && messageItem.text) {
+                textContent = messageItem.text;
+                console.log('📋 Direct text property extracted:', textContent);
+              }
+
+              console.log('📋 Final extracted text content:', textContent);
+
+              if (textContent.trim()) {
+                const message: ChatMessage = {
+                  id: messageItem.itemId || `${messageItem.role}-${Date.now()}-${Math.random()}`,
+                  role: messageItem.role as 'user' | 'assistant',
+                  content: textContent.trim(),
+                  timestamp: Date.now(),
+                  type: 'text',
+                  isTranscription: true
+                };
+
+                // ID 기반 중복만 체크 (내용이 같아도 ID가 다르면 허용)
+                const alreadyExists = existingMessages.some(existing =>
+                  existing.id === message.id
+                );
+
+                if (!alreadyExists) {
+                  console.log('💬 Adding new message from Agent SDK:', message);
+                  newMessages.push(message);
+                } else {
+                  console.log('📝 Skipping duplicate message by ID:', message.id);
+                }
+              }
             }
           }
-        }
 
-        console.log('📨 Setting messages:', newMessages.length, 'total messages');
-        setMessages(newMessages);
+          if (newMessages.length > 0) {
+            console.log('📨 Adding', newMessages.length, 'new messages from history');
+            const finalMessages = [...existingMessages, ...newMessages];
+            console.log('📨 Final message count:', finalMessages.length);
+            return finalMessages;
+          }
+
+          // placeholder가 제거되었으면 업데이트, 아니면 그대로 유지
+          return existingMessages.length !== prev.length ? existingMessages : prev;
+        });
       });
 
-      // 모든 이벤트 리스너들
-      session.on('audio_interrupted', () => {
-        console.log('🛑 Audio interrupted');
-      });
 
       session.on('error', (error) => {
         console.error('❌ Session error:', error);
@@ -410,23 +459,308 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         if (error && typeof error === 'object' && 'error' in error) {
           console.error('❌ Inner error:', (error as any).error);
         }
-        setError('세션 오류: ' + (error?.message || JSON.stringify(error)));
+        const errorMessage = error && typeof error === 'object' && 'error' in error
+          ? String(error.error)
+          : String(error);
+        setError('세션 오류: ' + errorMessage);
       });
 
-      // 모든 가능한 이벤트들 리스닝
-      const eventTypes = [
+      // 사용자 음성 입력 감지
+      (session as any).on('input_audio_buffer.speech_started', () => {
+        console.log('🎤 User speech started');
+        if (!isUserSpeaking) {
+          setIsUserSpeaking(true);
+          const turnId = `user-turn-${Date.now()}`;
+          const userMessage: ChatMessage = {
+            id: turnId,
+            role: 'user',
+            content: '[음성 입력 중...]',
+            timestamp: Date.now(),
+            type: 'audio',
+            isTranscription: false
+          };
+          setMessages(prev => [...prev, userMessage]);
+        }
+      });
+
+      (session as any).on('input_audio_buffer.speech_stopped', () => {
+        console.log('🎤 User speech stopped');
+        setIsUserSpeaking(false);
+      });
+
+      // 사용자 음성 전사 완료
+      (session as any).on('conversation.item.input_audio_transcription.completed', (event: any) => {
+        console.log('📝 User transcription completed:', event);
+        console.log('📝 Transcript content:', event?.transcript);
+        if (event && event.transcript) {
+          const userMessage: ChatMessage = {
+            id: `user-transcription-${Date.now()}`,
+            role: 'user',
+            content: event.transcript,
+            timestamp: Date.now(),
+            type: 'text',
+            isTranscription: true
+          };
+
+          console.log('📝 Adding user transcription message:', userMessage);
+
+          setMessages(prev => {
+            console.log('📝 Current messages before update:', prev.length);
+
+            // ID 기반 중복만 체크
+            const alreadyExists = prev.some(msg => msg.id === userMessage.id);
+
+            if (alreadyExists) {
+              console.log('📝 Skipping duplicate user transcription by ID:', userMessage.id);
+              return prev;
+            }
+
+            // placeholder 메시지 제거하고 실제 전사 추가
+            const withoutPlaceholder = prev.filter(msg => {
+              const isPlaceholder = msg.content.includes('[음성 입력 중...]');
+              if (isPlaceholder) {
+                console.log('📝 Removing placeholder:', msg.content);
+              }
+              return !isPlaceholder;
+            });
+            const newMessages = [...withoutPlaceholder, userMessage];
+            console.log('📝 Updated messages:', newMessages.length);
+            return newMessages;
+          });
+        }
+      });
+
+      // AI 응답 시작
+      (session as any).on('response.created', () => {
+        console.log('🤖 AI response started');
+        setIsAssistantSpeaking(true);
+        const turnId = `assistant-turn-${Date.now()}`;
+        setCurrentTurnId(turnId);
+      });
+
+      // AI 응답 완료
+      (session as any).on('response.done', () => {
+        console.log('🤖 AI response completed');
+        setIsAssistantSpeaking(false);
+        setCurrentTurnId(null);
+      });
+
+      // AI 응답 텍스트 추가 (실시간으로 텍스트가 생성될 때)
+      (session as any).on('response.content_part.added', (event: any) => {
+        console.log('📝 AI content part added:', event);
+        console.log('📝 Full event structure:', JSON.stringify(event, null, 2));
+
+        // 다양한 속성에서 텍스트 추출 시도
+        let textContent = '';
+
+        if (event?.part?.type === 'text') {
+          textContent = event.part.text || event.part.content || '';
+          console.log('📝 Text from event.part.text:', textContent);
+        } else if (event?.text) {
+          textContent = event.text;
+          console.log('📝 Text from event.text:', textContent);
+        } else if (event?.content) {
+          textContent = event.content;
+          console.log('📝 Text from event.content:', textContent);
+        } else if (event?.delta?.text) {
+          textContent = event.delta.text;
+          console.log('📝 Text from event.delta.text:', textContent);
+        }
+
+        if (textContent && textContent.trim()) {
+          const assistantMessage: ChatMessage = {
+            id: `assistant-content-${event.item_id || event.id || Date.now()}`,
+            role: 'assistant',
+            content: textContent.trim(),
+            timestamp: Date.now(),
+            type: 'text',
+            isTranscription: true
+          };
+
+          console.log('📝 Adding AI content message:', assistantMessage);
+
+          setMessages(prev => {
+            console.log('📝 Current messages before AI content update:', prev.length);
+            // 같은 ID가 있으면 업데이트, 없으면 추가
+            const existingIndex = prev.findIndex(msg => msg.id === assistantMessage.id);
+            if (existingIndex >= 0) {
+              console.log('📝 Updating existing AI message at index:', existingIndex);
+              const updated = [...prev];
+              updated[existingIndex] = assistantMessage;
+              return updated;
+            } else {
+              // placeholder 메시지 제거하고 실제 응답 추가
+              const withoutPlaceholder = prev.filter(msg => {
+                const isPlaceholder = msg.content.includes('[음성 응답 중...]');
+                if (isPlaceholder) {
+                  console.log('📝 Removing AI placeholder:', msg.content);
+                }
+                return !isPlaceholder;
+              });
+              const newMessages = [...withoutPlaceholder, assistantMessage];
+              console.log('📝 Added new AI content message, total:', newMessages.length);
+              return newMessages;
+            }
+          });
+        }
+      });
+
+      // AI 응답 오디오 전사 (음성으로 말한 내용의 텍스트 버전)
+      (session as any).on('response.audio_transcript.done', (event: any) => {
+        console.log('🔊 AI audio transcript completed:', event);
+        if (event && event.transcript) {
+          const transcriptMessage: ChatMessage = {
+            id: `assistant-audio-transcript-${event.item_id || Date.now()}`,
+            role: 'assistant',
+            content: event.transcript,
+            timestamp: Date.now(),
+            type: 'text',
+            isTranscription: true
+          };
+
+          setMessages(prev => {
+            // ID 기반 중복만 체크
+            const alreadyExists = prev.some(msg => msg.id === transcriptMessage.id);
+
+            if (alreadyExists) {
+              console.log('📝 Skipping duplicate transcript by ID:', transcriptMessage.id);
+              return prev;
+            }
+
+            return [...prev, transcriptMessage];
+          });
+        }
+      });
+
+      // conversation.item.created 이벤트 - 새로운 대화 항목이 생성될 때
+      (session as any).on('conversation.item.created', (event: any) => {
+        console.log('📝 Conversation item created:', event);
+        const item = event?.item;
+        if (item && item.type === 'message') {
+          if (item.role === 'user' && item.content) {
+            // 사용자 메시지 전사 완료
+            const textContent = item.content
+              ?.filter((c: any) => c.type === 'text')
+              ?.map((c: any) => c.text || '')
+              ?.join('') || '';
+
+            if (textContent.trim()) {
+              const userMessage: ChatMessage = {
+                id: item.id || `user-created-${Date.now()}`,
+                role: 'user',
+                content: textContent.trim(),
+                timestamp: Date.now(),
+                type: 'text',
+                isTranscription: true
+              };
+
+              console.log('📝 Adding user message from item.created:', userMessage);
+
+              setMessages(prev => {
+                // ID 기반 중복만 체크
+                const alreadyExists = prev.some(msg => msg.id === userMessage.id);
+
+                if (alreadyExists) {
+                  console.log('📝 Skipping duplicate user message by ID:', userMessage.id);
+                  return prev;
+                }
+
+                const withoutPlaceholder = prev.filter(msg =>
+                  !msg.content.includes('[음성 입력 중...]')
+                );
+                return [...withoutPlaceholder, userMessage];
+              });
+            }
+          } else if (item.role === 'assistant' && item.content) {
+            // AI 응답 메시지
+            const textContent = item.content
+              ?.filter((c: any) => c.type === 'text')
+              ?.map((c: any) => c.text || '')
+              ?.join('') || '';
+
+            if (textContent.trim()) {
+              const assistantMessage: ChatMessage = {
+                id: item.id || `assistant-created-${Date.now()}`,
+                role: 'assistant',
+                content: textContent.trim(),
+                timestamp: Date.now(),
+                type: 'text',
+                isTranscription: true
+              };
+
+              console.log('📝 Adding assistant message from item.created:', assistantMessage);
+
+              setMessages(prev => {
+                // ID 기반 중복만 체크
+                const alreadyExists = prev.some(msg => msg.id === assistantMessage.id);
+
+                if (alreadyExists) {
+                  console.log('📝 Skipping duplicate assistant message by ID:', assistantMessage.id);
+                  return prev;
+                }
+
+                const withoutPlaceholder = prev.filter(msg =>
+                  !msg.content.includes('[음성 응답 중...]')
+                );
+                return [...withoutPlaceholder, assistantMessage];
+              });
+            }
+          }
+        }
+      });
+
+      // 실시간 텍스트 델타 이벤트 추가 - 스트리밍 텍스트 캐치
+      (session as any).on('response.text.delta', (event: any) => {
+        console.log('📝 AI text delta received:', event);
+        console.log('📝 Delta content:', JSON.stringify(event, null, 2));
+
+        if (event?.delta || event?.text) {
+          const deltaText = event.delta || event.text;
+          console.log('📝 Streaming text delta:', deltaText);
+
+          // 스트리밍 텍스트를 누적해서 메시지 업데이트
+          const assistantMessage: ChatMessage = {
+            id: `assistant-streaming-${event.item_id || event.id || Date.now()}`,
+            role: 'assistant',
+            content: deltaText,
+            timestamp: Date.now(),
+            type: 'text',
+            isTranscription: true
+          };
+
+          setMessages(prev => {
+            // 같은 스트리밍 ID가 있으면 내용을 추가
+            const existingIndex = prev.findIndex(msg => msg.id === assistantMessage.id);
+
+            if (existingIndex >= 0) {
+              const updated = [...prev];
+              updated[existingIndex] = {
+                ...updated[existingIndex],
+                content: updated[existingIndex].content + deltaText
+              };
+              return updated;
+            } else {
+              // placeholder 제거하고 새 스트리밍 메시지 추가
+              const withoutPlaceholder = prev.filter(msg =>
+                !msg.content.includes('[음성 응답 중...]')
+              );
+              return [...withoutPlaceholder, assistantMessage];
+            }
+          });
+        }
+      });
+
+      // 기타 이벤트들 로깅
+      const otherEventTypes = [
         'connected', 'disconnected', 'response',
-        'input_audio_buffer.speech_started', 'input_audio_buffer.speech_stopped',
-        'input_audio_buffer.committed', 'conversation.item.created',
-        'response.created', 'response.done', 'response.output_item.added',
-        'response.content_part.added', 'response.audio_transcript.done',
-        'response.audio_transcript.delta',
-        'session.created', 'session.updated',
-        'conversation.item.input_audio_transcription.completed',
-        'history_updated'
+        'input_audio_buffer.committed',
+        'response.output_item.added', 'response.audio_transcript.delta',
+        'response.text.delta', 'response.content_part.delta',
+        'session.created', 'session.updated'
       ];
-      eventTypes.forEach(eventType => {
-        session.on(eventType as any, (...args: any[]) => {
+
+      otherEventTypes.forEach(eventType => {
+        (session as any).on(eventType, (...args: unknown[]) => {
           console.log(`🔔 Event: ${eventType}`, args);
         });
       });
@@ -445,82 +779,6 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
     }
   }, [createAgent, isConnected, isConnecting]);
 
-  // Web Speech API 설정
-  const setupSpeechRecognition = useCallback(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.log('⚠️ Speech Recognition not supported');
-      return null;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'ko-KR'; // 한국어 설정
-
-    recognition.onstart = () => {
-      console.log('🎤 Speech recognition started');
-    };
-
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      console.log('🎤 Speech result:', { final: finalTranscript, interim: interimTranscript });
-
-      if (finalTranscript) {
-        // 최종 결과를 채팅에 추가
-        const userMessage: ChatMessage = {
-          id: `user-${Date.now()}-${Math.random()}`,
-          role: 'user',
-          content: finalTranscript.trim(),
-          timestamp: Date.now(),
-          type: 'audio'
-        };
-
-        setMessages(prev => {
-          // placeholder 메시지를 실제 전사로 교체
-          const withoutPlaceholder = prev.filter(msg =>
-            !(msg.role === 'user' && msg.content === '[사용자 음성 입력 중...]')
-          );
-          return [...withoutPlaceholder, userMessage];
-        });
-
-        setCurrentUserTranscript(finalTranscript);
-        setIsUserSpeaking(false);
-      } else if (interimTranscript) {
-        // 임시 결과로 placeholder 업데이트
-        setMessages(prev => {
-          return prev.map(msg => {
-            if (msg.role === 'user' && msg.content === '[사용자 음성 입력 중...]') {
-              return { ...msg, content: `🎤 ${interimTranscript}` };
-            }
-            return msg;
-          });
-        });
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('❌ Speech recognition error:', event.error);
-    };
-
-    recognition.onend = () => {
-      console.log('🎤 Speech recognition ended');
-    };
-
-    return recognition;
-  }, []);
 
   // 음성 녹음 시작 (연속 모드)
   const startRecording = useCallback(async () => {
@@ -641,39 +899,13 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
               console.log('🎉 First audio data received from AudioWorklet!');
             }
 
-            // 사용자 음성 감지 및 placeholder 메시지 추가
-            const significantAudio = level > 0.02; // 2% 이상
-            if (significantAudio && !isUserSpeaking) {
-              console.log('🎤 User started speaking, adding placeholder message');
-              setIsUserSpeaking(true);
-              const userMessage: ChatMessage = {
-                id: `user-${Date.now()}`,
-                role: 'user',
-                content: '[사용자 음성 입력 중...]',
-                timestamp: Date.now(),
-                type: 'audio'
-              };
-              setMessages(prev => {
-                // 이미 placeholder가 있는지 확인
-                const hasPlaceholder = prev.some(msg =>
-                  msg.role === 'user' && msg.content === '[사용자 음성 입력 중...]'
-                );
-                if (!hasPlaceholder) {
-                  return [...prev, userMessage];
-                }
-                return prev;
-              });
-              setCurrentUserTranscript('[사용자 음성 입력 중...]');
-            }
+            // 사용자 음성 감지 로직 개선 - 중복 방지
+            const significantAudio = level > 0.03; // 3% 이상으로 임계값 상향
 
             // 음성이 약해지면 사용자 발화 종료로 간주
-            if (!significantAudio && isUserSpeaking && count % 50 === 0) {
-              console.log('🎤 User might have stopped speaking (low level detected)');
-              // 2초 후에 placeholder 제거하도록 지연
-              setTimeout(() => {
-                setIsUserSpeaking(false);
-                setCurrentUserTranscript('');
-              }, 2000);
+            if (!significantAudio && isUserSpeaking && count % 100 === 0) {
+              console.log('🎤 User speech ended (low level detected)');
+              setIsUserSpeaking(false);
             }
 
             // 오디오 레벨 로깅 (매 50번째마다 - 더 자주 표시)
@@ -785,13 +1017,6 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         console.log('✅ Audio processing connected (ScriptProcessorNode fallback)');
       }
 
-      // Web Speech API 시작
-      const recognition = setupSpeechRecognition();
-      if (recognition) {
-        setSpeechRecognition(recognition);
-        recognition.start();
-        console.log('🎤 Speech recognition started along with recording');
-      }
 
       setIsRecording(true);
       console.log('🎤 Recording started - continuous PCM16 streaming');
@@ -813,15 +1038,9 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
   }, [isRecording, isConnected, connect]);
 
   // 음성 녹음 중지 및 세션 종료
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     console.log('🛑 Stopping recording and terminating session...');
 
-    // Speech Recognition 중지
-    if (speechRecognition) {
-      speechRecognition.stop();
-      setSpeechRecognition(null);
-      console.log('🎤 Speech recognition stopped');
-    }
 
     // 모든 스케줄된 오디오 소스 중지
     scheduledSourcesRef.current.forEach(source => {
@@ -840,21 +1059,31 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
       playbackAudioContextRef.current = null;
     }
 
-    // AudioWorklet 정리
-    if (workletNodeRef.current) {
-      workletNodeRef.current.disconnect();
-      workletNodeRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-
-    // 스트림 정리
+    // 스트림 정리 (먼저)
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+    }
+
+    // AudioWorklet 정리
+    if (workletNodeRef.current) {
+      try {
+        workletNodeRef.current.port.close();
+        workletNodeRef.current.disconnect();
+      } catch (error) {
+        console.warn('⚠️ AudioWorkletNode cleanup error:', error);
+      }
+      workletNodeRef.current = null;
+    }
+
+    // AudioContext 정리
+    if (audioContextRef.current) {
+      try {
+        await audioContextRef.current.close();
+      } catch (error) {
+        console.warn('⚠️ AudioContext close error:', error);
+      }
+      audioContextRef.current = null;
     }
 
     // 세션 종료
@@ -869,22 +1098,22 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
     setIsRecording(false);
     setIsConnected(false);
     setIsUserSpeaking(false);
-    setCurrentUserTranscript('');
-    setCurrentAssistantTranscript('');
-    setMessages([]); // 대화 내역 초기화
+    setCurrentTurnId(null);
+    setIsAssistantSpeaking(false);
+    // 메시지는 초기화하지 않고 보존 - 사용자가 녹음을 중지해도 대화 내용 유지
     console.log('✅ Recording stopped and session terminated');
   }, []);
 
   // 연결 해제
-  const disconnect = useCallback(() => {
-    stopRecording();
+  const disconnect = useCallback(async () => {
+    await stopRecording();
 
     if (sessionRef.current) {
       sessionRef.current = null;
     }
 
     setIsConnected(false);
-    setMessages([]);
+    // 메시지는 초기화하지 않고 보존 - disconnect 시에도 대화 내용 유지
     console.log('🔌 Disconnected');
   }, [stopRecording]);
 
@@ -901,6 +1130,9 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
     messages,
     error,
     isConnecting,
+    isUserSpeaking,
+    isAssistantSpeaking,
+    currentTurnId,
     connect,
     disconnect,
     startRecording,

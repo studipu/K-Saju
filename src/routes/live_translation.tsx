@@ -3,6 +3,17 @@ import { styled } from "styled-components";
 import { useI18n } from "../i18n/i18n";
 import { useRealtimeAgent } from "../hooks/useRealtimeAgent";
 
+// ChatMessage 타입 정의 (useRealtimeAgent에서 가져옴)
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  type: 'text' | 'audio';
+  isTranscription?: boolean;
+  audioData?: ArrayBuffer;
+}
+
 const Page = styled.div`
   padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -478,6 +489,28 @@ const MessageText = styled.div`
   font-size: 16px;
 `;
 
+const TranslationContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const PrimaryLanguage = styled.div`
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.5;
+  font-size: 16px;
+`;
+
+const SecondaryLanguage = styled.div`
+  font-weight: 400;
+  color: #6b7280;
+  line-height: 1.4;
+  font-size: 14px;
+  opacity: 0.7;
+  font-style: italic;
+`;
+
 const RecordingButtons = styled.div`
   display: flex;
   gap: 16px;
@@ -669,7 +702,6 @@ export default function LiveTranslation() {
     <Page>
       <Header>
         <MainTitle>{t("liveTranslationTitle")}</MainTitle>
-        <SubTitle>OpenAI Agent SDK로 실시간 사주풀이 번역</SubTitle>
       </Header>
 
       <Grid>
@@ -748,69 +780,215 @@ export default function LiveTranslation() {
               </div>
             )}
 
-            {messages.map((message, index) => {
-              // Check if this is a user message followed by an assistant message (translation pair)
-              const nextMessage = messages[index + 1];
-              const isTranslationPair = message.role === 'user' && nextMessage?.role === 'assistant';
+{(() => {
+              console.log('Processing messages:', messages.length);
 
-              if (isTranslationPair) {
-                // Detect languages based on content
-                const userIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(message.content);
-                const assistantIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(nextMessage.content);
+              // 메시지를 쌍으로 그룹화하는 로직 개선
+              const messageGroups: Array<{ user: ChatMessage; assistant?: ChatMessage; isComplete: boolean }> = [];
+              const processedIndexes = new Set<number>();
 
-                const originalLang = userIsKorean ? 'Korean' : selectedLang?.name || 'English';
-                const translatedLang = assistantIsKorean ? 'Korean' : selectedLang?.name || 'English';
+              // 먼저 메시지를 timestamp 순으로 정렬
+              const sortedMessages = [...messages].sort((a, b) => a.timestamp - b.timestamp);
 
-                return (
-                  <TranslationPair key={`pair-${message.id}`}>
-                    <PairHeader>
-                      <LanguageTag $isSource>
-                        🔤 Original
-                      </LanguageTag>
-                      <TranslationArrow>→</TranslationArrow>
-                      <LanguageTag>
-                        🌍 Translation
-                      </LanguageTag>
-                    </PairHeader>
+              // 언어 감지 함수
+              const isKorean = (text: string) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
 
-                    <PairContent>
-                      <LanguageMessage $isSource>
-                        <LanguageLabel $isSource>
-                          {originalLang}
-                        </LanguageLabel>
-                        <MessageTextStyled>{message.content}</MessageTextStyled>
-                      </LanguageMessage>
+              // 언어 기반 스마트 매칭
+              const findMatchingMessage = (currentMsg: ChatMessage, startIndex: number, direction: 'forward' | 'backward') => {
+                const currentIsKorean = isKorean(currentMsg.content);
+                const targetRole = currentMsg.role === 'user' ? 'assistant' : 'user';
 
-                      <TranslationArrow>↔</TranslationArrow>
+                const searchRange = direction === 'forward'
+                  ? Array.from({ length: Math.min(15, sortedMessages.length - startIndex - 1) }, (_, i) => startIndex + 1 + i)
+                  : Array.from({ length: Math.min(15, startIndex) }, (_, i) => startIndex - 1 - i);
 
-                      <LanguageMessage>
-                        <LanguageLabel>
-                          {translatedLang}
-                        </LanguageLabel>
-                        <MessageTextStyled>{nextMessage.content}</MessageTextStyled>
-                      </LanguageMessage>
-                    </PairContent>
-                  </TranslationPair>
-                );
+                let bestMatch = null;
+                let fallbackMatch = null;
+
+                for (const j of searchRange) {
+                  if (j < 0 || j >= sortedMessages.length || processedIndexes.has(j)) continue;
+
+                  const candidateMsg = sortedMessages[j];
+                  if (candidateMsg.role !== targetRole) continue;
+
+                  const candidateIsKorean = isKorean(candidateMsg.content);
+
+                  // 우선순위 1: 언어가 다른 경우 (정상적인 번역 쌍)
+                  if (currentIsKorean !== candidateIsKorean) {
+                    bestMatch = { message: candidateMsg, index: j };
+                    break; // 완벽한 매칭이므로 즉시 반환
+                  }
+
+                  // 우선순위 2: 같은 언어인 경우 (AI가 번역하지 않은 경우)
+                  if (!fallbackMatch && currentIsKorean === candidateIsKorean) {
+                    // 시간 차이가 5초 이내인 경우만 fallback으로 고려
+                    const timeDiff = Math.abs(currentMsg.timestamp - candidateMsg.timestamp);
+                    if (timeDiff <= 5000) { // 5초 이내
+                      fallbackMatch = { message: candidateMsg, index: j };
+                    }
+                  }
+                }
+
+                return bestMatch || fallbackMatch;
+              };
+
+              for (let i = 0; i < sortedMessages.length; i++) {
+                if (processedIndexes.has(i)) continue;
+
+                const message = sortedMessages[i];
+
+                if (message.role === 'user') {
+                  // 사용자 메시지에 대응하는 assistant 메시지를 찾음
+                  const match = findMatchingMessage(message, i, 'forward');
+
+                  if (match) {
+                    processedIndexes.add(match.index);
+                    messageGroups.push({
+                      user: message,
+                      assistant: match.message,
+                      isComplete: true
+                    });
+                  } else {
+                    messageGroups.push({
+                      user: message,
+                      assistant: undefined,
+                      isComplete: false
+                    });
+                  }
+                  processedIndexes.add(i);
+                } else if (message.role === 'assistant') {
+                  // assistant 메시지에 대응하는 user 메시지를 찾음
+                  const match = findMatchingMessage(message, i, 'backward');
+
+                  if (match) {
+                    processedIndexes.add(match.index);
+                    messageGroups.push({
+                      user: match.message,
+                      assistant: message,
+                      isComplete: true
+                    });
+                    processedIndexes.add(i);
+                  } else {
+                    // 앞뒤로 검색해서 매칭 시도
+                    const forwardMatch = findMatchingMessage(message, i, 'forward');
+
+                    if (forwardMatch) {
+                      processedIndexes.add(forwardMatch.index);
+                      messageGroups.push({
+                        user: forwardMatch.message,
+                        assistant: message,
+                        isComplete: true
+                      });
+                      processedIndexes.add(i);
+                    } else {
+                      // 정말로 고아가 된 assistant 메시지
+                      console.warn('Orphaned assistant message:', message.content);
+                      messageGroups.push({
+                        user: message as any,
+                        assistant: undefined,
+                        isComplete: false
+                      });
+                      processedIndexes.add(i);
+                    }
+                  }
+                }
               }
 
-              // Skip assistant messages that were already shown in pairs
-              if (message.role === 'assistant' && messages[index - 1]?.role === 'user') {
-                return null;
-              }
+              console.log('Message groups created:', messageGroups.length);
 
-              // Single message
-              return (
-                <MessageItem key={message.id}>
-                  <ProfileIcon $speaker={message.role}>
-                    {message.role === "user" ? "🗣️" : "🔄"}
-                  </ProfileIcon>
-                  <MessageContent>
-                    <MessageText>{message.content}</MessageText>
-                  </MessageContent>
-                </MessageItem>
-              );
-            })}
+              // 그룹을 timestamp 순으로 정렬
+              const sortedGroups = messageGroups.sort((a, b) => a.user.timestamp - b.user.timestamp);
+
+              return sortedGroups.map((group, groupIndex) => {
+                if (group.isComplete && group.assistant) {
+                  // 완전한 번역 쌍
+                  const userMessage = group.user;
+                  const assistantMessage = group.assistant;
+
+                  // 입력한 언어 감지 (사용자가 실제로 입력한 언어)
+                  const userIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(userMessage.content);
+                  const assistantIsKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(assistantMessage.content);
+
+                  // 메시지 쌍에서 한국어와 고객 언어 분리
+                  let customerText = '';
+                  let koreanText = '';
+                  let inputLanguageIcon = '';
+
+                  // 정상적인 번역 쌍인지 확인
+                  const isProperTranslation = userIsKorean !== assistantIsKorean;
+
+                  if (isProperTranslation) {
+                    // 정상적인 번역 쌍 처리
+                    if (userIsKorean) {
+                      // 사용자가 한국어로 입력 → AI가 고객 언어로 번역
+                      koreanText = userMessage.content;        // 입력: 한국어
+                      customerText = assistantMessage.content; // 번역: 고객 언어
+                      inputLanguageIcon = "🇰🇷";             // 한국어로 입력했음을 표시
+                    } else {
+                      // 사용자가 고객 언어로 입력 → AI가 한국어로 번역
+                      customerText = userMessage.content;      // 입력: 고객 언어
+                      koreanText = assistantMessage.content;   // 번역: 한국어
+                      inputLanguageIcon = selectedLang?.icon || "🇺🇸"; // 고객 언어로 입력했음을 표시
+                    }
+                  } else {
+                    // AI가 같은 언어로 응답한 경우 (번역 실패)
+                    if (userIsKorean) {
+                      // 둘 다 한국어인 경우
+                      koreanText = userMessage.content;
+                      customerText = `[번역 필요: ${assistantMessage.content}]`; // 번역되지 않았음을 표시
+                      inputLanguageIcon = "🇰🇷";
+                    } else {
+                      // 둘 다 고객 언어인 경우
+                      customerText = userMessage.content;
+                      koreanText = `[번역 필요: ${assistantMessage.content}]`; // 번역되지 않았음을 표시
+                      inputLanguageIcon = selectedLang?.icon || "🇺🇸";
+                    }
+                  }
+
+                  console.log(`Group ${groupIndex}: User(${userIsKorean ? 'KR' : 'EN'}): "${userMessage.content}" → AI: "${assistantMessage.content}"`);
+
+                  return (
+                    <MessageItem key={`group-${groupIndex}`}>
+                      <ProfileIcon $speaker="user">
+                        {inputLanguageIcon}
+                      </ProfileIcon>
+                      <MessageContent>
+                        <TranslationContainer>
+                          <PrimaryLanguage>{customerText}</PrimaryLanguage>
+                          <SecondaryLanguage>{koreanText}</SecondaryLanguage>
+                        </TranslationContainer>
+                      </MessageContent>
+                    </MessageItem>
+                  );
+                } else {
+                  // 불완전한 메시지 (번역이 아직 진행 중이거나 오류)
+                  const message = group.user;
+                  const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(message.content);
+
+                  console.warn(`Incomplete group ${groupIndex}: "${message.content}" (role: ${message.role})`);
+
+                  return (
+                    <MessageItem key={`incomplete-${groupIndex}`}>
+                      <ProfileIcon $speaker={message.role}>
+                        {message.role === "user"
+                          ? (isKorean ? "🇰🇷" : (selectedLang?.icon || "🇺🇸"))
+                          : "🔄"}
+                      </ProfileIcon>
+                      <MessageContent>
+                        <MessageText>
+                          {message.content}
+                          {!group.isComplete && message.role === 'user' && (
+                            <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px' }}>
+                              번역 중...
+                            </div>
+                          )}
+                        </MessageText>
+                      </MessageContent>
+                    </MessageItem>
+                  );
+                }
+              });
+            })()}
           </ConversationArea>
         </Panel>
       </Grid>

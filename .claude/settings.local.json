@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx tsc:*)",
+      "Read(//var/folders/j4/13tq9wsd6wx7m0b8l5sst4r80000gn/T/TemporaryItems/NSIRD_screencaptureui_Tr0JsJ/**)",
+      "Read(//var/folders/j4/13tq9wsd6wx7m0b8l5sst4r80000gn/T/TemporaryItems/NSIRD_screencaptureui_bxdICm/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
