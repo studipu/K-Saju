@@ -77,7 +77,7 @@ const Container = styled.div<{ $language: string }>`
   }
 `;
 
-const ContentWrapper = styled.div<{ isNavFixed: boolean; $language: string }>`
+const ContentWrapper = styled.div<{ $isNavFixed: boolean; $language: string }>`
   max-width: 1120px;
   margin: 0 auto;
   background: #ffffff;
@@ -89,6 +89,8 @@ const ContentWrapper = styled.div<{ isNavFixed: boolean; $language: string }>`
   
   @media (max-width: 768px) {
     padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 `;
 
@@ -120,8 +122,11 @@ const GalleryContainer = styled.div<{ translateX: number }>`
   transform: translateX(${props => props.translateX}%);
 `;
 
-const MainImage = styled.div`
-  background: #f7f7f7;
+const MainImage = styled.div<{ $imageUrl?: string }>`
+  background: ${props => props.$imageUrl ? `url(${props.$imageUrl})` : '#f7f7f7'};
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 8px;
   position: relative;
   display: flex;
@@ -157,8 +162,11 @@ const ImageGrid = styled.div`
   }
 `;
 
-const ThumbnailImage = styled.div`
-  background: #f7f7f7;
+const ThumbnailImage = styled.div<{ $imageUrl?: string }>`
+  background: ${props => props.$imageUrl ? `url(${props.$imageUrl})` : '#f7f7f7'};
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 8px;
   position: relative;
   display: flex;
@@ -574,6 +582,34 @@ const ScrollToTopButton = styled.button<{ visible: boolean; showBottomPrice: boo
   
 `;
 
+// Copy success toast notification
+const CopyToast = styled.div<{ visible: boolean }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #059669;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateX(${props => props.visible ? '0' : '100%'});
+  opacity: ${props => props.visible ? '1' : '0'};
+  transition: all 0.3s ease;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  @media (max-width: 768px) {
+    top: 10px;
+    right: 10px;
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+`;
+
 /* removed legacy PriceBookingSection and duplicate BookingButton */
 
 // Airbnb 스타일 메인 레이아웃
@@ -600,6 +636,10 @@ const MainContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+  
+  @media (max-width: 768px) {
+    order: 1;
+  }
 `;
 
 const Sidebar = styled.div`
@@ -608,7 +648,7 @@ const Sidebar = styled.div`
   gap: 24px;
   
   @media (max-width: 768px) {
-    order: -1;
+    order: 2;
   }
 `;
 
@@ -637,23 +677,63 @@ const CardTitle = styled.h3`
 const BusinessInfoItem = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.75rem 0;
   border-bottom: 1px solid #f3f4f6;
+  gap: 1rem;
   
   &:last-child {
     border-bottom: none;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 `;
 
 const BusinessInfoLabel = styled.span`
   color: #6b7280;
   font-weight: 500;
+  min-width: 100px;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    min-width: auto;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
 `;
 
 const BusinessInfoValue = styled.span`
-  color: #1f2937;
-  font-weight: 600;
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 14px;
+  white-space: pre-line;
+  word-break: break-word;
+  line-height: 1.5;
+  max-width: 200px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  user-select: text;
+  
+  &:hover {
+    color: #374151;
+    background-color: #f9fafb;
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+  
+  &:active {
+    background-color: #e5e7eb;
+  }
+  
+  @media (max-width: 768px) {
+    max-width: 100%;
+    font-size: 13px;
+    flex: 1;
+  }
 `;
 
 // 예약 카드 (Airbnb 스타일)
@@ -1083,11 +1163,14 @@ const ImageModalCloseButton = styled.button`
   }
 `;
 
-const ImageModalMainImage = styled.div`
+const ImageModalMainImage = styled.div<{ $imageUrl?: string }>`
   width: 80%;
   max-width: 800px;
   height: 60vh;
-  background: #f3f4f6;
+  background: ${props => props.$imageUrl ? `url(${props.$imageUrl})` : '#f3f4f6'};
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1131,10 +1214,13 @@ const ImageModalThumbnails = styled.div`
   }
 `;
 
-const ImageModalThumbnail = styled.div<{ $active?: boolean }>`
+const ImageModalThumbnail = styled.div<{ $active?: boolean; $imageUrl?: string }>`
   width: 120px;
   height: 80px;
-  background: #f3f4f6;
+  background: ${props => props.$imageUrl ? `url(${props.$imageUrl})` : '#f3f4f6'};
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -1168,7 +1254,7 @@ function useGoogleMaps(apiKey?: string) {
     s.id = id;
     s.async = true;
     s.defer = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&v=weekly&libraries=marker`;
     s.onload = () => setLoaded(true);
     s.onerror = () => setLoaded(false);
     document.head.appendChild(s);
@@ -1215,9 +1301,119 @@ interface Business {
   contact: BusinessContact;
   business_hours: string;
   reviews: BusinessReview[];
+  translations?: any;
   created_at: string;
   updated_at: string;
 }
+
+// Component for formatting description with proper headings and line breaks
+const FormattedDescription = ({ description }: { description: string }) => {
+  const formatText = (text: string) => {
+    // Split by sections and format with proper headings
+    const sections = text.split(/(?=🔮|⭐|💡|🏆)/);
+    
+    return sections.map((section, index) => {
+      if (!section.trim()) return null;
+      
+      // Handle emoji headings
+      const emojiHeadingRegex = /(🔮|⭐|💡|🏆)\s*\*\*([^*]+)\*\*/;
+      const match = section.match(emojiHeadingRegex);
+      
+      if (match) {
+        const [fullMatch, emoji, heading] = match;
+        const content = section.replace(fullMatch, '').trim();
+        
+        return (
+          <div key={index} style={{ marginBottom: '2rem' }}>
+            <h3 style={{ 
+              fontSize: '1.25rem', 
+              fontWeight: '700', 
+              color: '#1f2937', 
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1.5rem' }}>{emoji}</span>
+              {heading}
+            </h3>
+            <div style={{ 
+              color: '#374151', 
+              lineHeight: '1.7',
+              fontSize: '16px'
+            }}>
+              {formatContent(content)}
+            </div>
+          </div>
+        );
+      } else {
+        // Regular content without emoji heading
+        return (
+          <div key={index} style={{ 
+            marginBottom: '1.5rem',
+            color: '#374151', 
+            lineHeight: '1.7',
+            fontSize: '16px'
+          }}>
+            {formatContent(section)}
+          </div>
+        );
+      }
+    });
+  };
+  
+  const formatContent = (content: string) => {
+    // Handle numbered lists
+    if (content.includes('1.') || content.includes('2.')) {
+      const lines = content.split('\n').filter(line => line.trim());
+      return (
+        <ol style={{ paddingLeft: '1.5rem', margin: '0.5rem 0' }}>
+          {lines.map((line, i) => {
+            const numberedMatch = line.match(/^\d+\.\s*\*\*([^*]+)\*\*:\s*(.+)/);
+            if (numberedMatch) {
+              const [, title, description] = numberedMatch;
+              return (
+                <li key={i} style={{ marginBottom: '0.75rem' }}>
+                  <strong style={{ color: '#1f2937' }}>{title}</strong>: {description}
+                </li>
+              );
+            }
+            return line.trim() ? <li key={i} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li> : null;
+          })}
+        </ol>
+      );
+    }
+    
+    // Handle bullet points
+    const lines = content.split('\n').filter(line => line.trim());
+    return lines.map((line, i) => {
+      if (line.startsWith('-') || line.startsWith('•')) {
+        return (
+          <div key={i} style={{ 
+            marginBottom: '0.5rem',
+            paddingLeft: '1rem',
+            position: 'relative'
+          }}>
+            <span style={{ 
+              position: 'absolute', 
+              left: '0', 
+              color: '#6366f1',
+              fontWeight: 'bold'
+            }}>•</span>
+            {line.replace(/^[-•]\s*/, '').trim()}
+          </div>
+        );
+      }
+      return line.trim() ? (
+        <p key={i} style={{ marginBottom: '0.75rem' }}>
+          {line.trim()}
+        </p>
+      ) : null;
+    });
+  };
+  
+  return <div>{formatText(description)}</div>;
+};
 
 // Mock data - 실제로는 Supabase DB에서 가져올 데이터
 const mockBusinessData: Record<string, Business> = {
@@ -1458,6 +1654,7 @@ export default function BusinessDetail() {
   const [mapError, setMapError] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showCopyToast, setShowCopyToast] = useState(false);
   const loaded = useGoogleMaps(apiKey);
   
   const getPerSessionShort = (lang: string) => {
@@ -1504,6 +1701,139 @@ export default function BusinessDetail() {
       default: return 'Guests';
     }
   };
+
+  const getLocalizedText = (key: string, lang: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      'basic_information': { 
+        ko: '기본 정보', 
+        en: 'Basic Information', 
+        ja: '基本情報', 
+        zh: '基本信息', 
+        es: 'Información Básica' 
+      },
+      'address': { 
+        ko: '주소', 
+        en: 'Address', 
+        ja: '住所', 
+        zh: '地址', 
+        es: 'Dirección' 
+      },
+      'rating': { 
+        ko: '평점', 
+        en: 'Rating', 
+        ja: '評価', 
+        zh: '评分', 
+        es: 'Calificación' 
+      },
+      'reviews': { 
+        ko: '리뷰', 
+        en: 'reviews', 
+        ja: 'レビュー', 
+        zh: '评论', 
+        es: 'reseñas' 
+      },
+      'business_hours': { 
+        ko: '영업시간', 
+        en: 'Business Hours', 
+        ja: '営業時間', 
+        zh: '营业时间', 
+        es: 'Horario de Atención' 
+      },
+      'phone': { 
+        ko: '전화번호', 
+        en: 'Phone', 
+        ja: '電話番号', 
+        zh: '电话', 
+        es: 'Teléfono' 
+      },
+      'email': { 
+        ko: '이메일', 
+        en: 'Email', 
+        ja: 'メール', 
+        zh: '邮箱', 
+        es: 'Email' 
+      },
+      'website': { 
+        ko: '웹사이트', 
+        en: 'Website', 
+        ja: 'ウェブサイト', 
+        zh: '网站', 
+        es: 'Sitio Web' 
+      }
+    };
+    return translations[key]?.[lang] || translations[key]?.['en'] || key;
+  };
+
+  // Helper function to get multilingual content from business data
+  const getMultilingualContent = (field: string, defaultValue: string) => {
+    if (business?.translations && business.translations[field]) {
+      const languageMap: Record<string, string> = {
+        'ko': 'ko',
+        'en': 'en', 
+        'ja': 'ja',
+        'zh': 'zh',
+        'es': 'es'
+      };
+      const langCode = languageMap[language] || 'ko';
+      return business.translations[field][langCode] || business.translations[field]['ko'] || defaultValue;
+    }
+    return defaultValue;
+  };
+
+  // Helper function to detect language of review text
+  const detectReviewLanguage = (text: string): string => {
+    // Korean characters
+    if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text)) return 'ko';
+    // Japanese characters (Hiragana, Katakana, Kanji)
+    if (/[ひらがなカタカナ一-龯]/.test(text) || /[ひ-ゞ]/.test(text) || /[ァ-ヾ]/.test(text)) return 'ja';
+    // Chinese characters (different from Japanese context)
+    if (/[一-龯]/.test(text) && !/[ひらがなカタカナ]/.test(text) && /[，。！？]/.test(text)) return 'zh';
+    // Spanish characters
+    if (/[ñáéíóúü¡¿]/.test(text) || /\b(el|la|de|en|un|una|es|muy|con|que|se|por|para|como|más|su|año|años|hace|sido|tiene|puede|solo|desde|donde|cuando|porque|entre|sobre|hasta|durante|después|antes|mientras|aunque|sino|pero|cada|todo|todos|todas|esta|este|estos|estas|aquí|ahí|allí|cómo|cuál|cuáles|cuándo|cuánto|cuántos|cuántas|dónde|quién|quiénes|qué)\b/i.test(text)) return 'es';
+    // English (default for Latin script)
+    if (/[a-zA-Z]/.test(text)) return 'en';
+    
+    return 'ko'; // fallback
+  };
+
+  // Filter reviews by current language
+  const getFilteredReviews = (allReviews: BusinessReview[]) => {
+    const reviewsByLanguage = allReviews.filter(review => 
+      detectReviewLanguage(review.text) === language
+    );
+    
+    // If no reviews in current language, fall back to Korean
+    if (reviewsByLanguage.length === 0) {
+      return allReviews.filter(review => detectReviewLanguage(review.text) === 'ko');
+    }
+    
+    return reviewsByLanguage;
+  };
+
+  // Copy to clipboard function with toast feedback
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showCopyFeedback();
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      showCopyFeedback();
+    }
+  };
+
+  // Show copy success feedback
+  const showCopyFeedback = () => {
+    setShowCopyToast(true);
+    setTimeout(() => {
+      setShowCopyToast(false);
+    }, 2000); // Hide after 2 seconds
+  };
   
   // 총 5개의 이미지 (사진 5개 + 더보기)
   const totalImages = 5;
@@ -1549,12 +1879,28 @@ export default function BusinessDetail() {
           console.error('Error fetching reviews:', reviewsError);
         }
 
+        // Get multilingual content based on language preference
+        const getLocationContent = (field: string, defaultValue: string) => {
+          if (locationData.translations && locationData.translations[field]) {
+            const languageMap: Record<string, string> = {
+              'ko': 'ko',
+              'en': 'en', 
+              'ja': 'ja',
+              'zh': 'zh',
+              'es': 'es'
+            };
+            const langCode = languageMap[language] || 'ko';
+            return locationData.translations[field][langCode] || locationData.translations[field]['ko'] || defaultValue;
+          }
+          return defaultValue;
+        };
+
         // Business 인터페이스에 맞게 데이터 변환
         const businessData: Business = {
           id: locationData.id,
-          title: locationData.name || locationData.title || '사주 서비스',
-          subtitle: locationData.subtitle || '전통 사주와 현대 기술의 만남',
-          description: locationData.description || '정확하고 상세한 사주 분석을 제공합니다.',
+          title: getLocationContent('title', locationData.name || locationData.title || '사주 서비스'),
+          subtitle: getLocationContent('subtitle', locationData.subtitle || '전통 사주와 현대 기술의 만남'),
+          description: getLocationContent('description', locationData.description || '정확하고 상세한 사주 분석을 제공합니다.'),
           main_image_url: locationData.main_image_url || locationData.image_url,
           gallery_images: locationData.gallery_images || [],
           icon: locationData.icon || '🔮',
@@ -1578,12 +1924,21 @@ export default function BusinessDetail() {
             rating: review.rating,
             text: review.text
           })),
+          translations: locationData.translations,
           created_at: locationData.created_at,
           updated_at: locationData.updated_at
         };
 
         setBusiness(businessData);
-        setReviews((businessData.reviews && businessData.reviews.length > 0) ? businessData.reviews : pseudoReviews);
+        const allReviews = (businessData.reviews && businessData.reviews.length > 0) ? businessData.reviews : pseudoReviews;
+        setReviews(allReviews);
+        
+        // Debug: Log the business data to check images
+        console.log('Business Data:', {
+          main_image_url: businessData.main_image_url,
+          gallery_images: businessData.gallery_images,
+          title: businessData.title
+        });
       } catch (error) {
         console.error('Error fetching business:', error);
         setBusiness(null);
@@ -1595,7 +1950,7 @@ export default function BusinessDetail() {
     if (id) {
       fetchBusiness();
     }
-  }, [id]);
+  }, [id, language]);
 
   // 스크롤 감지 useEffect
   useEffect(() => {
@@ -1843,16 +2198,17 @@ export default function BusinessDetail() {
     return stars;
   };
 
-  // 리뷰 표시 로직
+  // 리뷰 표시 로직 - 언어별 필터링 적용
+  const filteredReviews = getFilteredReviews(reviews);
   const reviewsPerPage = 3;
-  const totalReviews = reviews.length;
-  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, reviewsPerPage);
+  const totalReviews = filteredReviews.length;
+  const displayedReviews = showAllReviews ? filteredReviews : filteredReviews.slice(0, reviewsPerPage);
 
 
   if (loading) {
     return (
       <Container $language={language}>
-        <ContentWrapper isNavFixed={isNavFixed} $language={language}>
+        <ContentWrapper $isNavFixed={isNavFixed} $language={language}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
             <p>Loading...</p>
           </div>
@@ -1864,7 +2220,7 @@ export default function BusinessDetail() {
   if (!business) {
     return (
       <Container $language={language}>
-        <ContentWrapper isNavFixed={isNavFixed} $language={language}>
+        <ContentWrapper $isNavFixed={isNavFixed} $language={language}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
             <p>Business not found</p>
           </div>
@@ -1875,23 +2231,32 @@ export default function BusinessDetail() {
 
   return (
     <Container $language={language}>
-      <ContentWrapper isNavFixed={isNavFixed} $language={language}>
+      <ContentWrapper $isNavFixed={isNavFixed} $language={language}>
         {/* Airbnb-style image gallery */}
         <ImageGallery>
           <ImageGrid>
-            <MainImage onClick={() => handleImageClick(0)}>
-Main Photo
+            <MainImage 
+              $imageUrl={business.main_image_url || business.gallery_images?.[0]}
+              onClick={() => handleImageClick(0)}
+            >
+              {!business.main_image_url && !business.gallery_images?.[0] && 'Main Photo'}
             </MainImage>
-            <ThumbnailImage onClick={() => handleImageClick(1)}>
-Photo 2
+            <ThumbnailImage 
+              $imageUrl={business.gallery_images?.[1]}
+              onClick={() => handleImageClick(1)}
+            >
+              {!business.gallery_images?.[1] && 'Photo 2'}
             </ThumbnailImage>
-            <ThumbnailImage onClick={() => handleImageClick(2)}>
-Photo 3
+            <ThumbnailImage 
+              $imageUrl={business.gallery_images?.[2]}
+              onClick={() => handleImageClick(2)}
+            >
+              {!business.gallery_images?.[2] && 'Photo 3'}
             </ThumbnailImage>
           </ImageGrid>
           <ShowAllPhotosButton onClick={handleMoreImages}>
             <CameraIcon style={{ width: 16, height: 16 }} />
-Show all photos
+            Show all photos
           </ShowAllPhotosButton>
         </ImageGallery>
 
@@ -1910,27 +2275,12 @@ Show all photos
                   fontFamily: getFontFamily(language, 'heading')
                 }}>{business.title}</h1>
               </div>
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '24px'
-              }}>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#222222', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <StarIconSolid style={{ width: 16, height: 16, color: '#fbbf24' }} />
-                  {business.rating}
-                </span>
-                <span style={{ fontSize: '14px', color: '#717171' }}>({business.review_count} reviews)</span>
-                <span style={{ fontSize: '14px', color: '#717171' }}>• {business.contact.address}</span>
-              </div>
             </Section>
 
             {/* Overview section */}
             <Section id="overview">
               <SectionHeader $language={language}>Overview</SectionHeader>
-              <p style={{ color: '#222222', lineHeight: '1.6', fontSize: '16px', margin: 0 }}>
-                {business.description}
-              </p>
+              <FormattedDescription description={business.description} />
             </Section>
 
             {/* Services section */}
@@ -2044,56 +2394,46 @@ Show all photos
 
             {/* Info card (right side, above map) */}
             <InfoCard>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>{getLocalizedText('basic_information', language)}</CardTitle>
               <BusinessInfoItem>
                 <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <MapPinIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
-                  Address
+                  {getLocalizedText('address', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue>{business.contact.address}</BusinessInfoValue>
+                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('address', business.contact.address))}>
+                  {getMultilingualContent('address', business.contact.address)}
+                </BusinessInfoValue>
               </BusinessInfoItem>
               <BusinessInfoItem>
                 <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <StarIconOutline style={{ width: 16, height: 16, color: '#6b7280' }} />
-                  Rating
+                  {getLocalizedText('rating', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue>
+                <BusinessInfoValue onClick={() => copyToClipboard(`${business.rating} (${business.review_count} ${getLocalizedText('reviews', language)})`)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <StarIconSolid style={{ width: 16, height: 16, color: '#fbbf24' }} />
-                    {business.rating} ({business.review_count} reviews)
+                    {business.rating} ({business.review_count} {getLocalizedText('reviews', language)})
                   </div>
                 </BusinessInfoValue>
               </BusinessInfoItem>
               <BusinessInfoItem>
                 <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <ClockIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
-                  Business Hours
+                  {getLocalizedText('business_hours', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue>{business.business_hours}</BusinessInfoValue>
+                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('business_hours', business.business_hours))}>
+                  {getMultilingualContent('business_hours', business.business_hours)}
+                </BusinessInfoValue>
               </BusinessInfoItem>
               <BusinessInfoItem>
                 <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <PhoneIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
-                  Phone
+                  {getLocalizedText('phone', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue>{business.contact.phone}</BusinessInfoValue>
+                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('phone', business.contact.phone))}>
+                  {getMultilingualContent('phone', business.contact.phone)}
+                </BusinessInfoValue>
               </BusinessInfoItem>
-              <BusinessInfoItem>
-                <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <EnvelopeIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
-                  Email
-                </BusinessInfoLabel>
-                <BusinessInfoValue>{business.contact.email}</BusinessInfoValue>
-              </BusinessInfoItem>
-              {business.contact.website && (
-                <BusinessInfoItem>
-                  <BusinessInfoLabel style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <GlobeAltIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
-                    Website
-                  </BusinessInfoLabel>
-                  <BusinessInfoValue>{business.contact.website}</BusinessInfoValue>
-                </BusinessInfoItem>
-              )}
             </InfoCard>
 
             {/* Map card */}
@@ -2119,11 +2459,12 @@ Show all photos
           </Sidebar>
         </MainLayout>
 
-        {/* Reviews section */}
+        {/* Reviews section - comes last on mobile */}
         <div style={{ 
           padding: '48px 24px', 
           borderTop: '1px solid #ebebeb', 
-          marginTop: 48
+          marginTop: 48,
+          order: 3
         }}>
           <Section id="reviews" style={{ paddingBottom: 0, borderBottom: 'none' }}>
             <div style={{ marginBottom: 48 }}>
@@ -2359,22 +2700,26 @@ Show all photos
       </ContentWrapper>
       
       {/* 이미지 모달 */}
-      {isImageModalOpen && (
+      {isImageModalOpen && business.gallery_images && (
         <ImageModalOverlay onClick={handleCloseModal}>
           <ImageModalCloseButton onClick={handleCloseModal}>
             ×
           </ImageModalCloseButton>
-          <ImageModalMainImage onClick={(e) => e.stopPropagation()}>
-Photo {selectedImageIndex + 1}
+          <ImageModalMainImage 
+            $imageUrl={business.gallery_images[selectedImageIndex]}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!business.gallery_images[selectedImageIndex] && `Photo ${selectedImageIndex + 1}`}
           </ImageModalMainImage>
           <ImageModalThumbnails onClick={(e) => e.stopPropagation()}>
-            {Array.from({ length: 10 }, (_, index) => (
+            {business.gallery_images.map((imageUrl, index) => (
               <ImageModalThumbnail
                 key={index}
                 $active={selectedImageIndex === index}
+                $imageUrl={imageUrl}
                 onClick={() => handleThumbnailClick(index)}
               >
-Photo {index + 1}
+                {!imageUrl && `Photo ${index + 1}`}
               </ImageModalThumbnail>
             ))}
           </ImageModalThumbnails>
@@ -2396,6 +2741,11 @@ Photo {index + 1}
       <ScrollToTopButton visible={showScrollToTop} showBottomPrice={showBottomPrice} onClick={handleScrollToTop}>
         <ChevronUpIcon style={{ width: 24, height: 24 }} />
       </ScrollToTopButton>
+
+      {/* Copy success toast */}
+      <CopyToast visible={showCopyToast}>
+        ✅ Copied to clipboard!
+      </CopyToast>
     </Container>
   );
 }

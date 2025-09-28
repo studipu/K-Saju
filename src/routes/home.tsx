@@ -775,7 +775,6 @@ export function Home() {
   ];
   
   const getPrice = (basePrice: number) => {
-    const { language } = useI18n();
     const exchangeRates = {
       ko: 1, // 원화 기준
       en: 0.00075, // USD (1원 = 0.00075달러)
@@ -822,12 +821,15 @@ export function Home() {
   }));
 
   const handleMoreClick = () => {
-    // More button click handler
-    console.log('View all services clicked');
+    // More button also links to our sample business
+    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+    navigate(`/business/${sampleBusinessId}`);
   };
 
-  const handleBusinessClick = (businessId: number) => {
-    navigate(`/business/${businessId}`);
+  const handleBusinessClick = (_businessId: number) => {
+    // For now, all service cards link to our sample business
+    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+    navigate(`/business/${sampleBusinessId}`);
   };
 
   const handleSearchLocations = () => {

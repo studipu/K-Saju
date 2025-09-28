@@ -832,7 +832,12 @@ export default function Locations() {
               <ServiceCardWrap
                 key={loc.id}
                 ref={(el) => { listRefs.current[loc.id] = el; }}
-                onClick={() => setSelectedId(loc.id)}
+                onClick={() => {
+                  setSelectedId(loc.id);
+                  // Navigate to business detail page
+                  const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+                  window.open(`/business/${sampleBusinessId}`, '_blank');
+                }}
                 $active={selectedId === loc.id}
               >
                 <ServiceCard service={service} variant="popular" />
