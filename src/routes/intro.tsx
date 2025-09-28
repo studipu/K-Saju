@@ -1,115 +1,269 @@
 import { styled } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/i18n";
-import starBg from "../assets/star_bg.png";
+import heroBg from "../assets/hero_bg.jpg";
+import homeBg from "../assets/home_bg.jpg";
+import yinyangBg from "../assets/yinyang_bg.mp4";
 
-const Wrapper = styled.div`
+// Import mysterious fonts for multiple languages from Google Fonts
+const fontLinks = [
+  // Korean mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Song+Myung&family=Jua&family=Gugi&family=Stylish:wght@400&family=Kirang+Haerang&display=swap',
+  // Korean clean fonts  
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap',
+  // Latin mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap',
+  // Japanese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Sawarabi+Mincho&display=swap',
+  // Chinese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap'
+];
+
+fontLinks.forEach(href => {
+  const link = document.createElement('link');
+  link.href = href;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+});
+
+// Language-specific font configurations
+const getFontFamily = (language: string, type: 'heading' | 'body' | 'accent' | 'price') => {
+  const fontConfigs = {
+    ko: {
+      heading: "'Song Myung', 'Stylish', 'Kirang Haerang', serif",
+      body: "'Noto Sans KR', 'Jua', sans-serif",
+      accent: "'Gugi', 'Song Myung', cursive",
+      price: "'Noto Serif KR', 'Song Myung', serif"
+    },
+    en: {
+      heading: "'Cinzel', 'Cormorant Garamond', serif",
+      body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      accent: "'Crimson Text', 'Cinzel', serif",
+      price: "'Cinzel', 'Cormorant Garamond', serif"
+    },
+    ja: {
+      heading: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      body: "'Noto Sans JP', 'Hiragino Sans', sans-serif",
+      accent: "'Noto Serif JP', 'Sawarabi Mincho', serif",
+      price: "'Noto Serif JP', serif"
+    },
+    zh: {
+      heading: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      body: "'Noto Sans SC', 'PingFang SC', sans-serif",
+      accent: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      price: "'Noto Serif SC', serif"
+    },
+    es: {
+      heading: "'Cinzel', 'Cormorant Garamond', serif",
+      body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      accent: "'Crimson Text', 'Cinzel', serif",
+      price: "'Cinzel', 'Cormorant Garamond', serif"
+    }
+  };
+  
+  return fontConfigs[language as keyof typeof fontConfigs]?.[type] || fontConfigs.en[type];
+};
+
+const Wrapper = styled.div<{ $language: string }>`
   width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: ${props => getFontFamily(props.$language, 'body')};
 `;
 
 const HeroSection = styled.section`
   width: 100%;
-  height: 60vh;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background-image: url(${starBg});
-  background-size: cover;
-  background-position: center;
-  background-repeat: repeat;
+  background: #0F0026;
   
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(76, 29, 149, 0.85);
-    z-index: 1;
-    pointer-events: none;
+  @media (max-width: 960px) {
+    height: auto;
+    min-height: 350px;
+    padding: 2rem 0;
+  }
+  
+  @media (max-width: 768px) {
+    height: auto;
+    min-height: 320px;
+    padding: 1.5rem 0;
   }
 `;
 
 const HeroContent = styled.div`
-  text-align: center;
+  text-align: left;
   color: white;
-  z-index: 2;
-  max-width: 800px;
-  padding: 0 2rem;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  padding: 0 1.5rem;
   position: relative;
-`;
-
-const HeroTitle = styled.h1`
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
   
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    text-align: center;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+const HeroTitle = styled.h1<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  max-width: 600px;
+  white-space: nowrap;
+  
+  @media (max-width: 768px) {
+    font-size: 2.2rem;
+    max-width: 100%;
+    margin-bottom: 1.2rem;
+    line-height: 1.3;
+    white-space: normal;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.8rem;
   }
 `;
 
 const HeroSubtitle = styled.p`
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
   opacity: 0.9;
-  line-height: 1.6;
+  line-height: 1.5;
+  max-width: 400px;
+  word-wrap: break-word;
   
   @media (max-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 1rem;
+    max-width: 100%;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
   }
 `;
 
 const CTAButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #6210CC;
+  border: 2px solid rgba(139, 92, 246, 0.4);
   color: white;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+  font-family: inherit;
+  font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.2;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 80%
+    );
+    transform: rotate(45deg);
+    animation: continuousShine 2.5s ease-in-out infinite;
+  }
+  
+  @keyframes continuousShine {
+    0% {
+      left: -150%;
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      left: 150%;
+      opacity: 0;
+    }
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    border-radius: 50px;
+    pointer-events: none;
+  }
   
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: #4c1d95;
+    border-color: rgba(139, 92, 246, 0.7);
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    
+    &::before {
+      animation-duration: 1.5s;
+    }
+  }
+  
+  &:active {
+    transform: translateY(-1px);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem 2rem;
+    font-size: 0.95rem;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem 1.75rem;
+    font-size: 0.9rem;
   }
 `;
 
-const BackgroundPattern = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
-  z-index: 2;
-`;
-
-const WhySection = styled.section`
-  min-height: 100vh;
-  padding: 4rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// Unified sections container with gradient background
+const UnifiedSectionsContainer = styled.div`
   position: relative;
-  overflow: hidden;
-  background-image: url(${starBg});
+  background-image: url(${homeBg});
   background-size: cover;
-  background-position: center;
-  background-repeat: repeat;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: local;
   
   &::before {
     content: "";
@@ -118,9 +272,28 @@ const WhySection = styled.section`
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(55, 48, 163, 0.75);
+    background: linear-gradient(
+      to bottom,
+      rgba(30, 9, 50, 0.6) 0%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
     z-index: 1;
     pointer-events: none;
+  }
+`;
+
+const WhySection = styled.section`
+  min-height: 50vh;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
   }
 `;
 
@@ -138,8 +311,9 @@ const WhyHeader = styled.div`
   z-index: 2;
 `;
 
-const WhyTitle = styled.h2`
-  font-size: 2.5rem;
+const WhyTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 2.2rem;
   font-weight: 700;
   color: #ffffff;
   margin-bottom: 1rem;
@@ -147,9 +321,17 @@ const WhyTitle = styled.h2`
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 2;
+  background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+  }
 `;
 
 const WhyIcon = styled.span`
@@ -171,20 +353,59 @@ const FeaturesGrid = styled.div`
 `;
 
 const FeatureCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
   position: relative;
   z-index: 2;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      rgba(139, 92, 246, 0.3) 0%,
+      rgba(212, 175, 55, 0.3) 25%,
+      rgba(139, 92, 246, 0.3) 50%,
+      rgba(212, 175, 55, 0.3) 75%,
+      rgba(139, 92, 246, 0.3) 100%
+    );
+    border-radius: 24px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
+  }
+  
+  @keyframes borderGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 
+      0 25px 70px rgba(139, 92, 246, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    border-radius: 20px;
+    
+    &::before {
+      border-radius: 20px;
+    }
   }
 `;
 
@@ -205,62 +426,198 @@ const FeatureIcon = styled.div`
   justify-content: center;
   font-size: 1.8rem;
   flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
 `;
 
-const FeatureTitle = styled.h3`
+const FeatureTitle = styled.h3<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
   font-size: 1.3rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 `;
 
-const FeatureDescription = styled.p`
+const FeatureDescription = styled.p<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   color: #6b7280;
   line-height: 1.6;
   font-size: 1rem;
   margin: 0;
 `;
 
+const ClosingSection = styled.section`
+  min-height: 40vh;
+  padding: 3rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(66, 66, 66, 0.7) 0%,
+      rgba(33, 33, 33, 0.8) 100%
+    );
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2.5rem 1rem;
+    min-height: 35vh;
+  }
+`;
+
+const ClosingVideoBackground = styled.video`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vw;
+  object-fit: cover;
+  transform: translate(-50%, -50%) rotate(90deg);
+  z-index: 1;
+  
+  @media (max-width: 768px) {
+    width: 100vh;
+    height: 100vw;
+    transform: translate(-50%, -50%) rotate(90deg) scale(1.2);
+  }
+  
+  @media (max-width: 480px) {
+    transform: translate(-50%, -50%) rotate(90deg) scale(1.5);
+  }
+`;
+
+const ClosingContainer = styled.div`
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-radius: 32px;
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 
+    0 20px 60px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      rgba(139, 92, 246, 0.3) 0%,
+      rgba(212, 175, 55, 0.3) 25%,
+      rgba(139, 92, 246, 0.3) 50%,
+      rgba(212, 175, 55, 0.3) 75%,
+      rgba(139, 92, 246, 0.3) 100%
+    );
+    border-radius: 32px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
+  }
+  
+  @keyframes borderGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2rem;
+    border-radius: 24px;
+    
+    &::before {
+      border-radius: 24px;
+    }
+  }
+`;
+
+const ClosingTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c1810;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const ClosingSubtitle = styled.p<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
 export function Intro() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const navigate = useNavigate();
 
   const whyFeatures = [
     {
       id: 1,
-      title: "다국어 지원",
+      title: t("multilingualSupport"),
       icon: "🌍",
-      description: "영어, 중국어, 일본어, 스페인어로 실시간 번역 서비스를 제공하여 언어 장벽 없이 정확한 사주 풀이를 받으실 수 있습니다."
+      description: t("multilingualSupportDesc")
     },
     {
       id: 2,
-      title: "전통 사주풀이",
+      title: t("traditionalFortuneTelling"),
       icon: "🏮",
-      description: "수백 년의 역사를 가진 한국 전통 사주풀이 기법으로 당신의 운명과 미래를 정확하게 해석해드립니다."
+      description: t("traditionalFortuneTellingDesc")
     },
     {
       id: 3,
-      title: "검증된 업체",
+      title: t("verifiedBusinesses"),
       icon: "🤝",
-      description: "엄선된 전문 사주풀이 업체들과 매칭되어 신뢰할 수 있는 고품질의 상담 서비스를 경험하세요."
+      description: t("verifiedBusinessesDesc")
     },
     {
       id: 4,
-      title: "맞춤형 매칭",
+      title: t("personalizedMatching"),
       icon: "🎯",
-      description: "당신의 위치, 선호도, 예산에 맞는 최적의 사주 풀이 업체를 AI가 추천해드립니다."
+      description: t("personalizedMatchingDesc")
     },
     {
       id: 5,
-      title: "프리미엄 경험",
+      title: t("premiumExperience"),
       icon: "💎",
-      description: "한국 문화의 깊이를 느낄 수 있는 특별한 경험과 기억에 남을 문화 체험을 제공합니다."
+      description: t("premiumExperienceDesc")
     },
     {
       id: 6,
-      title: "편리한 예약",
+      title: t("convenientBooking"),
       icon: "📱",
-      description: "간편한 온라인 예약 시스템으로 언제 어디서나 쉽게 사주풀이 상담을 예약하실 수 있습니다."
+      description: t("convenientBookingDesc")
     }
   ];
 
@@ -269,44 +626,60 @@ export function Intro() {
   };
 
   return (
-    <Wrapper>
+    <Wrapper $language={language}>
       <HeroSection>
-        <BackgroundPattern />
         <HeroContent>
-          <HeroTitle>
-            {"Why Choose K-Saju?"}
+          <HeroTitle $language={language}>
+            {t("whyChooseKSaju")}
           </HeroTitle>
           <HeroSubtitle>
-            {"Discover the ancient wisdom of Korean fortune telling with modern convenience and multilingual support."}
+            {t("introSubtitle")}
           </HeroSubtitle>
-          <CTAButton onClick={handleGetStarted}>
-            {t("start")}
-          </CTAButton>
         </HeroContent>
       </HeroSection>
       
-      <WhySection>
-        <WhyContainer>
-          <WhyHeader>
-            <WhyTitle>
-              <WhyIcon>⭐</WhyIcon>
-              왜 K-Saju인가요?
-            </WhyTitle>
-          </WhyHeader>
-          
-          <FeaturesGrid>
-            {whyFeatures.map((feature) => (
-              <FeatureCard key={feature.id}>
-                <FeatureHeader>
-                  <FeatureIcon>{feature.icon}</FeatureIcon>
-                  <FeatureTitle>{feature.title}</FeatureTitle>
-                </FeatureHeader>
-                <FeatureDescription>{feature.description}</FeatureDescription>
-              </FeatureCard>
-            ))}
-          </FeaturesGrid>
-        </WhyContainer>
-      </WhySection>
+      <UnifiedSectionsContainer>
+        <WhySection>
+          <WhyContainer>
+            <WhyHeader>
+              <WhyTitle $language={language}>
+                <WhyIcon>⭐</WhyIcon>
+                {t("whyKSaju")}
+              </WhyTitle>
+            </WhyHeader>
+            
+            <FeaturesGrid>
+              {whyFeatures.map((feature) => (
+                <FeatureCard key={feature.id}>
+                  <FeatureHeader>
+                    <FeatureIcon>{feature.icon}</FeatureIcon>
+                    <FeatureTitle $language={language}>{feature.title}</FeatureTitle>
+                  </FeatureHeader>
+                  <FeatureDescription $language={language}>{feature.description}</FeatureDescription>
+                </FeatureCard>
+              ))}
+            </FeaturesGrid>
+          </WhyContainer>
+        </WhySection>
+      </UnifiedSectionsContainer>
+      
+      <ClosingSection>
+        <ClosingVideoBackground
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src={yinyangBg} type="video/mp4" />
+        </ClosingVideoBackground>
+        <ClosingContainer>
+          <ClosingTitle $language={language}>{t("closingTitle")}</ClosingTitle>
+          <ClosingSubtitle $language={language}>{t("closingSubtitle")}</ClosingSubtitle>
+          <CTAButton onClick={() => navigate('/')}>
+            {t("start")}
+          </CTAButton>
+        </ClosingContainer>
+      </ClosingSection>
     </Wrapper>
   );
 }

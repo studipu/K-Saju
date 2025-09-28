@@ -4,13 +4,73 @@ import styled from 'styled-components';
 import { useI18n } from '../i18n/i18n';
 import { generateFortune, type FortuneResult, type UserInput } from '../services/fortune';
 
-const Container = styled.div`
+// Import mysterious fonts for multiple languages from Google Fonts
+const fontLinks = [
+  // Korean mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Song+Myung&family=Jua&family=Gugi&family=Stylish:wght@400&family=Kirang+Haerang&display=swap',
+  // Korean clean fonts  
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap',
+  // Latin mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap',
+  // Japanese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Sawarabi+Mincho&display=swap',
+  // Chinese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap'
+];
+
+fontLinks.forEach(href => {
+  const link = document.createElement('link');
+  link.href = href;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+});
+
+// Language-specific font configurations
+const getFontFamily = (language: string, type: 'heading' | 'body' | 'accent' | 'price') => {
+  const fontConfigs = {
+    ko: {
+      heading: "'Song Myung', 'Stylish', 'Kirang Haerang', serif",
+      body: "'Noto Sans KR', 'Jua', sans-serif",
+      accent: "'Gugi', 'Song Myung', cursive",
+      price: "'Noto Serif KR', 'Song Myung', serif"
+    },
+    en: {
+      heading: "'Cinzel', 'Crimson Text', serif",
+      body: "'Cormorant Garamond', 'Crimson Text', serif",
+      accent: "'Cinzel', 'Crimson Text', serif",
+      price: "'Crimson Text', serif"
+    },
+    ja: {
+      heading: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      body: "'Noto Sans JP', 'Sawarabi Mincho', sans-serif",
+      accent: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      price: "'Noto Serif JP', 'Sawarabi Mincho', serif"
+    },
+    zh: {
+      heading: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      body: "'Noto Sans SC', 'Ma Shan Zheng', sans-serif",
+      accent: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      price: "'Noto Serif SC', 'Ma Shan Zheng', serif"
+    },
+    es: {
+      heading: "'Cinzel', 'Crimson Text', serif",
+      body: "'Cormorant Garamond', 'Crimson Text', serif",
+      accent: "'Cinzel', 'Crimson Text', serif",
+      price: "'Crimson Text', serif"
+    }
+  };
+  
+  return fontConfigs[language as keyof typeof fontConfigs]?.[type] || fontConfigs.en[type];
+};
+
+const Container = styled.div<{ $language: string }>`
   min-height: 100vh;
   width: 100vw;
   margin-left: calc(-50vw + 50%);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
   position: relative;
-  padding: 4rem 0;
+  padding: 2rem 0;
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   
   &::before {
     content: '';
@@ -19,55 +79,68 @@ const Container = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    z-index: -1;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    z-index: 0;
   }
   
   @media (max-width: 768px) {
-    padding: 2rem 0;
+    padding: 1rem 0;
   }
 `;
 
 const ContentWrapper = styled.div`
-  max-width: 600px;
+  max-width: 800px;
   width: 100%;
   margin: 0 auto;
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
   overflow-y: auto;
   position: relative;
   z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   
   @media (max-width: 768px) {
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     margin: 1rem;
     max-width: calc(100% - 2rem);
+    border-radius: 20px;
   }
 `;
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
-  position: relative;
+  margin-bottom: 3rem;
 `;
 
 const BackButton = styled.button`
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
+  margin-bottom: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
   
   &:hover {
-    color: #374151;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #2d3748;
+    transform: translateY(-1px);
   }
 `;
 
@@ -78,58 +151,92 @@ const FortuneIcon = styled.div`
   justify-content: center;
 `;
 
-const Title = styled.h1`
-  font-size: 2.5rem;
+const Title = styled.h1<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 3rem;
   font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  text-align: center;
+  color: #1a202c;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    font-size: 2.2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.8rem;
+  }
 `;
 
-const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: #6b7280;
-  text-align: center;
+const Subtitle = styled.p<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  font-size: 1.2rem;
+  color: #4a5568;
+  margin-bottom: 0;
+  line-height: 1.6;
+  font-weight: 400;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const FortuneCard = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   padding: 2rem;
   margin: 2rem 0;
-  border: 2px solid #0ea5e9;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   position: relative;
   overflow: hidden;
   
   &::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    animation: shimmer 3s infinite;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      rgba(139, 92, 246, 0.3) 0%,
+      rgba(212, 175, 55, 0.3) 25%,
+      rgba(139, 92, 246, 0.3) 50%,
+      rgba(212, 175, 55, 0.3) 75%,
+      rgba(139, 92, 246, 0.3) 100%
+    );
+    border-radius: 20px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
   }
   
-  @keyframes shimmer {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+  @keyframes borderGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
   }
 `;
 
-const FortuneTitle = styled.h2`
+const FortuneTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
   font-size: 1.8rem;
-  font-weight: 600;
-  color: #0c4a6e;
+  font-weight: 700;
+  color: #2c1810;
   margin-bottom: 1rem;
   text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-const FortuneContent = styled.div`
+const FortuneContent = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-size: 1.2rem;
   line-height: 1.8;
-  color: #075985;
+  color: #4a5568;
   margin-bottom: 1.5rem;
   text-align: center;
 `;
@@ -142,45 +249,69 @@ const FortuneDetails = styled.div`
 `;
 
 const FortuneDetailCard = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #0ea5e9;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 4px solid rgba(139, 92, 246, 0.6);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
 `;
 
-const DetailTitle = styled.h3`
+const DetailTitle = styled.h3<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #2c1810;
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 `;
 
-const DetailContent = styled.p`
-  color: #4b5563;
+const DetailContent = styled.p<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  color: #4a5568;
   font-size: 1rem;
   line-height: 1.6;
 `;
 
 const LuckyElements = styled.div`
-  background: #fef3c7;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
   margin: 2rem 0;
-  border: 2px solid #f59e0b;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 `;
 
-const LuckyTitle = styled.h3`
+const LuckyTitle = styled.h3<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
   font-size: 1.3rem;
-  font-weight: 600;
-  color: #92400e;
+  font-weight: 700;
+  color: #2c1810;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const LuckyGrid = styled.div`
@@ -190,11 +321,23 @@ const LuckyGrid = styled.div`
 `;
 
 const LuckyItem = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
   padding: 1rem;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 20px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
 `;
 
 const LuckyEmoji = styled.div`
@@ -202,15 +345,17 @@ const LuckyEmoji = styled.div`
   margin-bottom: 0.5rem;
 `;
 
-const LuckyLabel = styled.div`
+const LuckyLabel = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-size: 0.9rem;
-  color: #92400e;
+  color: #8b4513;
   font-weight: 500;
 `;
 
-const LuckyValue = styled.div`
+const LuckyValue = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-size: 1rem;
-  color: #1f2937;
+  color: #2c1810;
   font-weight: 600;
 `;
 
@@ -221,7 +366,8 @@ const ActionButtons = styled.div`
   margin-top: 3rem;
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary'; $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   padding: 1rem 2rem;
   border: none;
   border-radius: 12px;
@@ -229,26 +375,36 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  min-width: 160px;
   
   ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
     
-    &:hover {
-      background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.4);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
     }
   ` : `
-    background: white;
-    color: #374151;
-    border: 2px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.8);
+    color: #4a5568;
+    border: 2px solid rgba(226, 232, 240, 0.8);
+    backdrop-filter: blur(10px);
     
-    &:hover {
-      border-color: #d1d5db;
-      background: #f9fafb;
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(139, 92, 246, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     }
   `}
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -276,71 +432,196 @@ const LoadingSpinner = styled.div`
 
 // 사용자 입력 폼 컴포넌트
 const InputForm = styled.div`
-  background: #f8fafc;
-  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   padding: 2rem;
   margin-bottom: 2rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 `;
 
-const FormTitle = styled.h3`
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #1f2937;
+const FormTitle = styled.h3<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c1810;
   margin-bottom: 1.5rem;
   text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const FormGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
+  
+  /* 출생시간 모름 토글을 위한 세로 가운데 정렬 */
+  &:has([id="birthTimeUnknown"]) {
+    justify-content: center;
+  }
 `;
 
-const Label = styled.label`
+const Label = styled.label<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-size: 0.9rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #2d3748;
   margin-bottom: 0.5rem;
 `;
 
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #d1d5db;
-  border-radius: 8px;
+const Input = styled.input<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  padding: 1rem 1.25rem;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
     border-color: #8b5cf6;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  }
+  
+  &::placeholder {
+    color: #a0aec0;
+  }
+  
+  /* Date and time input specific styles for better language support */
+  &[type="date"], &[type="time"] {
+    color-scheme: light;
+    
+    /* Force English locale for date/time inputs */
+    &::-webkit-datetime-edit {
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+    }
+    
+    &::-webkit-datetime-edit-fields-wrapper {
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+    }
+    
+    &::-webkit-datetime-edit-text {
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+    }
+    
+    &::-webkit-datetime-edit-month-field,
+    &::-webkit-datetime-edit-day-field,
+    &::-webkit-datetime-edit-year-field {
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+    }
+    
+    &::-webkit-datetime-edit-hour-field,
+    &::-webkit-datetime-edit-minute-field,
+    &::-webkit-datetime-edit-second-field {
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+    }
+    
+    /* Completely hide browser's default placeholder */
+    &::-webkit-datetime-edit-text {
+      color: transparent !important;
+      opacity: 0 !important;
+    }
+    
+    &::-webkit-datetime-edit-fields-wrapper {
+      color: transparent !important;
+    }
+    
+    /* Hide all default datetime edit elements when empty */
+    &:empty {
+      &::-webkit-datetime-edit,
+      &::-webkit-datetime-edit-fields-wrapper,
+      &::-webkit-datetime-edit-text,
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field,
+      &::-webkit-datetime-edit-hour-field,
+      &::-webkit-datetime-edit-minute-field,
+      &::-webkit-datetime-edit-second-field {
+        color: transparent !important;
+        opacity: 0 !important;
+      }
+    }
+    
+    /* Custom placeholder overlay - only show when empty */
+    &[type="date"]:empty::before,
+    &[type="time"]:empty::before {
+      content: attr(data-placeholder);
+      color: #a0aec0;
+      font-style: italic;
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      pointer-events: none;
+      z-index: 10;
+      background: white;
+      padding: 0 4px;
+    }
+    
+    /* Also show custom placeholder when invalid (no value) */
+    &[type="date"]:invalid::before,
+    &[type="time"]:invalid::before {
+      content: attr(data-placeholder);
+      color: #a0aec0;
+      font-style: italic;
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      pointer-events: none;
+      z-index: 10;
+      background: white;
+      padding: 0 4px;
+    }
   }
 `;
 
-const Select = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #d1d5db;
-  border-radius: 8px;
+const Select = styled.select<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  padding: 1rem 1.25rem;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
   font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
     border-color: #8b5cf6;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
   }
 `;
 
-const GenerateButton = styled.button`
+const GenerateButton = styled.button<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -348,11 +629,12 @@ const GenerateButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
   
-  &:hover {
-    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
   }
   
   &:disabled {
@@ -363,9 +645,54 @@ const GenerateButton = styled.button`
   }
 `;
 
+const ToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+`;
+
+const ToggleLabel = styled.label<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ToggleSwitch = styled.div<{ $active: boolean }>`
+  position: relative;
+  width: 50px;
+  height: 24px;
+  background: ${props => props.$active ? '#8b5cf6' : '#cbd5e0'};
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${props => props.$active ? '26px' : '2px'};
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const ToggleInput = styled.input`
+  display: none;
+`;
+
 export default function TodayFortune() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [fortune, setFortune] = useState<FortuneResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(true);
@@ -373,13 +700,68 @@ export default function TodayFortune() {
     name: '',
     birthDate: '',
     birthTime: '',
-    nationality: ''
+    nationality: '' // 더 이상 사용하지 않지만 호환성을 위해 유지
   });
+  const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
+
+  // Helper function to get proper locale for date/time inputs
+  const getInputLocale = () => {
+    // Force English locale for date/time inputs to prevent browser localization
+    return 'en-US';
+  };
   
   useEffect(() => {
     // 페이지 진입 시 상단으로 스크롤
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Set document language for better browser compatibility
+    document.documentElement.lang = getInputLocale();
+    
+    // Set custom placeholder for date/time inputs
+    const setCustomPlaceholders = () => {
+      const dateInput = document.getElementById('birthDate') as HTMLInputElement;
+      const timeInput = document.getElementById('birthTime') as HTMLInputElement;
+      
+      if (dateInput) {
+        // Force English locale and prevent browser localization
+        dateInput.setAttribute('lang', 'en-US');
+        dateInput.setAttribute('data-locale', 'en-US');
+        dateInput.setAttribute('data-placeholder', t('datePlaceholder'));
+        dateInput.setAttribute('title', t('datePlaceholder'));
+        
+        // Remove any existing placeholder to prevent conflicts
+        dateInput.removeAttribute('placeholder');
+        
+        // Force English format by setting a temporary value and clearing it
+        const originalValue = dateInput.value;
+        dateInput.value = '';
+        if (originalValue) {
+          dateInput.value = originalValue;
+        }
+      }
+      
+      if (timeInput) {
+        // Force English locale and prevent browser localization
+        timeInput.setAttribute('lang', 'en-US');
+        timeInput.setAttribute('data-locale', 'en-US');
+        timeInput.setAttribute('data-placeholder', t('timePlaceholder'));
+        timeInput.setAttribute('title', t('timePlaceholder'));
+        
+        // Remove any existing placeholder to prevent conflicts
+        timeInput.removeAttribute('placeholder');
+        
+        // Force English format by setting a temporary value and clearing it
+        const originalValue = timeInput.value;
+        timeInput.value = '';
+        if (originalValue) {
+          timeInput.value = originalValue;
+        }
+      }
+    };
+    
+    // Set placeholders after a short delay to ensure DOM is ready
+    setTimeout(setCustomPlaceholders, 100);
+  }, [language, t]);
   
   const handleInputChange = (field: keyof UserInput, value: string) => {
     setUserInput(prev => ({
@@ -390,8 +772,8 @@ export default function TodayFortune() {
 
   const handleGenerateFortune = async () => {
     // 입력 검증
-    if (!userInput.name || !userInput.birthDate || !userInput.birthTime || !userInput.nationality) {
-      alert('모든 정보를 입력해주세요.');
+    if (!userInput.name || !userInput.birthDate || (!userInput.birthTime && !birthTimeUnknown)) {
+      alert(t('pleaseEnterAllInformation'));
       return;
     }
 
@@ -414,19 +796,19 @@ export default function TodayFortune() {
   const handleShareFortune = () => {
     if (!fortune) return;
     
-    const shareText = `🍀 오늘의 운세\n\n${fortune.overall}\n\n💕 연애운: ${fortune.love}\n💼 사업운: ${fortune.business}\n🏥 건강운: ${fortune.health}\n💰 재물운: ${fortune.wealth}\n\n🍀 행운의 색깔: ${fortune.luckyColor}\n🔢 행운의 숫자: ${fortune.luckyNumber}\n🧭 행운의 방향: ${fortune.luckyDirection}\n🎯 오늘의 행동: ${fortune.luckyAction}\n🍽️ 오늘의 음식: ${fortune.food}\n🔑 오늘의 키워드: ${fortune.keyword}\n💡 오늘의 조언: ${fortune.advice}\n\n#오늘의운세 #K-Saju #사주`;
+    const shareText = `🍀 ${t('todayFortune')}\n\n${fortune.overall}\n\n💕 ${t('loveFortune')}: ${fortune.love}\n💼 ${t('businessFortune')}: ${fortune.business}\n🏥 ${t('healthFortune')}: ${fortune.health}\n💰 ${t('wealthFortune')}: ${fortune.wealth}\n\n🍀 ${t('luckyColor')}: ${fortune.luckyColor}\n🔢 ${t('luckyNumber')}: ${fortune.luckyNumber}\n🧭 ${t('luckyDirection')}: ${fortune.luckyDirection}\n🎯 ${t('todayAction')}: ${fortune.luckyAction}\n🍽️ ${t('todayFood')}: ${fortune.food}\n🔑 ${t('todayKeyword')}: ${fortune.keyword}\n💡 ${t('todayAdvice')}: ${fortune.advice}\n\n#${t('todayFortune')} #K-Saju #${t('fortune')}`;
     
     if (navigator.share) {
       // 네이티브 공유 기능 사용 (모바일)
       navigator.share({
-        title: '오늘의 운세',
+        title: t('todayFortune'),
         text: shareText,
         url: window.location.href
       }).catch(console.error);
     } else if (navigator.clipboard) {
       // 클립보드에 복사 (데스크톱)
       navigator.clipboard.writeText(shareText).then(() => {
-        alert('운세가 클립보드에 복사되었습니다!');
+        alert(t('fortuneCopiedToClipboard'));
       }).catch(() => {
         // 클립보드 실패 시 대체 방법
         handleFallbackShare(shareText);
@@ -450,9 +832,9 @@ export default function TodayFortune() {
     
     try {
       document.execCommand('copy');
-      alert('운세가 클립보드에 복사되었습니다!');
+      alert(t('fortuneCopiedToClipboard'));
     } catch (err) {
-      alert('운세를 복사할 수 없습니다. 직접 복사해주세요.');
+      alert(t('cannotCopyFortune'));
     }
     
     document.body.removeChild(textArea);
@@ -465,13 +847,13 @@ export default function TodayFortune() {
   
   if (loading) {
     return (
-      <Container>
+      <Container $language={language} lang={language}>
         <ContentWrapper>
           <Header>
-            <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
+            <BackButton onClick={handleBack}>‹ {t('backToHome')}</BackButton>
             <FortuneIcon>🔮</FortuneIcon>
-            <Title>오늘의 운세 분석 중...</Title>
-            <Subtitle>당신만의 특별한 운세를 생성하고 있습니다</Subtitle>
+            <Title $language={language}>{t('fortuneAnalyzing')}</Title>
+            <Subtitle $language={language}>{t('creatingYourSpecialFortune')}</Subtitle>
           </Header>
           <LoadingSpinner />
         </ContentWrapper>
@@ -481,78 +863,88 @@ export default function TodayFortune() {
 
   if (showForm) {
     return (
-      <Container>
+      <Container $language={language} lang={language}>
         <ContentWrapper>
           <Header>
-            <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
+            <BackButton onClick={handleBack}>‹ {t('backToHome')}</BackButton>
             <FortuneIcon>🔮</FortuneIcon>
-            <Title>오늘의 운세</Title>
-            <Subtitle>당신의 정보를 입력하면 개인 맞춤 운세를 제공합니다</Subtitle>
+            <Title $language={language}>{t('todayFortune')}</Title>
+            <Subtitle $language={language}>{t('enterYourInfoForPersonalizedFortune')}</Subtitle>
           </Header>
           
-          <InputForm>
-            <FormTitle>📝 개인 정보 입력</FormTitle>
+          <InputForm lang={language}>
+            <FormTitle $language={language}>📝 {t('personalInfoInput')}</FormTitle>
             <FormGrid>
+              {/* 첫 번째 행: 이름 */}
               <FormGroup>
-                <Label htmlFor="name">이름 *</Label>
+                <Label $language={language} htmlFor="name">{t('name')} *</Label>
                 <Input
+                  $language={language}
                   id="name"
                   type="text"
                   value={userInput.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="이름을 입력하세요"
+                  placeholder={t('enterYourName')}
                 />
               </FormGroup>
               
+              {/* 첫 번째 행: 생년월일 */}
               <FormGroup>
-                <Label htmlFor="birthDate">생년월일 *</Label>
+                <Label $language={language} htmlFor="birthDate">{t('birthDate')} *</Label>
                 <Input
+                  $language={language}
                   id="birthDate"
                   type="date"
                   value={userInput.birthDate}
                   onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                  lang="en-US"
+                  data-locale="en-US"
+                  data-placeholder={t('datePlaceholder')}
+                  required
                 />
               </FormGroup>
               
+              {/* 두 번째 행: 출생시간 */}
               <FormGroup>
-                <Label htmlFor="birthTime">출생시각 *</Label>
+                <Label $language={language} htmlFor="birthTime">{t('birthTime')} *</Label>
                 <Input
+                  $language={language}
                   id="birthTime"
                   type="time"
                   value={userInput.birthTime}
                   onChange={(e) => handleInputChange('birthTime', e.target.value)}
+                  lang="en-US"
+                  data-locale="en-US"
+                  data-placeholder={t('timePlaceholder')}
+                  disabled={birthTimeUnknown}
+                  required={!birthTimeUnknown}
                 />
               </FormGroup>
               
+              {/* 두 번째 행: 출생시간 모름 토글 */}
               <FormGroup>
-                <Label htmlFor="nationality">국적 *</Label>
-                <Select
-                  id="nationality"
-                  value={userInput.nationality}
-                  onChange={(e) => handleInputChange('nationality', e.target.value)}
-                >
-                  <option value="">국적을 선택하세요</option>
-                  <option value="korean">한국</option>
-                  <option value="us">미국</option>
-                  <option value="uk">영국</option>
-                  <option value="canada">캐나다</option>
-                  <option value="australia">호주</option>
-                  <option value="germany">독일</option>
-                  <option value="france">프랑스</option>
-                  <option value="japan">일본</option>
-                  <option value="china">중국</option>
-                  <option value="thailand">태국</option>
-                  <option value="vietnam">베트남</option>
-                  <option value="india">인도</option>
-                  <option value="brazil">브라질</option>
-                  <option value="mexico">멕시코</option>
-                  <option value="other">기타</option>
-                </Select>
+                <ToggleContainer>
+                  <ToggleLabel $language={language} htmlFor="birthTimeUnknown">
+                    <ToggleInput
+                      type="checkbox"
+                      id="birthTimeUnknown"
+                      checked={birthTimeUnknown}
+                      onChange={(e) => {
+                        setBirthTimeUnknown(e.target.checked);
+                        if (e.target.checked) {
+                          handleInputChange('birthTime', '');
+                        }
+                      }}
+                    />
+                    <ToggleSwitch $active={birthTimeUnknown} />
+                    {t('birthTimeUnknown')}
+                  </ToggleLabel>
+                </ToggleContainer>
               </FormGroup>
             </FormGrid>
             
-            <GenerateButton onClick={handleGenerateFortune}>
-              🔮 운세 생성하기
+            <GenerateButton $language={language} onClick={handleGenerateFortune}>
+              🔮 {t('generateFortune')}
             </GenerateButton>
           </InputForm>
         </ContentWrapper>
@@ -562,17 +954,17 @@ export default function TodayFortune() {
   
   if (!fortune) {
     return (
-      <Container>
+      <Container $language={language} lang={language}>
         <ContentWrapper>
           <Header>
-            <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
-            <Title>운세를 불러올 수 없습니다</Title>
-            <Subtitle>잠시 후 다시 시도해주세요</Subtitle>
+            <BackButton onClick={handleBack}>‹ {t('backToHome')}</BackButton>
+            <Title $language={language}>{t('cannotLoadFortune')}</Title>
+            <Subtitle $language={language}>{t('pleaseTryAgainLater')}</Subtitle>
           </Header>
           <ActionButtons>
-            <Button onClick={handleBack}>홈으로</Button>
-            <Button $variant="primary" onClick={() => window.location.reload()}>
-              다시 시도
+            <Button $language={language} onClick={handleBack}>{t('goHome')}</Button>
+            <Button $language={language} $variant="primary" onClick={() => window.location.reload()}>
+              {t('tryAgain')}
             </Button>
           </ActionButtons>
         </ContentWrapper>
@@ -581,94 +973,94 @@ export default function TodayFortune() {
   }
   
   return (
-    <Container>
+    <Container $language={language} lang={language}>
       <ContentWrapper>
         <Header>
-          <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
+          <BackButton onClick={handleBack}>‹ {t('backToHome')}</BackButton>
           <FortuneIcon>🍀</FortuneIcon>
-          <Title>오늘의 운세</Title>
-          <Subtitle>AI가 분석한 당신만의 특별한 운세입니다</Subtitle>
+          <Title $language={language}>{t('todayFortune')}</Title>
+          <Subtitle $language={language}>{t('aiAnalyzedYourSpecialFortune')}</Subtitle>
         </Header>
         
         <FortuneCard>
-          <FortuneTitle>✨ 전체 운세</FortuneTitle>
-          <FortuneContent>{fortune.overall}</FortuneContent>
+          <FortuneTitle $language={language}>✨ {t('overallFortune')}</FortuneTitle>
+          <FortuneContent $language={language}>{fortune.overall}</FortuneContent>
         </FortuneCard>
         
         <FortuneDetails>
           <FortuneDetailCard>
-            <DetailTitle>💕 연애운</DetailTitle>
-            <DetailContent>{fortune.love}</DetailContent>
+            <DetailTitle $language={language}>💕 {t('loveFortune')}</DetailTitle>
+            <DetailContent $language={language}>{fortune.love}</DetailContent>
           </FortuneDetailCard>
           
           <FortuneDetailCard>
-            <DetailTitle>💼 사업운</DetailTitle>
-            <DetailContent>{fortune.business}</DetailContent>
+            <DetailTitle $language={language}>💼 {t('businessFortune')}</DetailTitle>
+            <DetailContent $language={language}>{fortune.business}</DetailContent>
           </FortuneDetailCard>
           
           <FortuneDetailCard>
-            <DetailTitle>🏥 건강운</DetailTitle>
-            <DetailContent>{fortune.health}</DetailContent>
+            <DetailTitle $language={language}>🏥 {t('healthFortune')}</DetailTitle>
+            <DetailContent $language={language}>{fortune.health}</DetailContent>
           </FortuneDetailCard>
           
           <FortuneDetailCard>
-            <DetailTitle>💰 재물운</DetailTitle>
-            <DetailContent>{fortune.wealth}</DetailContent>
+            <DetailTitle $language={language}>💰 {t('wealthFortune')}</DetailTitle>
+            <DetailContent $language={language}>{fortune.wealth}</DetailContent>
           </FortuneDetailCard>
         </FortuneDetails>
         
         <LuckyElements>
-          <LuckyTitle>🍀 오늘의 행운 요소</LuckyTitle>
+          <LuckyTitle $language={language}>🍀 {t('todayLuckyElements')}</LuckyTitle>
           <LuckyGrid>
             <LuckyItem>
               <LuckyEmoji>🎨</LuckyEmoji>
-              <LuckyLabel>행운의 색깔</LuckyLabel>
-              <LuckyValue>{fortune.luckyColor}</LuckyValue>
+              <LuckyLabel $language={language}>{t('luckyColor')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.luckyColor}</LuckyValue>
             </LuckyItem>
             
             <LuckyItem>
               <LuckyEmoji>🔢</LuckyEmoji>
-              <LuckyLabel>행운의 숫자</LuckyLabel>
-              <LuckyValue>{fortune.luckyNumber}</LuckyValue>
+              <LuckyLabel $language={language}>{t('luckyNumber')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.luckyNumber}</LuckyValue>
             </LuckyItem>
             
             <LuckyItem>
               <LuckyEmoji>🧭</LuckyEmoji>
-              <LuckyLabel>행운의 방향</LuckyLabel>
-              <LuckyValue>{fortune.luckyDirection}</LuckyValue>
+              <LuckyLabel $language={language}>{t('luckyDirection')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.luckyDirection}</LuckyValue>
             </LuckyItem>
             
             <LuckyItem>
               <LuckyEmoji>🍽️</LuckyEmoji>
-              <LuckyLabel>오늘의 음식</LuckyLabel>
-              <LuckyValue>{fortune.food}</LuckyValue>
+              <LuckyLabel $language={language}>{t('todayFood')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.food}</LuckyValue>
             </LuckyItem>
             
             <LuckyItem>
               <LuckyEmoji>🔑</LuckyEmoji>
-              <LuckyLabel>오늘의 키워드</LuckyLabel>
-              <LuckyValue>{fortune.keyword}</LuckyValue>
+              <LuckyLabel $language={language}>{t('todayKeyword')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.keyword}</LuckyValue>
             </LuckyItem>
             
             <LuckyItem>
               <LuckyEmoji>🎯</LuckyEmoji>
-              <LuckyLabel>오늘의 행동</LuckyLabel>
-              <LuckyValue>{fortune.luckyAction}</LuckyValue>
+              <LuckyLabel $language={language}>{t('todayAction')}</LuckyLabel>
+              <LuckyValue $language={language}>{fortune.luckyAction}</LuckyValue>
             </LuckyItem>
           </LuckyGrid>
         </LuckyElements>
         
         <FortuneCard>
-          <FortuneTitle>💡 오늘의 조언</FortuneTitle>
-          <FortuneContent>{fortune.advice}</FortuneContent>
+          <FortuneTitle $language={language}>💡 {t('todayAdvice')}</FortuneTitle>
+          <FortuneContent $language={language}>{fortune.advice}</FortuneContent>
         </FortuneCard>
         
         <ActionButtons>
-          <Button onClick={handleShareFortune}>
-            📤 공유하기
+          <Button $language={language} onClick={handleShareFortune}>
+            📤 {t('shareResult')}
           </Button>
-          <Button $variant="primary" onClick={handleBookConsultation}>
-            상세 상담 받기
+          <Button $language={language} $variant="primary" onClick={handleBookConsultation}>
+            {t('getDetailedConsultation')}
           </Button>
         </ActionButtons>
       </ContentWrapper>

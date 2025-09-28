@@ -18,8 +18,8 @@ export interface FortuneResult {
 export interface UserInput {
   name: string;
   birthDate: string; // YYYY-MM-DD 형식
-  birthTime: string; // HH:MM 형식
-  nationality: string;
+  birthTime: string; // HH:MM 형식 (빈 문자열일 수 있음)
+  nationality: string; // 더 이상 사용하지 않음 (호환성을 위해 유지)
 }
 
 // 시드 기반 인덱스 생성 함수
@@ -338,7 +338,9 @@ function replaceTemplate(template: string, variables: Record<string, string>): s
 // 운세 생성 메인 함수
 export function generateFortune(userInput: UserInput): FortuneResult {
   const today = getTodayString();
-  const seed = `${userInput.name}-${userInput.birthDate}-${userInput.birthTime}-${userInput.nationality}-${today}`;
+  // birthTime이 없을 때는 "unknown"을 사용하고, nationality는 제거
+  const birthTimeForSeed = userInput.birthTime || "unknown";
+  const seed = `${userInput.name}-${userInput.birthDate}-${birthTimeForSeed}-${today}`;
   
   // 각 카테고리별 인덱스 생성
   const loveIndex = getSeededIndex(seed + 'love', fortuneDatabase.love.length);

@@ -497,6 +497,12 @@ const IDCard = styled.div`
   position: relative;
   overflow: hidden;
   
+  @media (max-width: 768px) {
+    aspect-ratio: auto;
+    min-height: auto;
+    padding: 1rem;
+  }
+  
   &::before {
     content: '';
     position: absolute;
@@ -540,10 +546,10 @@ const IDCardContent = styled.div`
   
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.5rem;
     height: auto;
     min-height: auto;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
 `;
 
@@ -613,7 +619,7 @@ const IDCardNameWithHanja = styled.div`
   margin-bottom: 1.5rem;
   
   @media (max-width: 768px) {
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.3rem;
   }
 `;
 
@@ -637,7 +643,7 @@ const IDCardInfo = styled.div`
   }
   
   @media (max-width: 768px) {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
   }
 `;
 
@@ -706,6 +712,13 @@ const IDCardFooter = styled.div`
   bottom: 0.5rem;
   left: 0;
   right: 0;
+  
+  @media (max-width: 768px) {
+    position: static;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #d4af37;
+  }
 `;
 
 const IDCardIssueDate = styled.p<{ $language: string }>`

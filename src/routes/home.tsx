@@ -168,14 +168,14 @@ const HeroTitle = styled.h1<{ $language: string }>`
   line-height: 1.2;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   max-width: 450px;
-  word-wrap: break-word;
-  hyphens: auto;
+  white-space: nowrap;
   
   @media (max-width: 768px) {
     font-size: 2.2rem;
     max-width: 100%;
     margin-bottom: 1.2rem;
     line-height: 1.3;
+    white-space: normal;
   }
   
   @media (max-width: 480px) {
