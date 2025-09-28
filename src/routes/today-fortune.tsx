@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useI18n } from '../i18n/i18n';
+import { generateFortune, type FortuneResult, type UserInput } from '../services/fortune';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -251,101 +252,169 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 `;
 
 const LoadingSpinner = styled.div`
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f4f6;
-  border-radius: 50%;
-  border-top-color: #8b5cf6;
-  animation: spin 1s ease-in-out infinite;
-  margin: 2rem auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 200px;
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-radius: 50%;
+    border-top-color: #8b5cf6;
+    animation: spin 1s ease-in-out infinite;
+  }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
 `;
 
-// 운세 데이터 타입
-interface FortuneData {
-  overall: string;
-  love: string;
-  career: string;
-  health: string;
-  money: string;
-  luckyColor: string;
-  luckyNumber: number;
-  luckyDirection: string;
-  advice: string;
-}
+// 사용자 입력 폼 컴포넌트
+const InputForm = styled.div`
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 2px solid #e2e8f0;
+`;
 
-// Mock 운세 데이터 생성 함수
-const generateFortune = (): FortuneData => {
-  const fortunes = [
-    {
-      overall: "오늘은 새로운 시작에 좋은 날입니다. 긍정적인 마음가짐으로 하루를 시작하세요.",
-      love: "진심이 통하는 날입니다. 솔직한 마음을 표현해보세요.",
-      career: "새로운 기회가 찾아올 수 있습니다. 적극적으로 도전해보세요.",
-      health: "활동적인 하루를 보내면 기분이 좋아질 것입니다.",
-      money: "계획적인 소비가 필요한 하루입니다.",
-      luckyColor: "파란색",
-      luckyNumber: 7,
-      luckyDirection: "동쪽",
-      advice: "오늘은 인내심을 갖고 차근차근 진행하세요."
-    },
-    {
-      overall: "오늘은 인맥을 쌓기에 좋은 날입니다. 새로운 사람들과의 만남이 기대됩니다.",
-      love: "마음을 열고 대화해보세요. 좋은 인연이 있을 것입니다.",
-      career: "팀워크가 중요한 하루입니다. 협력에 집중하세요.",
-      health: "스트레스를 해소할 수 있는 활동을 해보세요.",
-      money: "투자보다는 저축에 집중하는 것이 좋습니다.",
-      luckyColor: "초록색",
-      luckyNumber: 3,
-      luckyDirection: "남쪽",
-      advice: "주변 사람들과의 관계를 소중히 여기세요."
-    },
-    {
-      overall: "오늘은 집중력이 높은 날입니다. 중요한 일을 처리하기에 좋습니다.",
-      love: "진정한 마음을 확인할 수 있는 하루입니다.",
-      career: "목표를 향해 한 걸음씩 나아가세요.",
-      health: "규칙적인 생활이 건강에 도움이 됩니다.",
-      money: "신중한 판단이 필요한 하루입니다.",
-      luckyColor: "빨간색",
-      luckyNumber: 9,
-      luckyDirection: "서쪽",
-      advice: "확신을 갖고 결정하세요."
-    }
-  ];
+const FormTitle = styled.h3`
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+  text-align: center;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Label = styled.label`
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+`;
+
+const Input = styled.input`
+  padding: 0.75rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
   
-  return fortunes[Math.floor(Math.random() * fortunes.length)];
-};
+  &:focus {
+    outline: none;
+    border-color: #8b5cf6;
+  }
+`;
+
+const Select = styled.select`
+  padding: 0.75rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: border-color 0.2s;
+  
+  &:focus {
+    outline: none;
+    border-color: #8b5cf6;
+  }
+`;
+
+const GenerateButton = styled.button`
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.4);
+  }
+  
+  &:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
 
 export default function TodayFortune() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const [fortune, setFortune] = useState<FortuneData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [fortune, setFortune] = useState<FortuneResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(true);
+  const [userInput, setUserInput] = useState<UserInput>({
+    name: '',
+    birthDate: '',
+    birthTime: '',
+    nationality: ''
+  });
   
   useEffect(() => {
     // 페이지 진입 시 상단으로 스크롤
     window.scrollTo(0, 0);
-    
-    // 운세 데이터 생성 시뮬레이션
-    const loadFortune = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
-      setFortune(generateFortune());
-      setLoading(false);
-    };
-    
-    loadFortune();
   }, []);
   
+  const handleInputChange = (field: keyof UserInput, value: string) => {
+    setUserInput(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleGenerateFortune = async () => {
+    // 입력 검증
+    if (!userInput.name || !userInput.birthDate || !userInput.birthTime || !userInput.nationality) {
+      alert('모든 정보를 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    setShowForm(false);
+    
+    // 운세 생성 시뮬레이션 (2초 대기)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // 실제 운세 생성
+    const fortuneResult = generateFortune(userInput);
+    setFortune(fortuneResult);
+    setLoading(false);
+  };
+
   const handleBack = () => {
     navigate('/');
   };
   
   const handleShareFortune = () => {
-    const shareText = `🍀 오늘의 운세\n\n${fortune?.overall}\n\n💕 연애운: ${fortune?.love}\n💼 사업운: ${fortune?.career}\n💰 재물운: ${fortune?.money}\n\n행운의 색깔: ${fortune?.luckyColor}\n행운의 숫자: ${fortune?.luckyNumber}\n행운의 방향: ${fortune?.luckyDirection}\n\n💡 오늘의 조언: ${fortune?.advice}\n\n#오늘의운세 #K-Saju #사주`;
+    if (!fortune) return;
+    
+    const shareText = `🍀 오늘의 운세\n\n${fortune.overall}\n\n💕 연애운: ${fortune.love}\n💼 사업운: ${fortune.business}\n🏥 건강운: ${fortune.health}\n💰 재물운: ${fortune.wealth}\n\n🍀 행운의 색깔: ${fortune.luckyColor}\n🔢 행운의 숫자: ${fortune.luckyNumber}\n🧭 행운의 방향: ${fortune.luckyDirection}\n🎯 오늘의 행동: ${fortune.luckyAction}\n🍽️ 오늘의 음식: ${fortune.food}\n🔑 오늘의 키워드: ${fortune.keyword}\n💡 오늘의 조언: ${fortune.advice}\n\n#오늘의운세 #K-Saju #사주`;
     
     if (navigator.share) {
       // 네이티브 공유 기능 사용 (모바일)
@@ -392,6 +461,7 @@ export default function TodayFortune() {
   const handleBookConsultation = () => {
     navigate('/locations');
   };
+
   
   if (loading) {
     return (
@@ -401,9 +471,90 @@ export default function TodayFortune() {
             <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
             <FortuneIcon>🔮</FortuneIcon>
             <Title>오늘의 운세 분석 중...</Title>
-            <Subtitle>AI가 당신의 운세를 분석하고 있습니다</Subtitle>
+            <Subtitle>당신만의 특별한 운세를 생성하고 있습니다</Subtitle>
           </Header>
           <LoadingSpinner />
+        </ContentWrapper>
+      </Container>
+    );
+  }
+
+  if (showForm) {
+    return (
+      <Container>
+        <ContentWrapper>
+          <Header>
+            <BackButton onClick={handleBack}>‹ 뒤로 가기</BackButton>
+            <FortuneIcon>🔮</FortuneIcon>
+            <Title>오늘의 운세</Title>
+            <Subtitle>당신의 정보를 입력하면 개인 맞춤 운세를 제공합니다</Subtitle>
+          </Header>
+          
+          <InputForm>
+            <FormTitle>📝 개인 정보 입력</FormTitle>
+            <FormGrid>
+              <FormGroup>
+                <Label htmlFor="name">이름 *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={userInput.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="이름을 입력하세요"
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="birthDate">생년월일 *</Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={userInput.birthDate}
+                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="birthTime">출생시각 *</Label>
+                <Input
+                  id="birthTime"
+                  type="time"
+                  value={userInput.birthTime}
+                  onChange={(e) => handleInputChange('birthTime', e.target.value)}
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="nationality">국적 *</Label>
+                <Select
+                  id="nationality"
+                  value={userInput.nationality}
+                  onChange={(e) => handleInputChange('nationality', e.target.value)}
+                >
+                  <option value="">국적을 선택하세요</option>
+                  <option value="korean">한국</option>
+                  <option value="us">미국</option>
+                  <option value="uk">영국</option>
+                  <option value="canada">캐나다</option>
+                  <option value="australia">호주</option>
+                  <option value="germany">독일</option>
+                  <option value="france">프랑스</option>
+                  <option value="japan">일본</option>
+                  <option value="china">중국</option>
+                  <option value="thailand">태국</option>
+                  <option value="vietnam">베트남</option>
+                  <option value="india">인도</option>
+                  <option value="brazil">브라질</option>
+                  <option value="mexico">멕시코</option>
+                  <option value="other">기타</option>
+                </Select>
+              </FormGroup>
+            </FormGrid>
+            
+            <GenerateButton onClick={handleGenerateFortune}>
+              🔮 운세 생성하기
+            </GenerateButton>
+          </InputForm>
         </ContentWrapper>
       </Container>
     );
@@ -452,7 +603,7 @@ export default function TodayFortune() {
           
           <FortuneDetailCard>
             <DetailTitle>💼 사업운</DetailTitle>
-            <DetailContent>{fortune.career}</DetailContent>
+            <DetailContent>{fortune.business}</DetailContent>
           </FortuneDetailCard>
           
           <FortuneDetailCard>
@@ -462,7 +613,7 @@ export default function TodayFortune() {
           
           <FortuneDetailCard>
             <DetailTitle>💰 재물운</DetailTitle>
-            <DetailContent>{fortune.money}</DetailContent>
+            <DetailContent>{fortune.wealth}</DetailContent>
           </FortuneDetailCard>
         </FortuneDetails>
         
@@ -485,6 +636,24 @@ export default function TodayFortune() {
               <LuckyEmoji>🧭</LuckyEmoji>
               <LuckyLabel>행운의 방향</LuckyLabel>
               <LuckyValue>{fortune.luckyDirection}</LuckyValue>
+            </LuckyItem>
+            
+            <LuckyItem>
+              <LuckyEmoji>🍽️</LuckyEmoji>
+              <LuckyLabel>오늘의 음식</LuckyLabel>
+              <LuckyValue>{fortune.food}</LuckyValue>
+            </LuckyItem>
+            
+            <LuckyItem>
+              <LuckyEmoji>🔑</LuckyEmoji>
+              <LuckyLabel>오늘의 키워드</LuckyLabel>
+              <LuckyValue>{fortune.keyword}</LuckyValue>
+            </LuckyItem>
+            
+            <LuckyItem>
+              <LuckyEmoji>🎯</LuckyEmoji>
+              <LuckyLabel>오늘의 행동</LuckyLabel>
+              <LuckyValue>{fortune.luckyAction}</LuckyValue>
             </LuckyItem>
           </LuckyGrid>
         </LuckyElements>

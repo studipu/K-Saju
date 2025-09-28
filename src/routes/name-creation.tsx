@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useI18n } from '../i18n/i18n';
+import { generateKoreanName, type NameGenerationResponse } from '../services/openai';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -209,33 +210,26 @@ const Button = styled.button<{ $variant?: 'primary' }>`
   }
 `;
 
-const LoadingContainer = styled.div`
-  text-align: center;
-  padding: 3rem 2rem;
-`;
-
-const LoadingText = styled.p`
-  font-size: 1.1rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
-`;
-
-const ShimmerEffect = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  animation: shimmer 1s linear infinite;
-  margin: 0 auto 1rem;
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 200px;
   
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-radius: 50%;
+    border-top-color: #8b5cf6;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 `;
 
@@ -356,17 +350,8 @@ const ErrorMessage = styled.div`
 interface FormData {
   originalName: string;
   gender: string;
-  personality: string;
-  birthYear: string;
+  personality: string[];
   nationality: string;
-}
-
-interface NameResult {
-  koreanName: string;
-  koreanPronunciation: string;
-  englishPronunciation: string;
-  meaning: string;
-  details: string;
 }
 
 const NameCreation: React.FC = () => {
@@ -374,20 +359,19 @@ const NameCreation: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     originalName: '',
     gender: '',
-    personality: '',
-    birthYear: '',
+    personality: [],
     nationality: ''
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<NameResult | null>(null);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [result, setResult] = useState<NameGenerationResponse | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   useEffect(() => {
     // 페이지 진입 시 상단으로 스크롤
     window.scrollTo(0, 0);
   }, []);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -402,8 +386,25 @@ const NameCreation: React.FC = () => {
     }
   };
 
+  const handlePersonalityChange = (personality: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      personality: checked 
+        ? [...prev.personality, personality]
+        : prev.personality.filter(p => p !== personality)
+    }));
+    
+    // 에러 메시지 제거
+    if (errors.personality) {
+      setErrors(prev => ({
+        ...prev,
+        personality: undefined
+      }));
+    }
+  };
+
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
     
     if (!formData.originalName.trim()) {
       newErrors.originalName = '이름을 입력해주세요';
@@ -411,11 +412,8 @@ const NameCreation: React.FC = () => {
     if (!formData.gender) {
       newErrors.gender = '성별을 선택해주세요';
     }
-    if (!formData.personality) {
-      newErrors.personality = '성격을 선택해주세요';
-    }
-    if (!formData.birthYear) {
-      newErrors.birthYear = '출생년도를 선택해주세요';
+    if (formData.personality.length === 0) {
+      newErrors.personality = '성격을 하나 이상 선택해주세요';
     }
     if (!formData.nationality) {
       newErrors.nationality = '국적을 선택해주세요';
@@ -425,80 +423,6 @@ const NameCreation: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const generateKoreanName = (formData: FormData): NameResult => {
-    // 성격과 특성에 따른 한국 이름 생성 로직
-    const surnames = [
-      { name: '김', korean: '김', english: 'Kim' },
-      { name: '이', korean: '이', english: 'Lee' },
-      { name: '박', korean: '박', english: 'Park' },
-      { name: '최', korean: '최', english: 'Choi' },
-      { name: '정', korean: '정', english: 'Jung' },
-      { name: '강', korean: '강', english: 'Kang' },
-      { name: '조', korean: '조', english: 'Cho' },
-      { name: '윤', korean: '윤', english: 'Yoon' },
-      { name: '장', korean: '장', english: 'Jang' },
-      { name: '임', korean: '임', english: 'Lim' }
-    ];
-    
-    const maleNames = [
-      { name: '민수', korean: '민수', english: 'Min-su' },
-      { name: '준호', korean: '준호', english: 'Jun-ho' },
-      { name: '태현', korean: '태현', english: 'Tae-hyun' },
-      { name: '현우', korean: '현우', english: 'Hyeon-u' },
-      { name: '지훈', korean: '지훈', english: 'Ji-hun' },
-      { name: '동현', korean: '동현', english: 'Dong-hyun' },
-      { name: '성민', korean: '성민', english: 'Seong-min' },
-      { name: '준영', korean: '준영', english: 'Jun-young' },
-      { name: '민호', korean: '민호', english: 'Min-ho' },
-      { name: '재현', korean: '재현', english: 'Jae-hyun' }
-    ];
-    
-    const femaleNames = [
-      { name: '지은', korean: '지은', english: 'Ji-eun' },
-      { name: '서연', korean: '서연', english: 'Seo-yeon' },
-      { name: '민지', korean: '민지', english: 'Min-ji' },
-      { name: '예은', korean: '예은', english: 'Ye-eun' },
-      { name: '하늘', korean: '하늘', english: 'Ha-neul' },
-      { name: '지현', korean: '지현', english: 'Ji-hyun' },
-      { name: '수진', korean: '수진', english: 'Su-jin' },
-      { name: '예진', korean: '예진', english: 'Ye-jin' },
-      { name: '서현', korean: '서현', english: 'Seo-hyun' },
-      { name: '민정', korean: '민정', english: 'Min-jung' }
-    ];
-    
-    const surname = surnames[Math.floor(Math.random() * surnames.length)];
-    let givenName: { name: string; korean: string; english: string };
-    
-    if (formData.gender === 'male') {
-      givenName = maleNames[Math.floor(Math.random() * maleNames.length)];
-    } else {
-      givenName = femaleNames[Math.floor(Math.random() * femaleNames.length)];
-    }
-    
-    const koreanName = `${surname.name}${givenName.name}`;
-    const koreanPronunciation = `${surname.korean} ${givenName.korean}`;
-    const englishPronunciation = `${surname.english} ${givenName.english}`;
-    
-    // 의미와 상세 설명 생성
-    const meanings = {
-      'active': '활발하고 에너지가 넘치는',
-      'calm': '차분하고 안정적인',
-      'creative': '창의적이고 독창적인',
-      'kind': '따뜻하고 친근한',
-      'strong': '강인하고 의지가 강한',
-      'wise': '지혜롭고 똑똑한'
-    };
-    
-    const meaning = meanings[formData.personality as keyof typeof meanings] || '특별하고 의미있는';
-    
-    return {
-      koreanName,
-      koreanPronunciation,
-      englishPronunciation,
-      meaning: `${meaning} 의미를 담은 이름입니다`,
-      details: `${formData.originalName}님의 성격과 특성을 반영하여 선정된 한국 이름입니다. 이 이름은 한국의 전통적 의미와 현대적 감각이 조화를 이룬 이름입니다.`
-    };
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -509,12 +433,17 @@ const NameCreation: React.FC = () => {
     
     setLoading(true);
     
-    // 3초 후에 결과 생성
-    setTimeout(() => {
-      const nameResult = generateKoreanName(formData);
+    try {
+      // Supabase Edge Function을 통해 한국 이름 생성
+      const nameResult = await generateKoreanName(formData);
       setResult(nameResult);
+    } catch (error) {
+      console.error('이름 생성 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      alert(`이름 생성 중 오류가 발생했습니다: ${errorMessage}`);
+    } finally {
       setLoading(false);
-    }, 3000);
+    }
   };
 
   const handleBack = () => {
@@ -522,7 +451,7 @@ const NameCreation: React.FC = () => {
   };
 
   const handleShare = () => {
-    const shareText = `🎭 한국 이름 작명 결과\n\n새로운 한국 이름: ${result?.koreanName}\n\n🔊 발음\n한국어: ${result?.koreanPronunciation}\n영어: ${result?.englishPronunciation}\n\n의미: ${result?.meaning}\n\n${result?.details}\n\n#한국이름 #이름작명 #K-Saju`;
+    const shareText = `🎭 한국 이름 작명 결과\n\n🔊 발음 기반 이름: ${result?.sound_based.name_hangul} (${result?.sound_based.romanization})\n${result?.sound_based.note}\n\n📝 의미 기반 이름: ${result?.meaning_based.name_hangul} (${result?.meaning_based.romanization})\n한자: ${result?.meaning_based.name_hanja}\n${result?.meaning_based.meaning}\n\n#한국이름 #이름작명 #K-Saju`;
     
     if (navigator.share) {
       navigator.share({
@@ -546,8 +475,7 @@ const NameCreation: React.FC = () => {
     setFormData({
       originalName: '',
       gender: '',
-      personality: '',
-      birthYear: '',
+      personality: [],
       nationality: ''
     });
   };
@@ -562,10 +490,7 @@ const NameCreation: React.FC = () => {
             <Subtitle>AI가 당신에게 맞는 한국 이름을 만들고 있습니다...</Subtitle>
           </Header>
           
-          <LoadingContainer>
-            <ShimmerEffect />
-            <LoadingText>당신의 성격과 특성을 분석하여<br />완벽한 한국 이름을 선정하고 있습니다</LoadingText>
-          </LoadingContainer>
+          <LoadingSpinner />
         </ContentWrapper>
       </Container>
     );
@@ -582,23 +507,38 @@ const NameCreation: React.FC = () => {
           </Header>
           
           <ResultContainer>
+            {/* Sound-based Name */}
             <NameCard>
-              <KoreanName>{result.koreanName}</KoreanName>
+              <KoreanName>{result.sound_based.name_hangul}</KoreanName>
               
               <PronunciationSection>
                 <PronunciationTitle>🔊 발음</PronunciationTitle>
                 <PronunciationRow>
-                  <PronunciationLabel>한국어:</PronunciationLabel>
-                  <PronunciationText>{result.koreanPronunciation}</PronunciationText>
-                </PronunciationRow>
-                <PronunciationRow>
-                  <PronunciationLabel>영어:</PronunciationLabel>
-                  <PronunciationText>{result.englishPronunciation}</PronunciationText>
+                  <PronunciationLabel>로마자:</PronunciationLabel>
+                  <PronunciationText>{result.sound_based.romanization}</PronunciationText>
                 </PronunciationRow>
               </PronunciationSection>
               
-              <NameMeaning>{result.meaning}</NameMeaning>
-              <NameDetails>{result.details}</NameDetails>
+              <NameMeaning>{result.sound_based.note}</NameMeaning>
+            </NameCard>
+
+            {/* Meaning-based Name */}
+            <NameCard style={{ marginTop: '2rem' }}>
+              <KoreanName>{result.meaning_based.name_hangul}</KoreanName>
+              
+              <PronunciationSection>
+                <PronunciationTitle>🔊 발음</PronunciationTitle>
+                <PronunciationRow>
+                  <PronunciationLabel>로마자:</PronunciationLabel>
+                  <PronunciationText>{result.meaning_based.romanization}</PronunciationText>
+                </PronunciationRow>
+                <PronunciationRow>
+                  <PronunciationLabel>한자:</PronunciationLabel>
+                  <PronunciationText>{result.meaning_based.name_hanja}</PronunciationText>
+                </PronunciationRow>
+              </PronunciationSection>
+              
+              <NameMeaning>{result.meaning_based.meaning}</NameMeaning>
             </NameCard>
             
             <ButtonGroup>
@@ -660,84 +600,64 @@ const NameCreation: React.FC = () => {
           </FormGroup>
           
           <FormGroup>
-            <Label>성격 <Required>*</Required></Label>
+            <Label>성격 (복수 선택 가능) <Required>*</Required></Label>
             <RadioGroup>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="active"
-                  checked={formData.personality === 'active'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('active')}
+                  onChange={(e) => handlePersonalityChange('active', e.target.checked)}
                 />
                 <RadioText>활발하고 에너지 넘치는</RadioText>
               </RadioLabel>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="calm"
-                  checked={formData.personality === 'calm'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('calm')}
+                  onChange={(e) => handlePersonalityChange('calm', e.target.checked)}
                 />
                 <RadioText>차분하고 안정적인</RadioText>
               </RadioLabel>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="creative"
-                  checked={formData.personality === 'creative'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('creative')}
+                  onChange={(e) => handlePersonalityChange('creative', e.target.checked)}
                 />
                 <RadioText>창의적이고 독창적인</RadioText>
               </RadioLabel>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="kind"
-                  checked={formData.personality === 'kind'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('kind')}
+                  onChange={(e) => handlePersonalityChange('kind', e.target.checked)}
                 />
                 <RadioText>따뜻하고 친근한</RadioText>
               </RadioLabel>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="strong"
-                  checked={formData.personality === 'strong'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('strong')}
+                  onChange={(e) => handlePersonalityChange('strong', e.target.checked)}
                 />
                 <RadioText>강인하고 의지가 강한</RadioText>
               </RadioLabel>
               <RadioLabel>
                 <RadioInput
-                  type="radio"
-                  name="personality"
+                  type="checkbox"
                   value="wise"
-                  checked={formData.personality === 'wise'}
-                  onChange={(e) => handleInputChange('personality', e.target.value)}
+                  checked={formData.personality.includes('wise')}
+                  onChange={(e) => handlePersonalityChange('wise', e.target.checked)}
                 />
                 <RadioText>지혜롭고 똑똑한</RadioText>
               </RadioLabel>
             </RadioGroup>
             {errors.personality && <ErrorMessage>{errors.personality}</ErrorMessage>}
-          </FormGroup>
-          
-          <FormGroup>
-            <Label>출생년도 <Required>*</Required></Label>
-            <Select
-              value={formData.birthYear}
-              onChange={(e) => handleInputChange('birthYear', e.target.value)}
-            >
-              <option value="">출생년도를 선택하세요</option>
-              {Array.from({ length: 50 }, (_, i) => 2024 - i).map(year => (
-                <option key={year} value={year.toString()}>{year}년</option>
-              ))}
-            </Select>
-            {errors.birthYear && <ErrorMessage>{errors.birthYear}</ErrorMessage>}
           </FormGroup>
           
           <FormGroup>

@@ -19,7 +19,7 @@ import Support from "./routes/support";
 import FAQ from "./routes/faq";
 import LiveTranslation from "./routes/live_translation.tsx";
 import Locations from "./routes/locations";
-import BusinessDetail from "./routes/business-detail";
+import BusinessDetail from "./routes/business_detail";
 import Booking from "./routes/booking";
 import Payment from "./routes/payment";
 import TodayFortune from "./routes/today-fortune";
@@ -113,7 +113,8 @@ function App() {
   return (
     <Wrapper>
       <GlobalStyles />
-      {isLoading ? <LoadingScreen /> : <RouterProvider router={router} />}
+      <RouterProvider router={router} />
+      {isLoading && <LoadingScreen />}
     </Wrapper>
   );
 }

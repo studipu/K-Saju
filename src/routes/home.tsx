@@ -3,8 +3,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/i18n";
 import { supabase } from "../supabase";
-import starBg from "../assets/star_bg.png";
 import heroBg from "../assets/hero_bg.jpg";
+import homeBg from "../assets/home_bg.jpg";
+import yinyangBg from "../assets/yinyang_bg.mp4";
+import LoadingScreen from "../components/loading_screen";
+import { ServiceCard } from "../components/service_card";
+import { MoreCard } from "../components/more_card";
+import { AIServiceCard } from "../components/ai_service_card";
+import { CardsCarousel } from "../components/cards_carousel";
+import { SectionTitle } from "../components/section_title";
 import { 
   SparklesIcon, 
   PencilSquareIcon, 
@@ -12,128 +19,476 @@ import {
   MapPinIcon 
 } from '@heroicons/react/24/outline';
 
-const Wrapper = styled.div`
+// Import mysterious fonts for multiple languages from Google Fonts
+const fontLinks = [
+  // Korean mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Song+Myung&family=Jua&family=Gugi&family=Stylish:wght@400&family=Kirang+Haerang&display=swap',
+  // Korean clean fonts  
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap',
+  // Latin mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap',
+  // Japanese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Sawarabi+Mincho&display=swap',
+  // Chinese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap'
+];
+
+fontLinks.forEach(href => {
+  const link = document.createElement('link');
+  link.href = href;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+});
+
+// Language-specific font configurations
+const getFontFamily = (language: string, type: 'heading' | 'body' | 'accent' | 'price') => {
+  const fontConfigs = {
+    ko: {
+      heading: "'Song Myung', 'Stylish', 'Kirang Haerang', serif",
+      body: "'Noto Sans KR', 'Jua', sans-serif",
+      accent: "'Gugi', 'Song Myung', cursive",
+      price: "'Noto Serif KR', 'Song Myung', serif"
+    },
+    en: {
+      heading: "'Cinzel', 'Cormorant Garamond', serif",
+      body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      accent: "'Crimson Text', 'Cinzel', serif",
+      price: "'Cinzel', 'Cormorant Garamond', serif"
+    },
+    ja: {
+      heading: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      body: "'Noto Sans JP', 'Hiragino Sans', sans-serif",
+      accent: "'Noto Serif JP', 'Sawarabi Mincho', serif",
+      price: "'Noto Serif JP', serif"
+    },
+    zh: {
+      heading: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      body: "'Noto Sans SC', 'PingFang SC', sans-serif",
+      accent: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      price: "'Noto Serif SC', serif"
+    },
+    es: {
+      heading: "'Cinzel', 'Cormorant Garamond', serif",
+      body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      accent: "'Crimson Text', 'Cinzel', serif",
+      price: "'Cinzel', 'Cormorant Garamond', serif"
+    }
+  };
+  
+  return fontConfigs[language as keyof typeof fontConfigs]?.[type] || fontConfigs.en[type];
+};
+
+const Wrapper = styled.div<{ $language: string }>`
   width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: ${props => getFontFamily(props.$language, 'body')};
 `;
 
 const HeroSection = styled.section`
   width: 100%;
-  height: 60vh;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  background: #0F0026;
+  
+  @media (max-width: 960px) {
+    height: auto;
+    min-height: 350px;
+    padding: 2rem 0;
+  }
+  
+  @media (max-width: 768px) {
+    height: auto;
+    min-height: 320px;
+    padding: 1.5rem 0;
+  }
+`;
+
+const HeroBgImage = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 960px;
+  height: 400px;
   background-image: url(${heroBg});
-  background-size: cover;
+  background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
+  z-index: 0;
   
+  @media (max-width: 960px) {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    min-height: 250px;
+    background-size: cover;
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    background-size: auto 100%;
+    background-position: center center;
+    background-repeat: no-repeat;
+  }
 `;
 
 const HeroContent = styled.div`
-  text-align: center;
+  text-align: left;
   color: white;
   z-index: 1;
-  max-width: 800px;
-  padding: 0 2rem;
+  width: 100%;
+  max-width: 960px;
+  padding: 0 1.5rem;
   position: relative;
+  
+  @media (max-width: 768px) {
+    text-align: center;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 `;
 
-const HeroTitle = styled.h1`
-  font-size: 2.5rem;
+const HeroTitle = styled.h1<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
   line-height: 1.2;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  max-width: 450px;
+  word-wrap: break-word;
+  hyphens: auto;
   
   @media (max-width: 768px) {
-    font-size: 2rem;
+    font-size: 2.2rem;
+    max-width: 100%;
+    margin-bottom: 1.2rem;
+    line-height: 1.3;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.8rem;
   }
 `;
 
 const HeroSubtitle = styled.p`
-  font-size: 1rem;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 400;
   margin-bottom: 1.5rem;
   opacity: 0.9;
   line-height: 1.5;
+  max-width: 400px;
+  word-wrap: break-word;
   
   @media (max-width: 768px) {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    max-width: 100%;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
   }
 `;
 
 const CTAButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #6210CC;
+  border: 2px solid rgba(139, 92, 246, 0.4);
   color: white;
   padding: 0.75rem 1.5rem;
+  font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.2;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 80%
+    );
+    transform: rotate(45deg);
+    animation: continuousShine 2.5s ease-in-out infinite;
+  }
+  
+  @keyframes continuousShine {
+    0% {
+      left: -150%;
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      left: 150%;
+      opacity: 0;
+    }
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    border-radius: 50px;
+    pointer-events: none;
+  }
   
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: #4c1d95;
+    border-color: rgba(139, 92, 246, 0.7);
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    
+    &::before {
+      animation-duration: 1.5s;
+    }
+  }
+  
+  &:active {
+    transform: translateY(-1px);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem 2rem;
+    font-size: 0.95rem;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem 1.75rem;
+    font-size: 0.9rem;
   }
 `;
 
-const BackgroundPattern = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
-  z-index: 1;
-`;
-
 const PopularSection = styled.section`
-  height: 50vh;
-  padding: 2rem;
+  min-height: 50vh;
+  padding: 2.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
+  }
+`;
+
+const RecommendedSection = styled.section`
+  min-height: 50vh;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
+  }
+`;
+
+const HotDealsSection = styled.section`
+  min-height: 50vh;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
+  }
+`;
+
+const ClosingSection = styled.section`
+  min-height: 40vh;
+  padding: 3rem 1.5rem;
+  display: flex;
+  align-items: center;
   justify-content: center;
   position: relative;
-  background-image: url(${starBg});
-  background-size: cover;
-  background-position: top;
-  background-repeat: no-repeat;
+  z-index: 2;
+  overflow: hidden;
   
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(46, 16, 101, 0.85);
-    z-index: 1;
+    background: linear-gradient(
+      to bottom,
+      rgba(66, 66, 66, 0.7) 0%,
+      rgba(33, 33, 33, 0.8) 100%
+    );
+    z-index: 2;
     pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2.5rem 1rem;
+    min-height: 35vh;
   }
 `;
 
-const RecommendedSection = styled.section`
-  height: 50vh;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+const ClosingVideoBackground = styled.video`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vw;
+  object-fit: cover;
+  transform: translate(-50%, -50%) rotate(90deg);
+  z-index: 1;
+  
+  @media (max-width: 768px) {
+    width: 100vh;
+    height: 100vw;
+    transform: translate(-50%, -50%) rotate(90deg) scale(1.2);
+  }
+  
+  @media (max-width: 480px) {
+    transform: translate(-50%, -50%) rotate(90deg) scale(1.5);
+  }
+`;
+
+const ClosingContainer = styled.div`
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-radius: 32px;
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 
+    0 20px 60px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   position: relative;
-  background-image: url(${starBg});
+  z-index: 3;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      rgba(139, 92, 246, 0.3) 0%,
+      rgba(212, 175, 55, 0.3) 25%,
+      rgba(139, 92, 246, 0.3) 50%,
+      rgba(212, 175, 55, 0.3) 75%,
+      rgba(139, 92, 246, 0.3) 100%
+    );
+    border-radius: 32px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
+  }
+  
+  @keyframes borderGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2rem;
+    border-radius: 24px;
+    
+    &::before {
+      border-radius: 24px;
+    }
+  }
+`;
+
+const ClosingTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c1810;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const ClosingSubtitle = styled.p`
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+// Unified sections container with gradient background
+const UnifiedSectionsContainer = styled.div`
+  position: relative;
+  background-image: url(${homeBg});
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   background-repeat: no-repeat;
+  background-attachment: local;
   
   &::before {
     content: "";
@@ -144,464 +499,216 @@ const RecommendedSection = styled.section`
     height: 100%;
     background: linear-gradient(
       to bottom,
-      rgba(46, 16, 101, 0.85) 0%,
-      rgba(25, 25, 35, 0.9) 70%,
-      rgba(15, 15, 15, 0.9) 100%
+      rgba(30, 9, 50, 0.6) 0%,
+      rgba(0, 0, 0, 0.7) 100%
     );
     z-index: 1;
     pointer-events: none;
   }
 `;
 
-const HotDealsSection = styled.section`
-  height: 50vh;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background-image: url(${starBg}) !important;
-  background-size: cover !important;
-  background-position: bottom !important;
-  background-repeat: no-repeat !important;
-  background-attachment: local !important;
-  
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      to bottom,
-      rgba(15, 15, 15, 0.9) 0%,
-      rgba(0, 0, 0, 0.95) 100%
-    ) !important;
-    z-index: 1;
-    pointer-events: none;
-  }
-`;
-
-const SectionTitleContainer = styled.div`
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto 1.5rem auto;
-  padding: 0 2rem;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  margin: 0;
-  white-space: nowrap;
-`;
-
-const Divider = styled.div`
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 30%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 70%,
-    transparent 100%
-  );
-`;
-
-
-const AIServicesSectionTitle = styled.h2`
-  font-size: 1.8rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #1f2937;
-  position: relative;
-  z-index: 2;
-`;
-
-const CardsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem 0;
-  position: relative;
-  max-width: 100%;
-  width: 100%;
-  z-index: 2;
-`;
-
-const CardsViewport = styled.div`
-  width: 100%;
-  max-width: 1200px; /* Smaller cards need less space */
-  margin: 0 auto;
-  position: relative;
-  overflow: visible; /* 화살표가 보이도록 */
-  padding: 0 80px; /* Reduced padding for smaller layout */
-`;
-
-const CardsInner = styled.div`
-  width: 976px; /* Updated calculation: 4개 카드(220px × 4 = 880px) + 3개 간격(32px × 3 = 96px) = 976px */
-  margin: 0 auto;
-  overflow: hidden;
-  position: relative;
-  padding: 0.75rem 0; /* Reduced padding for smaller components */
-`;
-
-const CardsWrapper = styled.div<{ translateX: number }>`
-  display: flex;
-  gap: 2rem;
-  transform: translateX(${props => props.translateX}px);
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  width: fit-content;
-`;
-
-const NavButton = styled.button<{ position: 'left' | 'right' }>`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  ${props => props.position === 'left' ? 'left: 30px;' : 'right: 30px;'}
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(229, 231, 235, 0.5);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1.2rem;
-  color: #6b7280;
-  z-index: 3;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  
-  &:hover {
-    border-color: #3b82f6;
-    color: #3b82f6;
-    transform: translateY(-50%) scale(1.05);
-    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.95);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: translateY(-50%);
-  }
-`;
-
-const MoreCard = styled.div`
-  width: 220px;
-  flex-shrink: 0;
-  background: rgba(243, 244, 246, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #374151;
-  padding: 1.25rem;
-  text-align: center;
-  border: 1px solid rgba(229, 231, 235, 0.5);
-  position: relative;
-  z-index: 2;
-  
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    background: rgba(243, 244, 246, 0.95);
-  }
-`;
-
-const MoreCardIcon = styled.div`
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  color: #9ca3af;
-`;
-
-const MoreCardTitle = styled.h3`
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  color: #374151;
-`;
-
-const MoreCardSubtitle = styled.p`
-  font-size: 0.8rem;
-  color: #6b7280;
-`;
-
-const HotDealsCard = styled.div`
-  width: 220px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  border: 2px solid #f59e0b;
-  position: relative;
-  z-index: 2;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 0.98);
-  }
-`;
-
-const DiscountBadge = styled.div`
-  background: #f59e0b;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: inline-block;
-  margin-bottom: 0.5rem;
-`;
-
-const OriginalPrice = styled.div`
-  font-size: 0.9rem;
-  color: #9ca3af;
-  text-decoration: line-through;
-  margin-bottom: 0.25rem;
-`;
-
 const AIServicesSection = styled.section`
-  height: 35vh;
-  padding: 1.5rem;
+  min-height: 50vh;
+  padding: 2.5rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #ffffff;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
+  }
 `;
 
 const AIServicesContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2.5rem;
-  max-width: 1000px;
+  display: flex;
+  align-items: stretch;
+  gap: 2rem;
+  max-width: 960px;
   width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 2;
   
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+    padding: 0 1rem;
   }
 `;
 
-const AIServicesGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const AIServiceCard = styled.div`
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
+const AIServicesHeader = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  margin-top: 0;
   
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.1);
-    border-color: #3b82f6;
+  @media (max-width: 768px) {
+    text-align: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
   }
 `;
 
-const AIServiceIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-  transition: all 0.3s ease;
-  
-  svg {
-    width: 18px;
-    height: 18px;
-    color: white;
-  }
-  
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
-
-const AIServiceTitle = styled.h3`
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #1f2937;
+const MagicTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   margin: 0;
-`;
-
-const AIServicesContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 1.5rem;
+  padding-top: 0;
+  line-height: 1.3;
+  background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  max-width: 320px;
   
   @media (max-width: 768px) {
-    padding-left: 0;
+    font-size: 1.8rem;
+    max-width: 100%;
     text-align: center;
   }
 `;
 
-const AIServicesTitle = styled.h2`
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.75rem;
-  line-height: 1.2;
+const AIServicesGrid = styled.div`
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: flex-start;
   
   @media (max-width: 768px) {
-    font-size: 1.5rem;
+    flex-direction: row;
+    gap: 1.5rem;
+    justify-content: center; /* center items across the row */
+    align-items: center;     /* center items vertically in row */
+    flex-wrap: wrap;
+    width: 100%;             /* take full width to allow centering */
+    align-self: center;      /* override parent's align-items: flex-start */
+    margin: 0 auto;          /* ensure centering in parent flex column */
   }
-`;
-
-const AIServicesSubtitle = styled.p`
-  font-size: 0.9rem;
-  color: #6b7280;
-  line-height: 1.5;
-  margin: 0;
-`;
-
-
-const PopularCard = styled.div`
-  width: 220px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  z-index: 2;
   
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 0.98);
+  @media (max-width: 480px) {
+    flex-direction: column;  /* stack on very small screens */
+    gap: 1.5rem;
+    align-items: center;     /* center stacked items */
   }
 `;
 
-// Special card style for AI Services section (white background)
-const AIServicesCard = styled.div`
-  width: 220px;
-  flex-shrink: 0;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  z-index: 2;
+const AIServicesContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  max-width: 480px;
   
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
-    background: #f9fafb;
+  @media (max-width: 768px) {
+    align-items: center;
+    max-width: 100%;
   }
 `;
 
-const CardImage = styled.div<{ $imageUrl?: string }>`
+const NameInputSection = styled.div`
+  background: linear-gradient(135deg, #4A0E4E 0%, #2D1B69 100%);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-top: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 25px rgba(74, 14, 78, 0.4);
   width: 100%;
-  height: 120px;
-  background: ${props => 
-    props.$imageUrl 
-      ? `url(${props.$imageUrl})`
-      : 'linear-gradient(45deg, #f3f4f6, #e5e7eb)'
-  };
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-  font-weight: 600;
+  min-width: 400px;
+  
+  @media (max-width: 768px) {
+    min-width: auto;
+    padding: 1.5rem;
+    margin: 0 1rem;
+    width: calc(100% - 2rem);
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1.25rem;
+    border-radius: 20px;
+  }
 `;
 
-const CardContent = styled.div`
-  padding: 1rem;
-`;
-
-const CardTitle = styled.h3`
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  color: #1f2937;
-  line-height: 1.3;
-`;
-
-const CardPrice = styled.div`
-  font-size: 1.1rem;
+const NameInputTitle = styled.h3<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 1.35rem;
   font-weight: 700;
-  color: #059669;
-  margin-bottom: 0.5rem;
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  padding-top: 0;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 `;
 
-const CardRating = styled.div`
+const NameInputSubtitle = styled.p`
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+`;
+
+const NameInputForm = styled.div`
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 1rem;
 `;
 
-const Stars = styled.div`
-  display: flex;
-  gap: 2px;
+const NameInput = styled.input`
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  width: 100%;
+
+  &::placeholder {
+    color: #6b7280;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #8B5CF6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    background: #ffffff;
+  }
 `;
 
-const Star = styled.span`
-  color: #fbbf24;
-  font-size: 1.2rem;
-`;
-
-const RatingText = styled.span`
-  color: #6b7280;
-  font-size: 0.9rem;
+const NameSubmitButton = styled.button`
+  background: #000000;
+  border: 2px solid #1a1a1a;
+  color: white;
+  padding: 1rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  
+  &:hover {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 // Types for Supabase data
@@ -619,15 +726,15 @@ interface LocationService {
 }
 
 export function Home() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [recommendedIndex, setRecommendedIndex] = useState(0);
-  const [hotDealsIndex, setHotDealsIndex] = useState(0);
-  
+
   // State for Supabase data
   const [services, setServices] = useState<LocationService[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // State for name input
+  const [userName, setUserName] = useState('');
 
   // Fetch services from Supabase
   useEffect(() => {
@@ -656,22 +763,14 @@ export function Home() {
     {
       id: 1,
       title: t("todayFortune"),
-      icon: SparklesIcon
-    },
-    {
-      id: 2,
-      title: t("nameCreation"),
-      icon: PencilSquareIcon
+      icon: SparklesIcon,
+      color: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)" // Red like Gryffindor
     },
     {
       id: 3,
-      title: "실시간 통역",
-      icon: MicrophoneIcon
-    },
-    {
-      id: 4,
-      title: t("nearbySearch"),
-      icon: MapPinIcon
+      title: t("liveTranslation"),
+      icon: MicrophoneIcon,
+      color: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" // Blue like Ravenclaw
     }
   ];
   
@@ -722,331 +821,164 @@ export function Home() {
     discount: "33%"
   }));
 
-
-  const cardsPerView = 4;
-  const cardWidth = 220; // Updated width for smaller cards
-  const cardGap = 32; // 2rem = 32px
-  const totalCardWidth = cardWidth + cardGap;
-  
-  const totalCards = popularServices.length + 1; // +1 for more card
-  const maxIndex = Math.max(0, Math.ceil(totalCards / cardsPerView) - 1);
-  
-  // 4개씩만 보이도록 슬라이드 계산
-  const translateX = -currentIndex * cardsPerView * totalCardWidth;
-  const recommendedTranslateX = -recommendedIndex * cardsPerView * totalCardWidth;
-  const hotDealsTranslateX = -hotDealsIndex * cardsPerView * totalCardWidth;
-
-  const handlePrev = () => {
-    setCurrentIndex(Math.max(0, currentIndex - 1));
-  };
-
-  const handleNext = () => {
-    setCurrentIndex(Math.min(maxIndex, currentIndex + 1));
-  };
-
-  const handleRecommendedPrev = () => {
-    setRecommendedIndex(Math.max(0, recommendedIndex - 1));
-  };
-
-  const handleRecommendedNext = () => {
-    setRecommendedIndex(Math.min(maxIndex, recommendedIndex + 1));
-  };
-
-  const handleHotDealsPrev = () => {
-    setHotDealsIndex(Math.max(0, hotDealsIndex - 1));
-  };
-
-  const handleHotDealsNext = () => {
-    setHotDealsIndex(Math.min(maxIndex, hotDealsIndex + 1));
-  };
-
   const handleMoreClick = () => {
-    // 더보기 버튼 클릭 시 처리 (예: 모든 서비스 보기 페이지로 이동)
-    console.log('더보기 클릭');
+    // More button click handler
+    console.log('View all services clicked');
   };
 
   const handleBusinessClick = (businessId: number) => {
     navigate(`/business/${businessId}`);
   };
 
-  const handleScrollToServices = () => {
-    const aiServicesSection = document.getElementById('ai-services-section');
-    if (aiServicesSection) {
-      aiServicesSection.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
+  const handleSearchLocations = () => {
+    navigate('/locations');
   };
 
   const handleAIServiceClick = (serviceId: number) => {
-    if (serviceId === 1) { // 오늘의 운세 (id: 1)
+    if (serviceId === 1) { // Today's Fortune (id: 1)
       navigate('/today-fortune');
-    } else if (serviceId === 2) { // 이름 작명 (id: 2)
-      navigate('/name-creation');
-    } else if (serviceId === 3) { // 실시간 통역 (id: 3)
+    } else if (serviceId === 3) { // Live Translation (id: 3)
       navigate('/live-translation');
-    } else if (serviceId === 4) { // 근처 찾기 (id: 4)
-      navigate('/locations');
     }
   };
 
-  const renderStars = (rating: number) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    const stars = [];
-    
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i}>★</Star>);
+  const handleNameCreation = () => {
+    if (userName.trim()) {
+      // Navigate to name-creation page with the entered name as a query parameter
+      navigate(`/name-creation?name=${encodeURIComponent(userName.trim())}`);
+    } else {
+      // If no name entered, just navigate to the page
+      navigate('/name-creation');
     }
-    
-    if (hasHalfStar) {
-      stars.push(<Star key="half">☆</Star>);
-    }
-    
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Star key={`empty-${i}`}>☆</Star>);
-    }
-    
-    return stars;
   };
 
-  // Show loading state while fetching data
-  if (loading) {
-    return (
-      <Wrapper>
-        <HeroSection>
-          <BackgroundPattern />
-          <HeroContent>
-            <HeroTitle>Loading...</HeroTitle>
-          </HeroContent>
-        </HeroSection>
-      </Wrapper>
-    );
-  }
+  const handleNameInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameCreation();
+    }
+  };
 
   return (
-    <Wrapper>
+    <Wrapper $language={language}>
       <HeroSection>
-        <BackgroundPattern />
+        <HeroBgImage />
         <HeroContent>
-          <HeroTitle>
-            {t("heroTitle").split('\n').map((line, index) => (
-              <span key={index}>
-                {line}
-                {index < t("heroTitle").split('\n').length - 1 && <br />}
-              </span>
-            ))}
+          <HeroTitle $language={language}>
+            {t("heroTitle")}
           </HeroTitle>
           <HeroSubtitle>
-            {t("heroSubtitle").split('\n').map((line, index) => (
-              <span key={index}>
-                {line}
-                {index < t("heroSubtitle").split('\n').length - 1 && <br />}
-              </span>
-            ))}
+            {t("heroSubtitle")}
           </HeroSubtitle>
-          <CTAButton onClick={handleScrollToServices}>
-            {t("heroButton")}
+          <CTAButton onClick={handleSearchLocations}>
+            {"✨ "}{t("searchLocations")}
           </CTAButton>
         </HeroContent>
       </HeroSection>
       
-      
-      <AIServicesSection id="ai-services-section">
-        <AIServicesContainer>
-          <AIServicesGrid>
-            {aiServices.map((service) => {
-              const IconComponent = service.icon;
-              return (
-                <AIServiceCard key={service.id} onClick={() => handleAIServiceClick(service.id)}>
-                  <AIServiceIcon>
-                    <IconComponent />
-                  </AIServiceIcon>
-                  <AIServiceTitle>{service.title}</AIServiceTitle>
-                </AIServiceCard>
-              );
-            })}
-          </AIServicesGrid>
-          
-          <AIServicesContent>
-            <AIServicesTitle>AI-Powered Saju Services</AIServicesTitle>
-            <AIServicesSubtitle>
-              Experience the future of Korean fortune telling with our advanced AI technology. 
-              Get instant insights, personalized readings, and connect with traditional wisdom 
-              through modern innovation.
-            </AIServicesSubtitle>
-          </AIServicesContent>
-        </AIServicesContainer>
-      </AIServicesSection>
-      
-      <PopularSection>
-        <SectionTitleContainer>
-          <Divider />
+      <UnifiedSectionsContainer>
+        <AIServicesSection id="ai-services-section">
+          <AIServicesContainer>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', paddingTop: 0 }}>
+              <AIServicesHeader>
+                <MagicTitle $language={language}>{t("aiServicesTitle")}</MagicTitle>
+              </AIServicesHeader>
+              <AIServicesGrid>
+                {aiServices.map((service) => (
+                  <AIServiceCard 
+                    key={service.id}
+                    service={service}
+                    onClick={handleAIServiceClick}
+                  />
+                ))}
+              </AIServicesGrid>
+            </div>
+            
+            <AIServicesContent>
+              <NameInputSection>
+                <NameInputTitle $language={language}>{t("getKoreanName")}</NameInputTitle>
+                <NameInputSubtitle>
+                  {t("nameInputDescription")}
+                </NameInputSubtitle>
+                <NameInputForm>
+                  <NameInput
+                    type="text"
+                    placeholder={t("enterFullName")}
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    onKeyPress={handleNameInputKeyPress}
+                  />
+                  <NameSubmitButton onClick={handleNameCreation}>
+                    {t("createKoreanName")}
+                  </NameSubmitButton>
+                </NameInputForm>
+              </NameInputSection>
+            </AIServicesContent>
+          </AIServicesContainer>
+        </AIServicesSection>
+        
+        <PopularSection>
           <SectionTitle>{t("popularServices")}</SectionTitle>
-          <Divider />
-        </SectionTitleContainer>
-        <CardsContainer>
-          <CardsViewport>
-            <NavButton 
-              position="left" 
-              onClick={handlePrev} 
-              disabled={currentIndex === 0}
-            >
-              ‹
-            </NavButton>
-            
-            <CardsInner>
-              <CardsWrapper translateX={translateX}>
-                {popularServices.map((service) => (
-                  <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
-                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
-                    </CardImage>
-                    <CardContent>
-                      <CardTitle>{service.title}</CardTitle>
-                      <CardPrice>{service.price}</CardPrice>
-                      <CardRating>
-                        <Stars>
-                          {renderStars(service.rating)}
-                        </Stars>
-                        <RatingText>({service.rating})</RatingText>
-                      </CardRating>
-                    </CardContent>
-                  </PopularCard>
-                ))}
-                
-                <MoreCard onClick={handleMoreClick}>
-                  <MoreCardIcon>➕</MoreCardIcon>
-                  <MoreCardTitle>더보기</MoreCardTitle>
-                  <MoreCardSubtitle>모든 서비스 보기</MoreCardSubtitle>
-                </MoreCard>
-              </CardsWrapper>
-            </CardsInner>
-            
-            <NavButton 
-              position="right" 
-              onClick={handleNext} 
-              disabled={currentIndex >= maxIndex}
-            >
-              ›
-            </NavButton>
-          </CardsViewport>
-        </CardsContainer>
-      </PopularSection>
+          <CardsCarousel totalItems={popularServices.length + 1}>
+            {popularServices.map((service) => (
+              <ServiceCard 
+                key={service.id}
+                service={service}
+                variant="popular"
+                onClick={handleBusinessClick}
+              />
+            ))}
+            <MoreCard onClick={handleMoreClick} />
+          </CardsCarousel>
+        </PopularSection>
 
-              <RecommendedSection>
-        <SectionTitleContainer>
-          <Divider />
+        <RecommendedSection>
           <SectionTitle>{t("recommendedBy")}</SectionTitle>
-          <Divider />
-        </SectionTitleContainer>
-        <CardsContainer>
-          <CardsViewport>
-            <NavButton 
-              position="left" 
-              onClick={handleRecommendedPrev} 
-              disabled={recommendedIndex === 0}
-            >
-              ‹
-            </NavButton>
-            
-            <CardsInner>
-              <CardsWrapper translateX={recommendedTranslateX}>
-                {recommendedServices.map((service) => (
-                  <PopularCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
-                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
-                    </CardImage>
-                    <CardContent>
-                      <CardTitle>{service.title}</CardTitle>
-                      <CardPrice>{service.price}</CardPrice>
-                      <CardRating>
-                        <Stars>
-                          {renderStars(service.rating)}
-                        </Stars>
-                        <RatingText>({service.rating})</RatingText>
-                      </CardRating>
-                    </CardContent>
-                  </PopularCard>
-                ))}
-                
-                <MoreCard onClick={handleMoreClick}>
-                  <MoreCardIcon>➕</MoreCardIcon>
-                  <MoreCardTitle>더보기</MoreCardTitle>
-                  <MoreCardSubtitle>모든 서비스 보기</MoreCardSubtitle>
-                </MoreCard>
-              </CardsWrapper>
-            </CardsInner>
-            
-            <NavButton 
-              position="right" 
-              onClick={handleRecommendedNext} 
-              disabled={recommendedIndex >= maxIndex}
-            >
-              ›
-            </NavButton>
-          </CardsViewport>
-        </CardsContainer>
-              </RecommendedSection>
+          <CardsCarousel totalItems={recommendedServices.length + 1}>
+            {recommendedServices.map((service) => (
+              <ServiceCard 
+                key={service.id}
+                service={service}
+                variant="popular"
+                onClick={handleBusinessClick}
+              />
+            ))}
+            <MoreCard onClick={handleMoreClick} />
+          </CardsCarousel>
+        </RecommendedSection>
 
-      <HotDealsSection>
-        <SectionTitleContainer>
-          <Divider />
+        <HotDealsSection>
           <SectionTitle>{t("hotDeals")}</SectionTitle>
-          <Divider />
-        </SectionTitleContainer>
-        <CardsContainer>
-          <CardsViewport>
-            <NavButton 
-              position="left" 
-              onClick={handleHotDealsPrev} 
-              disabled={hotDealsIndex === 0}
-            >
-              ‹
-            </NavButton>
-            
-            <CardsInner>
-              <CardsWrapper translateX={hotDealsTranslateX}>
-                {hotDealsServices.map((service) => (
-                  <HotDealsCard key={service.id} onClick={() => handleBusinessClick(service.id)}>
-                    <CardImage $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}>
-                      {!service.image || !service.image.startsWith('http') ? service.image || 'No Image' : ''}
-                    </CardImage>
-                    <CardContent>
-                      <DiscountBadge>{service.discount} 할인</DiscountBadge>
-                      <CardTitle>{service.title}</CardTitle>
-                      <OriginalPrice>{service.originalPrice}</OriginalPrice>
-                      <CardPrice>{service.price}</CardPrice>
-                      <CardRating>
-                        <Stars>
-                          {renderStars(service.rating)}
-                        </Stars>
-                        <RatingText>({service.rating})</RatingText>
-                      </CardRating>
-                    </CardContent>
-                  </HotDealsCard>
-                ))}
-                
-                <MoreCard onClick={handleMoreClick}>
-                  <MoreCardIcon>➕</MoreCardIcon>
-                  <MoreCardTitle>더보기</MoreCardTitle>
-                  <MoreCardSubtitle>모든 서비스 보기</MoreCardSubtitle>
-                </MoreCard>
-              </CardsWrapper>
-            </CardsInner>
-            
-            <NavButton 
-              position="right" 
-              onClick={handleHotDealsNext} 
-              disabled={hotDealsIndex >= maxIndex}
-            >
-              ›
-            </NavButton>
-          </CardsViewport>
-        </CardsContainer>
-      </HotDealsSection>
+          <CardsCarousel totalItems={hotDealsServices.length}>
+            {hotDealsServices.map((service) => (
+              <ServiceCard 
+                key={service.id}
+                service={service}
+                variant="hotdeals"
+                onClick={handleBusinessClick}
+              />
+            ))}
+          </CardsCarousel>
+        </HotDealsSection>
+      </UnifiedSectionsContainer>
+      
+      <ClosingSection>
+        <ClosingVideoBackground
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src={yinyangBg} type="video/mp4" />
+        </ClosingVideoBackground>
+        <ClosingContainer>
+          <ClosingTitle $language={language}>{t("closingTitle")}</ClosingTitle>
+          <ClosingSubtitle>{t("closingSubtitle")}</ClosingSubtitle>
+          <CTAButton onClick={() => navigate('/intro')}>
+            {t("learnMoreButton")}
+          </CTAButton>
+        </ClosingContainer>
+      </ClosingSection>
+      {loading && <LoadingScreen />}
     </Wrapper>
   );
 }

@@ -181,7 +181,7 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
             silenceDurationMs: 500, // 더 빠르게 응답
           },
           // 말하기 속도와 톤 조절 (가능한 경우)
-          maxResponseOutputTokens: 150, // 간결한 번역을 위해 토큰 제한
+          // maxResponseOutputTokens: 150, // 간결한 번역을 위해 토큰 제한 (API에서 지원하지 않는 속성)
         },
       });
 
@@ -366,178 +366,38 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         console.log('✅ All audio sources stopped');
       });
 
-      // 사용자 음성 입력 전사 완료 이벤트 처리 (올바른 이벤트명)
-      session.on('conversation.item.input_audio_transcription.completed', (event: any) => {
-        console.log('🎤 User audio transcription completed:', JSON.stringify(event, null, 2));
-        if (event && event.transcript && event.transcript.trim()) {
-          const userMessage: ChatMessage = {
-            id: `user-${Date.now()}-${Math.random()}`,
-            role: 'user',
-            content: event.transcript.trim(),
-            timestamp: Date.now(),
-            type: 'audio'
-          };
-          console.log('💬 Adding user transcription to chat:', userMessage);
-          setMessages(prev => {
-            console.log('📊 Current messages before adding user:', prev.length);
-            // 중복 방지: 같은 내용의 메시지가 이미 있는지 확인
-            const isDuplicate = prev.some(msg =>
-              msg.role === 'user' &&
-              msg.content === userMessage.content &&
-              Math.abs(msg.timestamp - userMessage.timestamp) < 2000 // 2초 내
-            );
-            if (isDuplicate) {
-              console.log('💬 Duplicate user message, skipping');
-              return prev;
-            }
-            const newMessages = [...prev, userMessage];
-            console.log('📊 New messages after adding user:', newMessages.length);
-            return newMessages;
-          });
-        } else {
-          console.log('⚠️ No valid transcript in user audio event:', event);
-        }
-      });
+      // 대화 내역 업데이트
+      session.on('history_updated', (history) => {
+        console.log('📝 History updated from Agent SDK:', history.length, 'items');
+        const newMessages: ChatMessage[] = [];
 
-      // AI 응답 텍스트 실시간 처리 - response.output_text.delta로 토큰 단위 수신
+        for (const item of history) {
+          console.log('📋 Processing history item:', item.type, item);
 
-      // 기존 output_text 이벤트 제거 - rawEvent로 대체됨
+          if (item.type === 'message' && (item as any).role && (item as any).content) {
+            const messageItem = item as any;
+            const content = messageItem.content
+              ?.map((c: any) => c.type === 'text' ? c.text : '')
+              .join('') || '';
 
-      // rawEvent 사용으로 RealtimeAgent의 이벤트 스트림 처리
-      let rawCurrentAssistantMessageId: string | undefined;
-      let assistantTextBuffer = "";
-
-      // 실제 이벤트 구조 디버깅 및 올바른 이벤트 처리
-      console.log('🔍 모든 이벤트 디버깅 시작');
-
-      // 사용 가능한 모든 이벤트 타입들을 리스닝
-      const allEventTypes = [
-        'response.output_text.delta',
-        'response.output_text.done',
-        'response.text.delta',
-        'response.text.done',
-        'response.audio_transcript.delta',
-        'response.audio_transcript.done',
-        'response.content_part.added',
-        'response.content_part.done',
-        'conversation.item.created',
-        'response.created',
-        'response.done',
-        'conversation.item.input_audio_transcription.completed',
-        'conversation.item.input_audio_transcription.failed'
-      ];
-
-      allEventTypes.forEach(eventType => {
-        session.on(eventType as any, (event: any) => {
-          console.log(`🔔 이벤트 수신: ${eventType}`, event);
-
-          // AI 응답 텍스트 델타 처리
-          if (eventType === 'response.output_text.delta' || eventType === 'response.text.delta') {
-            if (event && event.delta) {
-              console.log('✅ 텍스트 델타 처리:', event.delta);
-              assistantTextBuffer += event.delta;
-              rawCurrentAssistantMessageId = addOrUpdateAssistantMessage(assistantTextBuffer, rawCurrentAssistantMessageId);
-            }
-          }
-
-          // AI 응답 오디오 전사 델타 처리 (대안)
-          if (eventType === 'response.audio_transcript.delta') {
-            if (event && event.delta) {
-              console.log('✅ 오디오 전사 델타 처리:', event.delta);
-              assistantTextBuffer += event.delta;
-              rawCurrentAssistantMessageId = addOrUpdateAssistantMessage(assistantTextBuffer, rawCurrentAssistantMessageId);
-            }
-          }
-
-          // 응답 완료 처리
-          if (eventType === 'response.done' || eventType === 'response.output_text.done' || eventType === 'response.audio_transcript.done') {
-            console.log('✅ 응답 완료 처리');
-            assistantTextBuffer = "";
-            rawCurrentAssistantMessageId = undefined;
-            setCurrentAssistantTranscript('');
-          }
-
-          // 사용자 음성 전사 처리
-          if (eventType === 'conversation.item.input_audio_transcription.completed') {
-            if (event && event.transcript && event.transcript.trim()) {
-              console.log('✅ 사용자 전사 처리:', event.transcript);
-              const userMessage: ChatMessage = {
-                id: `user-${Date.now()}-${Math.random()}`,
-                role: 'user',
-                content: event.transcript.trim(),
+            if (content.trim()) {
+              const message = {
+                id: `${messageItem.role}-${Date.now()}-${Math.random()}`,
+                role: messageItem.role,
+                content: content.trim(),
                 timestamp: Date.now(),
-                type: 'audio'
+                type: 'text',
               };
-              setMessages(prev => {
-                const withoutPlaceholder = prev.filter(msg =>
-                  !(msg.role === 'user' && msg.content === '[사용자 음성 입력 중...]')
-                );
-                return [...withoutPlaceholder, userMessage];
-              });
+
+              console.log('💬 Adding message to history:', message);
+              newMessages.push(message);
             }
           }
-        });
-      });
-
-      // 추가적으로 rawEvent도 시도
-      if (typeof (session as any).on === 'function') {
-        try {
-          (session as any).on('rawEvent', (event: any) => {
-            console.log('🔍 rawEvent 발견:', event.type, event);
-          });
-        } catch (e) {
-          console.log('🔍 rawEvent 지원되지 않음');
         }
-      }
 
-      // 도우미 함수: assistant 메시지 추가/업데이트 (타자치는 효과)
-      const addOrUpdateAssistantMessage = (content: string, messageId?: string): string => {
-        let newMessageId = messageId;
-
-        console.log('📝 메시지 업데이트:', { content, messageId });
-
-        setMessages(prev => {
-          console.log('📊 현재 메시지 개수:', prev.length);
-
-          // placeholder를 찾아서 교체하거나 기존 메시지 업데이트
-          const placeholderIndex = prev.findIndex(msg =>
-            msg.role === 'assistant' &&
-            (msg.content === '[AI가 응답 중...]' || msg.id === messageId)
-          );
-
-          if (placeholderIndex !== -1) {
-            console.log('✅ placeholder/기존 메시지 업데이트:', placeholderIndex);
-            // 기존 메시지 업데이트
-            const updatedMessage = {
-              ...prev[placeholderIndex],
-              content: content,
-              timestamp: Date.now()
-            };
-            newMessageId = updatedMessage.id;
-            return [
-              ...prev.slice(0, placeholderIndex),
-              updatedMessage,
-              ...prev.slice(placeholderIndex + 1)
-            ];
-          } else {
-            console.log('✅ 새 assistant 메시지 생성');
-            // 새 메시지 생성
-            const assistantMessage: ChatMessage = {
-              id: `assistant-${Date.now()}-${Math.random()}`,
-              role: 'assistant',
-              content: content,
-              timestamp: Date.now(),
-              type: 'audio'
-            };
-            newMessageId = assistantMessage.id;
-            const newMessages = [...prev, assistantMessage];
-            console.log('📊 새 메시지 추가 후 개수:', newMessages.length);
-            return newMessages;
-          }
-        });
-
-        return newMessageId || `assistant-${Date.now()}-${Math.random()}`;
-      };
+        console.log('📨 Setting messages:', newMessages.length, 'total messages');
+        setMessages(newMessages);
+      });
 
       // 모든 이벤트 리스너들
       session.on('audio_interrupted', () => {
@@ -550,39 +410,7 @@ SPEAK WITH MYSTICAL, WISE TONE FOR SAJU TRANSLATIONS.`;
         if (error && typeof error === 'object' && 'error' in error) {
           console.error('❌ Inner error:', (error as any).error);
         }
-        setError('세션 오류: ' + (error && typeof error === 'object' && 'message' in error ? (error as any).message : JSON.stringify(error)));
-      });
-
-      // history_updated 이벤트로 확실하게 메시지 받기
-      session.on('history_updated', (history: any[]) => {
-        console.log('📝 History updated from Agent SDK:', history.length, 'items');
-        const newMessages: ChatMessage[] = [];
-
-        for (const item of history) {
-          console.log('📋 Processing history item:', item.type, item);
-
-          if (item.type === 'message' && item.role && item.content) {
-            const content = Array.isArray(item.content)
-              ? item.content.map((c: any) => c.type === 'text' ? c.text : '').join('')
-              : item.content || '';
-
-            if (typeof content === 'string' && content.trim()) {
-              const message: ChatMessage = {
-                id: `${item.role}-${Date.now()}-${Math.random()}`,
-                role: item.role,
-                content: content.trim(),
-                timestamp: Date.now(),
-                type: 'audio'
-              };
-
-              console.log('💬 Adding message to history:', message);
-              newMessages.push(message);
-            }
-          }
-        }
-
-        console.log('📨 Setting messages:', newMessages.length, 'total messages');
-        setMessages(newMessages);
+        setError('세션 오류: ' + (error?.message || JSON.stringify(error)));
       });
 
       // 모든 가능한 이벤트들 리스닝
