@@ -110,10 +110,11 @@ VOICE & TONE GUIDELINES:
 
 DETECTION & TRANSLATION RULES:
 - If input sounds Korean → translate to ${customerLanguage} immediately
-- If input sounds like ANY other language → translate to Korean ONLY
-- This includes ${customerLanguage}, English, Chinese, Japanese, and all other languages
-- ALL non-Korean languages must become Korean
-- NEVER ask for clarification, just translate
+- If input sounds Korean → translate to ${customerLanguage} immediately
+- If input sounds like ${customerLanguage} → translate to Korean ONLY
+- If input sounds like ANY OTHER language (Chinese, Japanese, Spanish, French, etc.) → RESPOND WITH: "죄송합니다. 한국어 또는 ${customerLanguage}로만 말씀해 주세요. (Please speak only in Korean or ${customerLanguage}.)"
+- ONLY Korean and ${customerLanguage} are allowed for translation
+- NEVER translate languages other than Korean and ${customerLanguage}
 
 ${getSajuTerms(customerLanguage)}
 
