@@ -107,14 +107,23 @@ export function useUserProfile() {
 
         setProfile(profileData);
 
-        // country 정보를 바탕으로 고객 언어 설정
-        const language = getLanguageFromCountry(profileData.country);
+        // 언어 설정 우선순위:
+        // 1순위: preferred_language (사용자가 직접 설정한 언어)
+        // 2순위: country 기반 매핑 (자동 추론)
+        // 3순위: 기본값 (English)
+        let language: string;
+        if (profileData.preferred_language) {
+          language = profileData.preferred_language;
+        } else {
+          language = getLanguageFromCountry(profileData.country);
+        }
         setCustomerLanguage(language);
 
         console.log('User profile loaded:', {
           country: profileData.country,
-          language,
-          preferredLanguage: profileData.preferred_language
+          preferredLanguage: profileData.preferred_language,
+          finalLanguage: language,
+          source: profileData.preferred_language ? 'preferred_language' : 'country_mapping'
         });
 
       } catch (err) {
