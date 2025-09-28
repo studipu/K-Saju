@@ -10,21 +10,13 @@ interface NameGenerationRequest {
   originalName: string;
   gender: string;
   personality: string[];
-  nationality: string;
 }
 
 export interface NameGenerationResponse {
-  sound_based: {
-    name_hangul: string;
-    romanization: string;
-    note: string;
-  };
-  meaning_based: {
-    name_hangul: string;
-    name_hanja: string;
-    romanization: string;
-    meaning: string;
-  };
+  name_hangul: string;
+  name_hanja: string;
+  romanization: string;
+  meaning: string;
 }
 
 export const generateKoreanName = async (
@@ -50,56 +42,54 @@ export const generateKoreanName = async (
           content: `You are a Korean name generator for foreigners.
 
 Input fields:
-- Original name: ${formData.originalName}  (e.g., John, Maria, Ahmed)
-- Gender: ${formData.gender === 'male' ? 'Male' : 'Female'}
-- Personality traits: ${personalityText}  (multiple choices possible)
-- Nationality: ${getNationalityDescription(formData.nationality)}
+
+Original name: ${formData.originalName} (full name, e.g., John Smith, 李小龍, 山田太郎, María González)
+
+Gender: ${formData.gender === 'male' ? 'Male' : 'Female'}
+
+Personality traits: ${personalityText} (multiple choices possible)
 
 Task:
-Generate **two completely different Korean names** with the following rules:
+Generate one Korean name primarily inspired by the sound of the original name, but also provide a meaningful Hanja interpretation reflecting the person’s personality traits.
 
-1. Sound-based name
-   - Must be **3 Korean characters**: 1-syllable surname + 2-syllable given name (natural Korean male/female name pattern).  
-   - Do **not** directly transliterate the original name (e.g., "Robert → 로버트" is NOT allowed).  
-   - Use the **sound of the original name** to inspire the Korean surname and given name, but adapt them to **sensible, natural Korean names**.  
-   - Provide a short explanation (2–3 sentences) describing how the English name was adapted.  
+Rules:
 
-2. Meaning-based name
-   - Create one Korean name using Hanja.  
-   - You may choose a surname with meaningful Hanja that aligns with the person's personality traits.  
-   - Include:
-     - Hangul (Korean characters)
-     - Hanja (Chinese characters)
-     - Romanization
-     - Explanation (2–3 sentences) describing the meaning of each character, including the surname if meaningful, and why this name matches the person’s personality traits.  
-   - Ensure this name is different from the sound-based name.
+The name must be 3 Korean characters: 1-syllable surname + 2-syllable given name (natural Korean male/female name pattern).
 
-Return output in **strict JSON** format:
+Do not directly transliterate the original name.
+
+Use the sound of the original name to inspire both surname and given name, adapting to sensible, natural Korean names.
+
+Provide a Hanja interpretation for meaning, reflecting personality traits.
+
+Return output in strict JSON format:
 
 {
-  "sound_based": {
-    "name_hangul": "...",
-    "romanization": "...",
-    "note": "..."
-  },
-  "meaning_based": {
-    "name_hangul": "...",
-    "name_hanja": "...",
-    "romanization": "...",
-    "meaning": "..."
-  }
+  "name_hangul": "...",
+  "name_hanja": "...",
+  "romanization": "...",
+  "meaning": "Explain briefly the meaning of each character and why this name fits the person."
 }
 
-Examples of pattern for inspiration:
 
-1. Daniel Lewis → 류다현 (Ryu Da-hyun)  
-   Note: 'Lewis' inspires the surname 'Ryu', 'Daniel' inspires given name 'Da-hyun'.
+Examples:
 
-2. Alexander Hamilton → 한준호 (Han Jun-ho)  
-   Note: 'Hamilton' inspires the surname 'Han', 'Alexander' inspires given name 'Jun-ho'.
+English name: Kevin De Bruyne → 김덕배 (Kim Deok-bae)
 
-Important: Always create **3-character Korean names for sound-based**, and do **not directly copy the original name** into Hangul.
-Ensure that the generated names follow appropriate patterns for the specified gender, using natural male or female Korean name conventions.
+Explanation: The sound of "De Bruyne" inspires “Deok-bae” (덕배) and “Kevin” inspires the surname “Kim” (김) for a natural Korean male name. Hanja 德培 represents 德 (Deok, virtue) and 培 (Bae, cultivate), meaning “one who cultivates virtue,” reflecting creativity and a warm, friendly personality.
+
+Chinese name: 李小龍 → 이소룡 (Lee So-ryong)
+
+Explanation: The sound “Li Xiao-long” inspires the Korean pronunciation “So-ryong” (소룡) with surname Lee (이). Hanja 小龍 represents 小 (So, small) and 龍 (Ryong, dragon), interpreted as “small but powerful dragon,” reflecting strong and determined traits.
+
+Japanese name: 山田太郎 → 이태로 (Lee Tae-ro)
+
+Explanation: The sound “Yamada Taro” inspires the Korean given name “Tae-ro” (태로) with surname Lee (이), following the 1+2 글자 패턴. Hanja 泰魯 represents 泰 (Tae, peaceful) and 魯 (Ro, bright/clear), interpreted as “one who is bright and peaceful,” reflecting wisdom and stability.
+
+Spanish name: María González → 마리안 (Ma-ri-an)
+
+Explanation: The sound “María” inspires “Ma-ri” (마리) and “González” inspires the surname “An” (안). Hanja 安理 represents 安 (An, peace) and 理 (Ri, reason), interpreted as “one who brings peace and clarity,” reflecting kindness and intelligence.
+
 `
         }
       ],
@@ -112,16 +102,48 @@ Ensure that the generated names follow appropriate patterns for the specified ge
       throw new Error('OpenAI 응답이 비어있습니다');
     }
 
-    //console.log('📡 OpenAI 응답:', content);
+    console.log('📡 OpenAI 응답:', content);
 
-    // JSON 파싱
-    const result = JSON.parse(content) as NameGenerationResponse;
+    // JSON 파싱 (마크다운 코드 블록 제거)
+    let result: NameGenerationResponse;
+    try {
+      // 마크다운 코드 블록 제거
+      let cleanContent = content.trim();
+      
+      // ```json과 ``` 제거
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '');
+      }
+      if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '');
+      }
+      if (cleanContent.endsWith('```')) {
+        cleanContent = cleanContent.replace(/\s*```$/, '');
+      }
+      
+      console.log('🧹 정리된 JSON:', cleanContent);
+      
+      result = JSON.parse(cleanContent) as NameGenerationResponse;
+    } catch (parseError) {
+      console.error('❌ JSON 파싱 오류:', parseError);
+      console.log('📝 원본 응답:', content);
+      throw new Error('OpenAI 응답이 유효한 JSON 형식이 아닙니다');
+    }
     
-    // 필수 필드 검증
-    if (!result.sound_based?.name_hangul || !result.sound_based?.romanization || !result.sound_based?.note ||
-        !result.meaning_based?.name_hangul || !result.meaning_based?.name_hanja || 
-        !result.meaning_based?.romanization || !result.meaning_based?.meaning) {
-      throw new Error('OpenAI 응답 형식이 올바르지 않습니다');
+    console.log('🔍 파싱된 결과:', result);
+    
+    // 필수 필드 검증 (더 자세한 오류 메시지)
+    const missingFields = [];
+    
+    if (!result.name_hangul) missingFields.push('name_hangul');
+    if (!result.name_hanja) missingFields.push('name_hanja');
+    if (!result.romanization) missingFields.push('romanization');
+    if (!result.meaning) missingFields.push('meaning');
+    
+    if (missingFields.length > 0) {
+      console.error('❌ 누락된 필드들:', missingFields);
+      console.log('📝 현재 결과 구조:', JSON.stringify(result, null, 2));
+      throw new Error(`OpenAI 응답에서 필수 필드가 누락되었습니다: ${missingFields.join(', ')}`);
     }
 
     
@@ -139,65 +161,44 @@ Ensure that the generated names follow appropriate patterns for the specified ge
 };
 
 
-// 성격 설명 함수
+// 성격 설명 함수 (영어로 변환)
 const getPersonalityDescription = (personality: string): string => {
   const descriptions: { [key: string]: string } = {
-    'active': '활발하고 에너지 넘치는',
-    'calm': '차분하고 안정적인',
-    'creative': '창의적이고 독창적인',
-    'kind': '따뜻하고 친근한',
-    'strong': '강인하고 의지가 강한',
-    'wise': '지혜롭고 똑똑한'
+    'active': 'active and energetic',
+    'calm': 'calm and stable',
+    'creative': 'creative and original',
+    'kind': 'warm and friendly',
+    'strong': 'strong and determined',
+    'wise': 'wise and intelligent'
   };
-  return descriptions[personality] || '특별한';
+  return descriptions[personality] || 'special';
 };
 
-// 국적 설명 함수
-const getNationalityDescription = (nationality: string): string => {
-  const descriptions: { [key: string]: string } = {
-    'us': '미국',
-    'uk': '영국',
-    'canada': '캐나다',
-    'australia': '호주',
-    'germany': '독일',
-    'france': '프랑스',
-    'japan': '일본',
-    'china': '중국',
-    'thailand': '태국',
-    'vietnam': '베트남',
-    'india': '인도',
-    'brazil': '브라질',
-    'mexico': '멕시코',
-    'other': '기타'
-  };
-  return descriptions[nationality] || '기타';
-};
 
 // 폴백 이름 생성 함수 (OpenAI 실패 시 사용)
 const generateFallbackName = (formData: NameGenerationRequest): NameGenerationResponse => {
   const surnames = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임'];
   const maleNames = ['민수', '준호', '태현', '현우', '지훈', '동현', '성민', '준영', '민호', '재현'];
   const femaleNames = ['지은', '서연', '민지', '예은', '하늘', '지현', '수진', '예진', '서현', '민정'];
+  const maleHanja = ['民秀', '俊浩', '泰賢', '賢宇', '智勳', '東炫', '成民', '俊英', '民浩', '在炫'];
+  const femaleHanja = ['智恩', '瑞妍', '民智', '藝恩', '河娜', '智賢', '秀珍', '藝珍', '瑞賢', '民貞'];
   
   const surname = surnames[Math.floor(Math.random() * surnames.length)];
   const givenName = formData.gender === 'male' 
     ? maleNames[Math.floor(Math.random() * maleNames.length)]
     : femaleNames[Math.floor(Math.random() * femaleNames.length)];
   
-  const soundBasedName = `${surname}${givenName}`;
-  const meaningBasedName = `${surname}${givenName}`;
+  const hanjaName = formData.gender === 'male'
+    ? maleHanja[Math.floor(Math.random() * maleHanja.length)]
+    : femaleHanja[Math.floor(Math.random() * femaleHanja.length)];
+  
+  const fullName = `${surname}${givenName}`;
+  const fullHanja = `金${hanjaName}`; // 성씨는 김으로 고정
   
   return {
-    sound_based: {
-      name_hangul: soundBasedName,
-      romanization: `${surname} ${givenName}`,
-      note: `${formData.originalName}의 발음을 한국어로 재현한 이름입니다.`
-    },
-    meaning_based: {
-      name_hangul: meaningBasedName,
-      name_hanja: '金民秀', // 예시 한자
-      romanization: `${surname} ${givenName}`,
-      meaning: `${formData.originalName}님의 성격을 반영한 의미있는 한국 이름입니다.`
-    }
+    name_hangul: fullName,
+    name_hanja: fullHanja,
+    romanization: `${surname} ${givenName}`,
+    meaning: `${formData.originalName}님의 성격을 반영한 의미있는 한국 이름입니다.`
   };
 };
