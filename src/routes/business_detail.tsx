@@ -1285,10 +1285,16 @@ interface BusinessReview {
 }
 
 interface Business {
-  id: number;
+  id: string; // UUID string
   title: string;
+  title_ko?: string;
+  title_en?: string;
   subtitle: string;
+  subtitle_ko?: string;
+  subtitle_en?: string;
   description: string;
+  description_ko?: string;
+  description_en?: string;
   main_image_url?: string;
   gallery_images?: string[];
   icon?: string;
@@ -1300,8 +1306,9 @@ interface Business {
   review_count: number;
   contact: BusinessContact;
   business_hours: string;
+  business_hours_ko?: string;
+  business_hours_en?: string;
   reviews: BusinessReview[];
-  translations?: any;
   created_at: string;
   updated_at: string;
 }
@@ -1850,10 +1857,16 @@ export default function BusinessDetail() {
       try {
         setLoading(true);
         
-        // Supabase에서 locations 데이터 가져오기
+        // Supabase에서 locations 데이터 가져오기 (localized fields 포함)
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
-          .select('*')
+          .select(`
+            *, 
+            title_ko, title_en, 
+            subtitle_ko, subtitle_en,
+            description_ko, description_en,
+            business_hours_ko, business_hours_en
+          `)
           .eq('id', id)
           .single();
 
@@ -1879,28 +1892,45 @@ export default function BusinessDetail() {
           console.error('Error fetching reviews:', reviewsError);
         }
 
-        // Get multilingual content based on language preference
-        const getLocationContent = (field: string, defaultValue: string) => {
-          if (locationData.translations && locationData.translations[field]) {
-            const languageMap: Record<string, string> = {
-              'ko': 'ko',
-              'en': 'en', 
-              'ja': 'ja',
-              'zh': 'zh',
-              'es': 'es'
-            };
-            const langCode = languageMap[language] || 'ko';
-            return locationData.translations[field][langCode] || locationData.translations[field]['ko'] || defaultValue;
+        // Helper function to get localized content based on current language
+        const getLocalizedContent = (
+          koreanField: string | undefined,
+          englishField: string | undefined,
+          fallback: string
+        ) => {
+          if (language === 'en' && englishField) {
+            return englishField;
+          } else if (language === 'ko' && koreanField) {
+            return koreanField;
           }
-          return defaultValue;
+          // Fallback to Korean first, then English, then provided fallback
+          return koreanField || englishField || fallback;
         };
 
         // Business 인터페이스에 맞게 데이터 변환
         const businessData: Business = {
           id: locationData.id,
-          title: getLocationContent('title', locationData.name || locationData.title || '사주 서비스'),
-          subtitle: getLocationContent('subtitle', locationData.subtitle || '전통 사주와 현대 기술의 만남'),
-          description: getLocationContent('description', locationData.description || '정확하고 상세한 사주 분석을 제공합니다.'),
+          title: getLocalizedContent(
+            locationData.title_ko,
+            locationData.title_en,
+            locationData.title || '사주 서비스'
+          ),
+          title_ko: locationData.title_ko,
+          title_en: locationData.title_en,
+          subtitle: getLocalizedContent(
+            locationData.subtitle_ko,
+            locationData.subtitle_en,
+            locationData.subtitle || '전통 사주와 현대 기술의 만남'
+          ),
+          subtitle_ko: locationData.subtitle_ko,
+          subtitle_en: locationData.subtitle_en,
+          description: getLocalizedContent(
+            locationData.description_ko,
+            locationData.description_en,
+            locationData.description || '정확하고 상세한 사주 분석을 제공합니다.'
+          ),
+          description_ko: locationData.description_ko,
+          description_en: locationData.description_en,
           main_image_url: locationData.main_image_url || locationData.image_url,
           gallery_images: locationData.gallery_images || [],
           icon: locationData.icon || '🔮',
@@ -1916,7 +1946,13 @@ export default function BusinessDetail() {
             address: locationData.address || '서울특별시 강남구 역삼동',
             website: locationData.website
           },
-          business_hours: locationData.business_hours || 'Open 09:00 - 21:00',
+          business_hours: getLocalizedContent(
+            locationData.business_hours_ko,
+            locationData.business_hours_en,
+            locationData.business_hours || 'Open 09:00 - 21:00'
+          ),
+          business_hours_ko: locationData.business_hours_ko,
+          business_hours_en: locationData.business_hours_en,
           reviews: (reviewsData || []).map((review: any) => ({
             id: review.id,
             name: review.name,
@@ -1924,7 +1960,6 @@ export default function BusinessDetail() {
             rating: review.rating,
             text: review.text
           })),
-          translations: locationData.translations,
           created_at: locationData.created_at,
           updated_at: locationData.updated_at
         };
