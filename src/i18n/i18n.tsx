@@ -154,7 +154,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     popularServices: "Popular Saju Services",
     recommendedBy: "Recommended by K-Saju",
     hotDeals: "Saju Special Offers & Discounts",
-    aiSajuAnalysis: "AI Saju Analysis",
     compatibilityAnalysis: "Compatibility Analysis",
     nameCreationService: "Name Creation",
     // Name Creation Page
@@ -255,6 +254,14 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapInitializationError: "Error initializing map",
     geocodingFailedFallback: "Geocoding failed, using default location",
     businessNotFoundError: "Business not found",
+    // Service options translations
+    basicConsultation: "Basic Saju Consultation",
+    basicConsultationDesc: "AI-based basic Saju analysis and consultation",
+    premiumConsultation: "Premium Saju Consultation", 
+    premiumConsultationDesc: "Detailed AI analysis + traditional Saju interpretation",
+    vipConsultation: "VIP Comprehensive Consultation",
+    vipConsultationDesc: "Comprehensive analysis + personalized advice + follow-up consultation",
+    aiSajuAnalysis: "AI Saju Analysis",
     // Intro page translations
     whyChooseKSaju: "Why Choose K-Saju?",
     introSubtitle: "Discover the ancient wisdom of Korean fortune telling with modern convenience and multilingual support.",
@@ -429,7 +436,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     popularServices: "인기 사주 서비스",
     recommendedBy: "K-Saju 추천",
     hotDeals: "사주 특가 & 할인",
-    aiSajuAnalysis: "AI 사주 분석",
     compatibilityAnalysis: "궁합 분석",
     nameCreationService: "이름 작명",
     // Name Creation Page
@@ -530,6 +536,14 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapInitializationError: "지도 초기화 중 오류 발생",
     geocodingFailedFallback: "지오코딩 실패, 기본 위치 사용",
     businessNotFoundError: "업체를 찾을 수 없습니다",
+    // Service options translations
+    basicConsultation: "기본 사주 상담",
+    basicConsultationDesc: "AI 기반 기본 사주 분석 및 상담",
+    premiumConsultation: "프리미엄 사주 상담", 
+    premiumConsultationDesc: "상세한 AI 분석 + 전통 사주 해석",
+    vipConsultation: "VIP 종합 상담",
+    vipConsultationDesc: "종합 분석 + 개인 맞춤 조언 + 후속 상담",
+    aiSajuAnalysis: "AI 사주 분석",
     // Intro page translations
     whyChooseKSaju: "왜 K-Saju를 선택해야 할까요?",
     introSubtitle: "현대적인 편의성과 다국어 지원으로 한국 전통 사주의 고대 지혜를 발견하세요.",
@@ -707,7 +721,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     popularServices: "热门四柱服务",
     recommendedBy: "K-Saju推荐",
     hotDeals: "四柱特价&折扣",
-    aiSajuAnalysis: "AI四柱分析",
     compatibilityAnalysis: "缘分分析",
     nameCreationService: "起名服务",
     // Name Creation Page
@@ -808,6 +821,14 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapInitializationError: "地图初始化错误",
     geocodingFailedFallback: "地理编码失败，使用默认位置",
     businessNotFoundError: "找不到企业",
+    // Service options translations
+    basicConsultation: "基础四柱推命咨询",
+    basicConsultationDesc: "基于AI的基础四柱推命分析和咨询",
+    premiumConsultation: "高级四柱推命咨询", 
+    premiumConsultationDesc: "详细AI分析 + 传统四柱推命解读",
+    vipConsultation: "VIP综合咨询",
+    vipConsultationDesc: "综合分析 + 个性化建议 + 后续咨询",
+    aiSajuAnalysis: "AI四柱推命分析",
     // Intro page translations
     whyChooseKSaju: "为什么选择K-Saju？",
     introSubtitle: "通过现代便利和多语言支持，发现韩国传统算命的古老智慧。",
@@ -982,7 +1003,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     popularServices: "人気四柱サービス",
     recommendedBy: "K-Sajuおすすめ",
     hotDeals: "四柱特価&割引",
-    aiSajuAnalysis: "AI四柱分析",
     compatibilityAnalysis: "相性分析",
     nameCreationService: "命名サービス",
     // Name Creation Page
@@ -1083,6 +1103,14 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapInitializationError: "地図の初期化エラー",
     geocodingFailedFallback: "ジオコーディング失敗、デフォルト位置を使用",
     businessNotFoundError: "事業者が見つかりません",
+    // Service options translations
+    basicConsultation: "基本四柱推命相談",
+    basicConsultationDesc: "AI基盤の基本四柱推命分析及び相談",
+    premiumConsultation: "プレミアム四柱推命相談", 
+    premiumConsultationDesc: "詳細なAI分析 + 伝統四柱推命解釈",
+    vipConsultation: "VIP総合相談",
+    vipConsultationDesc: "総合分析 + 個人向けアドバイス + フォローアップ相談",
+    aiSajuAnalysis: "AI四柱推命分析",
     // Intro page translations
     whyChooseKSaju: "なぜK-Sajuを選ぶべきか？",
     introSubtitle: "現代的な便利さと多言語サポートで韓国伝統占いの古代の知恵を発見してください。",
@@ -1260,7 +1288,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     popularServices: "Servicios Saju Populares",
     recommendedBy: "Recomendado por K-Saju",
     hotDeals: "Ofertas Especiales Saju & Descuentos",
-    aiSajuAnalysis: "Análisis Saju IA",
     compatibilityAnalysis: "Análisis de Compatibilidad",
     nameCreationService: "Creación de Nombres",
     // Name Creation Page
@@ -1361,6 +1388,14 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapInitializationError: "Error inicializando el mapa",
     geocodingFailedFallback: "Geocodificación fallida, usando ubicación predeterminada",
     businessNotFoundError: "Negocio no encontrado",
+    // Service options translations
+    basicConsultation: "Consulta Básica de Saju",
+    basicConsultationDesc: "Análisis y consulta básica de Saju basada en IA",
+    premiumConsultation: "Consulta Premium de Saju", 
+    premiumConsultationDesc: "Análisis detallado de IA + interpretación tradicional de Saju",
+    vipConsultation: "Consulta Integral VIP",
+    vipConsultationDesc: "Análisis integral + consejos personalizados + consulta de seguimiento",
+    aiSajuAnalysis: "Análisis de Saju con IA",
     // Intro page translations
     whyChooseKSaju: "¿Por qué elegir K-Saju?",
     introSubtitle: "Descubre la sabiduría ancestral de la adivinación coreana con conveniencia moderna y soporte multilingüe.",

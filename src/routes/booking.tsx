@@ -685,10 +685,10 @@ const CalendarDay = styled.button<{ $isSelected?: boolean; $isDisabled?: boolean
   }
 `;
 
-// Mock business data (실제로는 props나 API에서 받아올 데이터)
-const mockBusinessData = {
+// Mock business data function to get localized data
+const getMockBusinessData = (t: (key: string) => string) => ({
   id: 1,
-  title: "AI 사주 분석",
+  title: t('aiSajuAnalysis'),
   base_price: 29000,
   currency: "KRW",
   contact: {
@@ -696,7 +696,7 @@ const mockBusinessData = {
     address: "서울특별시 강남구 역삼동 123-45",
     business_hours: "09:00 - 21:00"
   }
-};
+});
 
 interface BookingFormData {
   name: string;
@@ -1162,6 +1162,9 @@ export default function Booking() {
   const [errors, setErrors] = useState<Partial<BookingFormData>>({});
   const [showBottomBar, setShowBottomBar] = useState(false);
   
+  // Get localized business data
+  const mockBusinessData = getMockBusinessData(t);
+  
   // 스크롤 감지 useEffect
   useEffect(() => {
     const handleScroll = () => {
@@ -1179,25 +1182,25 @@ export default function Booking() {
     '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
   ];
   
-  // 서비스 옵션
+  // 서비스 옵션 (localized)
   const serviceOptions = [
     {
       id: 1,
-      name: "기본 사주 상담",
+      name: t('basicConsultation'),
       price: 29000,
-      description: "AI 기반 기본 사주 분석 및 상담"
+      description: t('basicConsultationDesc')
     },
     {
       id: 2,
-      name: "프리미엄 사주 상담",
+      name: t('premiumConsultation'),
       price: 49000,
-      description: "상세한 AI 분석 + 전통 사주 해석"
+      description: t('premiumConsultationDesc')
     },
     {
       id: 3,
-      name: "VIP 종합 상담",
+      name: t('vipConsultation'),
       price: 79000,
-      description: "종합 분석 + 개인 맞춤 조언 + 후속 상담"
+      description: t('vipConsultationDesc')
     }
   ];
   
