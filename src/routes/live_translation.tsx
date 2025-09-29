@@ -4,6 +4,65 @@ import { useI18n } from "../i18n/i18n";
 import { useRealtimeAgent } from "../hooks/useRealtimeAgent";
 import { useUserProfile } from "../hooks/useUserProfile";
 
+// Import mysterious fonts for multiple languages from Google Fonts
+const fontLinks = [
+  // Korean mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Song+Myung&family=Jua&family=Gugi&family=Stylish:wght@400&family=Kirang+Haerang&display=swap',
+  // Korean clean fonts  
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap',
+  // Latin mysterious fonts
+  'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap',
+  // Japanese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Sawarabi+Mincho&display=swap',
+  // Chinese fonts
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap'
+];
+
+fontLinks.forEach(href => {
+  const link = document.createElement('link');
+  link.href = href;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+});
+
+// Language-specific font configurations
+const getFontFamily = (language: string, type: 'heading' | 'body' | 'accent' | 'price') => {
+  const fontConfigs = {
+    ko: {
+      heading: "'Song Myung', 'Stylish', 'Kirang Haerang', serif",
+      body: "'Noto Sans KR', 'Jua', sans-serif",
+      accent: "'Gugi', 'Song Myung', cursive",
+      price: "'Noto Serif KR', 'Song Myung', serif"
+    },
+    en: {
+      heading: "'Cinzel', 'Crimson Text', serif",
+      body: "'Cormorant Garamond', 'Crimson Text', serif",
+      accent: "'Cinzel', 'Crimson Text', serif",
+      price: "'Crimson Text', serif"
+    },
+    ja: {
+      heading: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      body: "'Noto Sans JP', 'Sawarabi Mincho', sans-serif",
+      accent: "'Sawarabi Mincho', 'Noto Serif JP', serif",
+      price: "'Noto Serif JP', 'Sawarabi Mincho', serif"
+    },
+    zh: {
+      heading: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      body: "'Noto Sans SC', 'Ma Shan Zheng', sans-serif",
+      accent: "'Ma Shan Zheng', 'Noto Serif SC', serif",
+      price: "'Noto Serif SC', 'Ma Shan Zheng', serif"
+    },
+    es: {
+      heading: "'Cinzel', 'Crimson Text', serif",
+      body: "'Cormorant Garamond', 'Crimson Text', serif",
+      accent: "'Cinzel', 'Crimson Text', serif",
+      price: "'Crimson Text', serif"
+    }
+  };
+  
+  return fontConfigs[language as keyof typeof fontConfigs]?.[type] || fontConfigs.en[type];
+};
+
 // ChatMessage 타입 정의 (useRealtimeAgent에서 가져옴)
 interface ChatMessage {
   id: string;
@@ -16,86 +75,81 @@ interface ChatMessage {
 }
 
 const Page = styled.div`
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  width: 100%;
-`;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
-`;
-
-const MainTitle = styled.h1`
-  color: white;
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-
-const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean }>`
-  appearance: none;
-  border: none;
-  background: ${(p) => {
-    if (p.$recording) return "linear-gradient(135deg, #ff6b6b, #ff8e53)";
-    if (p.$danger) return "linear-gradient(135deg, #ff6b6b, #ee5a6f)";
-    if (p.$customer) return "linear-gradient(135deg, #4facfe, #00f2fe)";
-    if (p.$business) return "linear-gradient(135deg, #43e97b, #38f9d7)";
-    return "linear-gradient(135deg, #667eea, #764ba2)";
-  }};
-  color: white;
-  height: 56px;
-  padding: 0 24px;
-  border-radius: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 16px;
-  min-width: 160px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
   position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-
+  padding: 2rem 0;
+  
   &::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    z-index: 0;
   }
-
-  &:hover::before {
-    left: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem 0;
   }
+`;
 
-  &:hover {
+
+const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?: boolean; $business?: boolean; $recording?: boolean; $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  position: relative;
+  overflow: hidden;
+  
+  background: ${(p) => {
+    if (p.$recording) return "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+    if (p.$danger) return "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+    if (p.$customer) return "linear-gradient(135deg, #4c1d95 0%, #3730a3 100%)"; // Dark purple
+    if (p.$business) return "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+    return "linear-gradient(135deg, #4c1d95 0%, #3730a3 100%)"; // Dark purple default
+  }};
+  color: white;
+  box-shadow: ${(p) => {
+    if (p.$recording) return "0 4px 15px rgba(239, 68, 68, 0.3)";
+    if (p.$danger) return "0 4px 15px rgba(239, 68, 68, 0.3)";
+    if (p.$customer) return "0 4px 15px rgba(76, 29, 149, 0.3)"; // Dark purple shadow
+    if (p.$business) return "0 4px 15px rgba(16, 185, 129, 0.3)";
+    return "0 4px 15px rgba(76, 29, 149, 0.3)"; // Dark purple shadow default
+  }};
+  
+  &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: ${(p) => {
+      if (p.$recording) return "0 8px 25px rgba(239, 68, 68, 0.4)";
+      if (p.$danger) return "0 8px 25px rgba(239, 68, 68, 0.4)";
+      if (p.$customer) return "0 8px 25px rgba(76, 29, 149, 0.4)"; // Dark purple hover shadow
+      if (p.$business) return "0 8px 25px rgba(16, 185, 129, 0.4)";
+      return "0 8px 25px rgba(76, 29, 149, 0.4)"; // Dark purple hover shadow default
+    }};
   }
-
+  
   &:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
   }
-
+  
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    &:hover {
-      transform: none;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    }
   }
 
   ${(p) => p.$recording && `
@@ -103,30 +157,32 @@ const Button = styled.button<{ $primary?: boolean; $danger?: boolean; $customer?
 
     @keyframes pulse {
       0% {
-        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
       }
       50% {
-        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.6), 0 0 0 10px rgba(255, 107, 107, 0.1);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6), 0 0 0 10px rgba(239, 68, 68, 0.1);
       }
       100% {
-        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
       }
     }
   `}
 `;
 
 const Panel = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
   &:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(139, 92, 246, 0.3);
     transform: translateY(-2px);
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -140,13 +196,11 @@ const PanelHeader = styled.div`
   border-bottom: 1px solid #f3f4f6;
 `;
 
-const PanelTitle = styled.h2`
-  font-size: 24px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+const PanelTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
   margin: 0;
   line-height: 1.2;
   display: flex;
@@ -155,14 +209,15 @@ const PanelTitle = styled.h2`
 `;
 
 const ConversationArea = styled.div`
-  height: 70vh;
-  min-height: 500px;
+  height: 60vh;
+  min-height: 400px;
   overflow-y: auto;
-  padding: 24px;
-  background: linear-gradient(135deg, #f8fafc 0%, #e8f2ff 100%);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 20px;
+  padding: 1.5rem;
+  background: rgba(248, 250, 252, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.6);
+  border-radius: 16px;
   position: relative;
+  backdrop-filter: blur(10px);
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -174,24 +229,12 @@ const ConversationArea = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #5a67d8, #6b46c1);
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 20px;
-    background: linear-gradient(to bottom, rgba(248, 250, 252, 0.8), transparent);
-    pointer-events: none;
-    z-index: 1;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
   }
 `;
 
@@ -232,25 +275,27 @@ const ProfileIcon = styled.div<{ $isKorean: boolean }>`
 
 const MessageContent = styled.div`
   flex: 1;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: rgba(139, 92, 246, 0.2);
   }
 `;
 
-const MessageText = styled.div`
+const MessageText = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-weight: 500;
-  color: #111827;
+  color: #2d3748;
   line-height: 1.5;
-  font-size: 16px;
+  font-size: 1rem;
 `;
 
 const TranslationContainer = styled.div`
@@ -259,19 +304,21 @@ const TranslationContainer = styled.div`
   gap: 8px;
 `;
 
-const PrimaryLanguage = styled.div`
+const PrimaryLanguage = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-weight: 600;
-  color: #111827;
+  color: #1a202c;
   line-height: 1.5;
-  font-size: 16px;
+  font-size: 1rem;
 `;
 
-const SecondaryLanguage = styled.div`
+const SecondaryLanguage = styled.div<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'body')};
   font-weight: 400;
-  color: #6b7280;
+  color: #4a5568;
   line-height: 1.4;
-  font-size: 14px;
-  opacity: 0.7;
+  font-size: 0.9rem;
+  opacity: 0.8;
   font-style: italic;
 `;
 
@@ -364,7 +411,7 @@ const LANGUAGE_ICONS: Record<string, string> = {
 };
 
 export default function LiveTranslation() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const conversationRef = useRef<HTMLDivElement | null>(null);
 
   // 유저 프로필에서 country 기반으로 언어 설정 가져오기
@@ -400,14 +447,10 @@ export default function LiveTranslation() {
 
   return (
     <Page>
-      <Header>
-        <MainTitle>{t("liveTranslationTitle")}</MainTitle>
-      </Header>
-
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <Panel>
           <PanelHeader>
-            <PanelTitle>
+            <PanelTitle $language={language}>
               🗣️ {t("liveTranslation")}
             </PanelTitle>
           </PanelHeader>
@@ -436,6 +479,7 @@ export default function LiveTranslation() {
               $danger={isRecording}
               $recording={isRecording}
               disabled={isConnecting}
+              $language={language}
             >
               {isConnecting
                 ? "🔄 연결 중..."
@@ -635,8 +679,8 @@ export default function LiveTranslation() {
                       </ProfileIcon>
                       <MessageContent>
                         <TranslationContainer>
-                          <PrimaryLanguage>{customerText}</PrimaryLanguage>
-                          <SecondaryLanguage>{koreanText}</SecondaryLanguage>
+                          <PrimaryLanguage $language={language}>{customerText}</PrimaryLanguage>
+                          <SecondaryLanguage $language={language}>{koreanText}</SecondaryLanguage>
                         </TranslationContainer>
                       </MessageContent>
                     </MessageItem>
@@ -656,7 +700,7 @@ export default function LiveTranslation() {
                           : "🔄"}
                       </ProfileIcon>
                       <MessageContent>
-                        <MessageText>
+                        <MessageText $language={language}>
                           {message.content}
                           {!group.isComplete && message.role === 'user' && (
                             <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px' }}>

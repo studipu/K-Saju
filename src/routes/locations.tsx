@@ -4,6 +4,7 @@ import { PlusIcon, MinusIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, Squar
 import { supabase } from "../supabase";
 import starBg from "../assets/star_bg.png";
 import { ServiceCard } from "../components/service_card";
+import { useI18n } from "../i18n/i18n";
 
 type Place = {
   id: string;
@@ -28,12 +29,24 @@ type LocationItem = {
   maxGuestsTotal: number;
   minAge?: number;
   placeId: string;
+  // Localized fields
+  titleKo?: string;
+  titleEn?: string;
+  titleZh?: string;
+  titleJa?: string;
+  titleEs?: string;
+  taglineKo?: string;
+  taglineEn?: string;
+  taglineZh?: string;
+  taglineJa?: string;
+  taglineEs?: string;
 };
 
 const Background = styled.div`
   position: relative;
   width: 100%;
   flex: 1 1 auto;
+  background: #181818;
   background-image: url(${starBg});
   background-size: cover;
   background-position: center top;
@@ -48,8 +61,8 @@ const Background = styled.div`
     height: 100%;
     background: linear-gradient(
       to bottom,
-      rgba(30, 9, 50, 0.6) 0%,
-      rgba(0, 0, 0, 0.7) 100%
+      rgba(24, 24, 24, 0.7) 0%,
+      rgba(24, 24, 24, 0.85) 100%
     );
     z-index: 0;
     pointer-events: none;
@@ -85,7 +98,7 @@ const ListPane = styled.div<{ $expanded?: boolean; $mapRatio?: number; $sheetExp
     bottom: 0;
     display: flex;
     margin-right: 0;
-    background: #ffffff;
+    background: #181818;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
     box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
@@ -139,6 +152,10 @@ const ListHeader = styled.div`
   position: sticky;
   top: 0;
   z-index: 10;
+  
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+  }
 `;
 
 
@@ -282,11 +299,13 @@ const ViewBtn = styled.button<{ $active?: boolean }>`
   &:focus-visible { outline: 2px solid #111827; outline-offset: 2px; }
 `;
 
-// Sort/Filter UI
+// Sort/Filter UI - Always aligned to the right end
 const ControlsBar = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
 `;
 
 const FilterButton = styled.button`
@@ -358,18 +377,18 @@ const SheetHandle = styled.div<{ $expanded?: boolean }>`
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background: #ffffff;
+    background: #181818;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
     transition: background-color 0.15s ease;
     position: relative;
     
     &:hover {
-      background: #f9fafb;
+      background: #202020;
     }
     
     &:active {
-      background: #f3f4f6;
+      background: #161616;
     }
   }
   &::before {
@@ -407,6 +426,32 @@ function formatKRW(n: number) {
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(n);
 }
 
+// Helper function to get localized content based on user's language preference
+function getLocalizedContent(
+  language: string,
+  ko?: string,
+  en?: string,
+  zh?: string,
+  ja?: string,
+  es?: string,
+  fallback?: string
+): string {
+  switch (language) {
+    case 'ko':
+      return ko || en || fallback || '';
+    case 'en':
+      return en || ko || fallback || '';
+    case 'zh':
+      return zh || en || ko || fallback || '';
+    case 'ja':
+      return ja || en || ko || fallback || '';
+    case 'es':
+      return es || en || ko || fallback || '';
+    default:
+      return en || ko || fallback || '';
+  }
+}
+
 function useGoogleMaps(apiKey?: string) {
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
@@ -421,7 +466,7 @@ function useGoogleMaps(apiKey?: string) {
     s.id = id;
     s.async = true;
     s.defer = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=geometry,places`;
     s.onload = () => setLoaded(true);
     s.onerror = () => setLoaded(false);
     document.head.appendChild(s);
@@ -430,10 +475,11 @@ function useGoogleMaps(apiKey?: string) {
 }
 
 export default function Locations() {
+  const { language } = useI18n();
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const [places, setPlaces] = useState<Place[]>([]);
   const [locations, setLocations] = useState<LocationItem[]>([]);
-  const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.4 ~ 0.5
+  const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.4 ~ 0.45 max to prevent expansion beyond cards
   const placesById = useMemo(() => new Map(places.map(p => [p.id, p])), [places]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -488,7 +534,11 @@ export default function Locations() {
         .select("id, region, city, district, postal_code, address_line, place_label, latitude, longitude");
       const { data: locs, error: locsErr } = await supabase
         .from("locations")
-        .select("id, title, tagline, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id");
+        .select(`
+          id, title, tagline, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id,
+          title_ko, title_en, title_zh, title_ja, title_es,
+          tagline_ko, tagline_en, tagline_zh, tagline_ja, tagline_es
+        `);
       if (cancelled) return;
       if (placesErr || locsErr) {
         // Minimal logging to help production debugging
@@ -520,6 +570,17 @@ export default function Locations() {
           maxGuestsTotal: l.max_guests_total,
           minAge: l.min_age ?? undefined,
           placeId: l.place_id,
+          // Localized fields
+          titleKo: l.title_ko,
+          titleEn: l.title_en,
+          titleZh: l.title_zh,
+          titleJa: l.title_ja,
+          titleEs: l.title_es,
+          taglineKo: l.tagline_ko,
+          taglineEn: l.tagline_en,
+          taglineZh: l.tagline_zh,
+          taglineJa: l.tagline_ja,
+          taglineEs: l.tagline_es,
         }));
         setLocations(mappedLocs);
       }
@@ -559,14 +620,17 @@ export default function Locations() {
       const markerLib = (window as any).google.maps.marker;
       if (markerLib && markerLib.AdvancedMarkerElement) {
         const el = document.createElement("div");
-        el.style.padding = "6px 10px";
-        el.style.background = "#111111";
-        el.style.border = "1px solid #111111";
+        el.style.padding = "10px 16px";
+        el.style.background = "#000000";
         el.style.borderRadius = "999px";
-        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-        el.style.fontWeight = "700";
         el.style.color = "#ffffff";
-        el.style.fontSize = "12px";
+        el.style.fontSize = "14px";
+        el.style.fontWeight = "700";
+        el.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        el.style.whiteSpace = "nowrap";
+        el.style.textAlign = "center";
+        (el.style as any).webkitFontSmoothing = "antialiased";
+        (el.style as any).mozOsxFontSmoothing = "grayscale";
         el.textContent = priceText;
 
         const adv = new markerLib.AdvancedMarkerElement({
@@ -580,16 +644,84 @@ export default function Locations() {
         });
         markerMap.current[loc.id] = adv;
       } else {
+        // Create a custom pill-shaped marker for fallback
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          // Fallback to simple marker if canvas is not supported
+          const marker = new (window as any).google.maps.Marker({
+            map: mapObj.current,
+            position: { lat: place.latitude, lng: place.longitude },
+            label: { text: priceText, color: "#ffffff", fontSize: "11px", fontWeight: "600" } as any,
+          });
+          marker.addListener("click", () => {
+            setSelectedId(loc.id);
+            listRefs.current[loc.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+          markerMap.current[loc.id] = marker;
+          continue;
+        }
+        
+        const text = priceText;
+        const fontSize = 14;
+        const paddingX = 16;
+        const paddingY = 10;
+        
+        // Use device pixel ratio for crisp rendering
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Set font to measure text width
+        ctx.font = `700 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+        const textWidth = ctx.measureText(text).width;
+        
+        // Calculate dimensions
+        const boxWidth = textWidth + (paddingX * 2);
+        const boxHeight = fontSize + (paddingY * 2);
+        
+        // Set canvas size with high DPI support
+        canvas.width = boxWidth * dpr;
+        canvas.height = boxHeight * dpr;
+        canvas.style.width = boxWidth + 'px';
+        canvas.style.height = boxHeight + 'px';
+        
+        // Scale context for high DPI
+        ctx.scale(dpr, dpr);
+        
+        // Enable high-quality rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // Draw rounded rectangle (fully rounded corners)
+        ctx.fillStyle = '#000000';
+        const radius = boxHeight / 2; // Fully rounded = half the height
+        
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(boxWidth - radius, 0);
+        ctx.arcTo(boxWidth, 0, boxWidth, radius, radius);
+        ctx.lineTo(boxWidth, boxHeight - radius);
+        ctx.arcTo(boxWidth, boxHeight, boxWidth - radius, boxHeight, radius);
+        ctx.lineTo(radius, boxHeight);
+        ctx.arcTo(0, boxHeight, 0, boxHeight - radius, radius);
+        ctx.lineTo(0, radius);
+        ctx.arcTo(0, 0, radius, 0, radius);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw text with better font rendering
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, boxWidth / 2, boxHeight / 2);
+        
         const marker = new (window as any).google.maps.Marker({
           map: mapObj.current,
           position: { lat: place.latitude, lng: place.longitude },
-          label: { text: priceText, color: "#ffffff", fontSize: "12px", fontWeight: "700" } as any,
           icon: {
-            path: (window as any).google.maps.SymbolPath.CIRCLE,
-            scale: 0,
-            fillColor: "#111111",
-            fillOpacity: 1,
-            strokeOpacity: 0
+            url: canvas.toDataURL(),
+            anchor: new (window as any).google.maps.Point(boxWidth / 2, boxHeight / 2),
+            scaledSize: new (window as any).google.maps.Size(boxWidth, boxHeight)
           } as any,
         });
         marker.addListener("click", () => {
@@ -767,7 +899,7 @@ export default function Locations() {
             // viewport 기준으로 근사치 변환: 1920px 화면 기준 1vw ≈ 19.2px
             const pxPerVw = Math.max(window.innerWidth, 320) / 100;
             const deltaRatio = (delta / (pxPerVw * 100));
-            const next = Math.min(Math.max(startRatio + deltaRatio, 0.4), 0.5);
+            const next = Math.min(Math.max(startRatio + deltaRatio, 0.4), 0.45);
             setMapRatio(next);
           };
           const onUp = () => {
@@ -784,7 +916,7 @@ export default function Locations() {
           <div>
             <div style={{ fontWeight: 700, color: "#ffffff" }}>Look through 100+ locations</div>
           </div>
-          <ControlsBar style={{ position: "relative" }}>
+          <ControlsBar>
             <FilterButton onClick={() => setShowSort(v => !v)} aria-label="Filter & Sort">
               Sort
               <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ width: 16, height: 16, marginLeft: 6 }}>
@@ -821,9 +953,19 @@ export default function Locations() {
         <Cards $mode={viewMode}>
           {sortedLocations.map((loc) => {
             const place = placesById.get(loc.placeId);
+            // Use localized title based on user's language preference
+            const localizedTitle = getLocalizedContent(
+              language,
+              loc.titleKo,
+              loc.titleEn,
+              loc.titleZh,
+              loc.titleJa,
+              loc.titleEs,
+              loc.title
+            );
             const service = {
               id: Number(loc.id) || 0,
-              title: loc.title,
+              title: localizedTitle,
               price: new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(loc.priceKRW),
               rating: Math.round((Math.random() * 1.5 + 3.5) * 10) / 10,
               image: loc.imageUrl,
@@ -834,9 +976,8 @@ export default function Locations() {
                 ref={(el) => { listRefs.current[loc.id] = el; }}
                 onClick={() => {
                   setSelectedId(loc.id);
-                  // Navigate to business detail page
-                  const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
-                  window.open(`/business/${sampleBusinessId}`, '_blank');
+                  // Navigate to the actual business detail page using the location ID
+                  window.open(`/business/${loc.id}`, '_blank');
                 }}
                 $active={selectedId === loc.id}
               >

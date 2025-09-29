@@ -292,7 +292,7 @@ const RatingText = styled.span`
 
 interface ServiceCardProps {
   service: {
-    id: number;
+    id: number | string; // Accept both number and string (UUID)
     title: string;
     price: string;
     rating?: number;
@@ -302,7 +302,7 @@ interface ServiceCardProps {
     tagline?: string;
   };
   variant?: 'popular' | 'hotdeals' | 'ai';
-  onClick?: (serviceId: number) => void;
+  onClick?: (serviceId: number | string) => void; // Accept both number and string
 }
 
 const renderStars = (rating: number) => {
@@ -338,10 +338,10 @@ export function ServiceCard({ service, variant = 'popular', onClick }: ServiceCa
   return (
     <Card $variant={variant} onClick={handleClick}>
       <CardImage 
-        $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}
+        $imageUrl={service.image && (service.image.startsWith('http') || service.image.startsWith('/')) ? service.image : undefined}
         $variant={variant}
       >
-        {!service.image || !service.image.startsWith('http') ? service.image || t("noImage") : ''}
+        {!service.image || (!service.image.startsWith('http') && !service.image.startsWith('/')) ? service.image || t("noImage") : ''}
       </CardImage>
       <CardContent $variant={variant}>
         <SymbolMark $variant={variant}>✦</SymbolMark>
