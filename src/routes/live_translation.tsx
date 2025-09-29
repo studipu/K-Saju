@@ -203,13 +203,13 @@ const MessageItem = styled.div`
 `;
 
 
-const ProfileIcon = styled.div<{ $speaker: "user" | "assistant" }>`
+const ProfileIcon = styled.div<{ $isKorean: boolean }>`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: ${(p) => p.$speaker === "user"
-    ? "linear-gradient(135deg, #4facfe, #00f2fe)"
-    : "linear-gradient(135deg, #10b981, #059669)"};
+  background: ${(p) => p.$isKorean
+    ? "linear-gradient(135deg, #8b5cf6, #a855f7)"
+    : "linear-gradient(135deg, #4facfe, #00f2fe)"};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,16 +217,16 @@ const ProfileIcon = styled.div<{ $speaker: "user" | "assistant" }>`
   font-weight: 700;
   font-size: 16px;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px ${(p) => p.$speaker === "user"
-    ? "rgba(79, 172, 254, 0.3)"
-    : "rgba(16, 185, 129, 0.3)"};
+  box-shadow: 0 8px 24px ${(p) => p.$isKorean
+    ? "rgba(139, 92, 246, 0.3)"
+    : "rgba(79, 172, 254, 0.3)"};
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 32px ${(p) => p.$speaker === "user"
-      ? "rgba(79, 172, 254, 0.4)"
-      : "rgba(16, 185, 129, 0.4)"};
+    box-shadow: 0 12px 32px ${(p) => p.$isKorean
+      ? "rgba(139, 92, 246, 0.4)"
+      : "rgba(79, 172, 254, 0.4)"};
   }
 `;
 
@@ -630,7 +630,7 @@ export default function LiveTranslation() {
 
                   return (
                     <MessageItem key={`group-${groupIndex}`}>
-                      <ProfileIcon $speaker="user">
+                      <ProfileIcon $isKorean={userIsKorean}>
                         {inputLanguageIcon}
                       </ProfileIcon>
                       <MessageContent>
@@ -650,7 +650,7 @@ export default function LiveTranslation() {
 
                   return (
                     <MessageItem key={`incomplete-${groupIndex}`}>
-                      <ProfileIcon $speaker={message.role}>
+                      <ProfileIcon $isKorean={isKorean}>
                         {message.role === "user"
                           ? (isKorean ? "🇰🇷" : (LANGUAGE_ICONS[customerLanguage] || "🇺🇸"))
                           : "🔄"}
