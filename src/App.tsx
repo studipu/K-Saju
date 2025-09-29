@@ -19,12 +19,11 @@ import Support from "./routes/support";
 import FAQ from "./routes/faq";
 import LiveTranslation from "./routes/live_translation.tsx";
 import Locations from "./routes/locations";
-import BusinessDetail from "./routes/business_detail";
+import BusinessDetail from "./routes/business_detail.tsx";
 import Booking from "./routes/booking";
 import Payment from "./routes/payment";
 import TodayFortune from "./routes/today-fortune";
 import NameCreation from "./routes/name-creation"; // Added import
-import { Intro } from "./routes/intro";
 
 const router = createBrowserRouter([
   {
@@ -56,7 +55,6 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
-      { path: "intro", element: <Intro /> },
       { path: "support", element: <Support /> },
       { path: "faq", element: <FAQ /> },
       { path: "live-translation", element: <LiveTranslation /> },

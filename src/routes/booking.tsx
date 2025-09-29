@@ -1530,11 +1530,15 @@ export default function Booking() {
               {/* Continue to Payment Button in Summary */}
               <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #ebebeb' }}>
               <Button 
-                type="submit" 
+                type="button" 
                 $variant="primary" 
                 disabled={loading} 
                 $language={language}
                 style={{ width: '100%' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSubmit(e as any);
+                }}
               >
                 {loading ? <LoadingSpinner /> : getBookingText('continue_to_payment', language)}
               </Button>

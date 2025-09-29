@@ -39,23 +39,6 @@ const Right = styled.div`
   gap: 10px;
 `;
 
-const WhatIsSajuText = styled.button<{ $isScrolled: boolean }>`
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: ${props => props.$isScrolled ? '#111827' : '#ffffff'};
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-  
-  &:hover {
-    background: ${props => props.$isScrolled ? '#f3f4f6' : 'rgba(255, 255, 255, 0.1)'};
-    color: ${props => props.$isScrolled ? '#374151' : '#ffffff'};
-  }
-`;
 
 const Logo = styled(Link)<{ $isScrolled: boolean }>`
   display: flex;
@@ -116,30 +99,6 @@ const Divider = styled.span<{ $isScrolled: boolean }>`
   height: 20px;
   background: ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
   margin: 0 4px;
-`;
-
-// Search Locations button with responsive background
-const SearchButton = styled.button<{ $isScrolled: boolean }>`
-  appearance: none;
-  border: 1px solid ${props => props.$isScrolled ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)'};
-  background: ${props => props.$isScrolled ? '#ffffff' : 'rgba(255, 255, 255, 0.1)'};
-  color: ${props => props.$isScrolled ? '#111827' : '#ffffff'};
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: ${props => props.$isScrolled ? '#f9fafb' : 'rgba(255, 255, 255, 0.2)'};
-  }
-
-  @media (max-width: 768px) {
-    display: none;
-  }
 `;
 
 // Mobile hamburger button
@@ -306,8 +265,6 @@ export default function GNB() {
   }, []);
 
   const onMessages = () => navigate("/messages");
-  const onSearchLocations = () => navigate("/locations");
-  const onWhatIsSaju = () => navigate("/intro");
   const onSignIn = () => navigate("/sign-in");
   const onProfile = () => navigate("/profile");
   const onLogout = async () => {
@@ -337,14 +294,6 @@ export default function GNB() {
   // Mobile menu navigation handlers
   const onMobileMessages = () => {
     navigate("/messages");
-    onCloseMobileMenu();
-  };
-  const onMobileSearchLocations = () => {
-    navigate("/locations");
-    onCloseMobileMenu();
-  };
-  const onMobileWhatIsSaju = () => {
-    navigate("/intro");
     onCloseMobileMenu();
   };
   const onMobileSignIn = () => {
@@ -380,16 +329,6 @@ export default function GNB() {
           <Right>
             {/* Desktop Navigation */}
             <DesktopNav>
-              {/* What is Saju? text */}
-              <WhatIsSajuText $isScrolled={isScrolled} onClick={onWhatIsSaju}>
-                What is Saju?
-              </WhatIsSajuText>
-              
-              {/* Search Locations button placed to the left of language control */}
-              <SearchButton $isScrolled={isScrolled} onClick={onSearchLocations} aria-label={t("searchLocations")}>
-                {"📍 "}{t("searchLocations")}
-              </SearchButton>
-
               {!((user?.user_metadata as any)?.preferred_language) && (
               <div style={{ position: "relative" }} data-dropdown>
                 <IconButton $isScrolled={isScrolled} onClick={onToggleLang} aria-label={t("language")}>
@@ -659,23 +598,6 @@ export default function GNB() {
       {/* Mobile Menu */}
       <MobileMenu $isOpen={mobileMenuOpen} $isScrolled={isScrolled} onClick={onCloseMobileMenu}>
         <MobileMenuPanel $isScrolled={isScrolled} data-mobile-menu onClick={(e) => e.stopPropagation()}>
-          {/* What is Saju? */}
-          <MobileMenuItem onClick={onMobileWhatIsSaju}>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 6.042A9.02 9.02 0 017.5 4C5.567 4 4 5.567 4 7.5c0 2.91 2.479 5.92 6.086 8.45a2 2 0 003.828 0C17.521 13.42 20 10.41 20 7.5 20 5.567 18.433 4 16.5 4A9.02 9.02 0 0112 6.042z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            What is Saju?
-          </MobileMenuItem>
-
-          {/* Search Locations */}
-          <MobileMenuItem onClick={onMobileSearchLocations}>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" stroke="currentColor" strokeWidth="1.5"/>
-            </svg>
-            {t("searchLocations")}
-          </MobileMenuItem>
-
           {user ? (
             <>
               {/* Messages */}

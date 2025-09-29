@@ -292,7 +292,7 @@ const RatingText = styled.span`
 
 interface ServiceCardProps {
   service: {
-    id: number;
+    id: number | string; // Accept both number and string (UUID)
     title: string;
     price: string;
     rating?: number;
@@ -302,7 +302,7 @@ interface ServiceCardProps {
     tagline?: string;
   };
   variant?: 'popular' | 'hotdeals' | 'ai';
-  onClick?: (serviceId: number) => void;
+  onClick?: (serviceId: number | string) => void; // Accept both number and string
 }
 
 const renderStars = (rating: number) => {

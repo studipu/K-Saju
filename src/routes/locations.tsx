@@ -421,7 +421,7 @@ function useGoogleMaps(apiKey?: string) {
     s.id = id;
     s.async = true;
     s.defer = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=geometry,places`;
     s.onload = () => setLoaded(true);
     s.onerror = () => setLoaded(false);
     document.head.appendChild(s);

@@ -16,8 +16,11 @@ import {
   SparklesIcon, 
   PencilSquareIcon, 
   MicrophoneIcon, 
-  MapPinIcon 
+  MapPinIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
+import starBg from "../assets/star_bg.png";
 
 // Import mysterious fonts for multiple languages from Google Fonts
 const fontLinks = [
@@ -711,18 +714,232 @@ const NameSubmitButton = styled.button`
   }
 `;
 
+// FAQ Section Styles
+const FAQSection = styled.section`
+  padding: 3rem 2rem;
+  position: relative;
+  overflow: hidden;
+  background-image: url(${starBg});
+  background-size: cover;
+  background-position: center;
+  background-repeat: repeat;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      135deg,
+      rgba(76, 29, 149, 0.80) 0%,
+      rgba(0, 0, 0, 0.80) 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2.5rem 1rem;
+  }
+`;
+
+const FAQContainer = styled.div`
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+`;
+
+const FAQHeader = styled.div`
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 2;
+`;
+
+const FAQTitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+  }
+`;
+
+const FAQSubtitle = styled.p`
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  max-width: 600px;
+  margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const FAQList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 2;
+`;
+
+const FAQItem = styled.div`
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  
+  &:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.98);
+  }
+`;
+
+const FAQQuestion = styled.button`
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(248, 250, 252, 0.8);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem 1.25rem;
+  }
+`;
+
+const FAQQuestionText = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.4;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const FAQChevron = styled.div<{ $isOpen: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #6b7280;
+  }
+`;
+
+const FAQAnswer = styled.div<{ $isOpen: boolean }>`
+  overflow: hidden;
+  transition: all 0.3s ease;
+  max-height: ${props => props.$isOpen ? '400px' : '0'};
+  opacity: ${props => props.$isOpen ? '1' : '0'};
+`;
+
+const FAQAnswerContent = styled.div`
+  padding: 0 1.5rem 1.25rem 1.5rem;
+  color: #6b7280;
+  line-height: 1.5;
+  font-size: 0.95rem;
+  
+  @media (max-width: 768px) {
+    padding: 0 1.25rem 1rem 1.25rem;
+    font-size: 0.9rem;
+  }
+`;
+
+// Final CTA Section Styles
+const FinalCTASection = styled.section`
+  padding: 5rem 2rem;
+  background: linear-gradient(
+    135deg,
+    #f8fafc 0%,
+    #f1f5f9 50%,
+    #e2e8f0 100%
+  );
+  
+  @media (max-width: 768px) {
+    padding: 4rem 1rem;
+  }
+`;
+
+const FinalCTAContainer = styled.div`
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+`;
+
+const FinalCTATitle = styled.h2<{ $language: string }>`
+  font-family: ${props => getFontFamily(props.$language, 'heading')};
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+  
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+`;
+
+const FinalCTASubtitle = styled.p`
+  font-size: 1.2rem;
+  color: #6b7280;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+  }
+`;
+
 // Types for Supabase data
 interface LocationService {
-  id: number;
+  id: string; // UUID string, not number
   title: string;
+  title_ko?: string;
+  title_en?: string;
   tagline?: string;
+  tagline_ko?: string;
+  tagline_en?: string;
   image_url?: string;
   price_krw: number;
   activity_level?: string;
   skill_level?: string;
   max_guests_total?: number;
   min_age?: number;
-  place_id: number;
+  place_id: string; // UUID string, not number
 }
 
 export function Home() {
@@ -735,6 +952,55 @@ export function Home() {
   
   // State for name input
   const [userName, setUserName] = useState('');
+  
+  // State for FAQ accordions
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+
+  // FAQ data
+  const faqData = [
+    {
+      id: 1,
+      question: language === 'ko' ? "사주란 무엇인가요?" : "What is Saju?",
+      answer: language === 'ko' 
+        ? "사주는 개인의 출생 연월일시(년, 월, 일, 시)를 기반으로 한 한국 전통 운명학입니다. 이 네 가지 기둥(四柱)으로 개인의 성격, 운명, 미래를 해석하는 학문으로, 수천 년의 역사를 가지고 있습니다."
+        : "Saju is a traditional Korean fortune-telling practice based on the four pillars of destiny: year, month, day, and hour of birth. This ancient wisdom has been used for thousands of years to interpret personality, fate, and future prospects."
+    },
+    {
+      id: 2,
+      question: language === 'ko' ? "K-Saju는 어떻게 다른가요?" : "How is K-Saju different?",
+      answer: language === 'ko'
+        ? "K-Saju는 전통 사주학에 현대적 편의성을 더한 플랫폼입니다. 다국어 지원, 검증된 전문가 매칭, AI 기반 추천 시스템을 통해 언어 장벽 없이 정확하고 신뢰할 수 있는 사주 상담을 받으실 수 있습니다."
+        : "K-Saju combines traditional Saju wisdom with modern convenience. We offer multilingual support, verified expert matching, and AI-powered recommendations to provide accurate and reliable fortune telling services without language barriers."
+    },
+    {
+      id: 3,
+      question: language === 'ko' ? "상담은 어떻게 진행되나요?" : "How does a consultation work?",
+      answer: language === 'ko'
+        ? "온라인으로 간편하게 예약한 후, 선택한 전문가와 1:1 상담을 진행합니다. 실시간 번역 서비스를 통해 언어 걱정 없이 소통할 수 있으며, 개인 맞춤형 해석과 조언을 받으실 수 있습니다."
+        : "After booking online, you'll have a 1:1 consultation with your chosen expert. Our real-time translation service ensures smooth communication, and you'll receive personalized interpretations and advice tailored to your situation."
+    },
+    {
+      id: 4,
+      question: language === 'ko' ? "얼마나 정확한가요?" : "How accurate are the readings?",
+      answer: language === 'ko'
+        ? "저희는 수십 년의 경험을 가진 검증된 사주 전문가들과만 파트너십을 맺고 있습니다. 전통적인 사주 해석 방법을 엄격히 따르며, 고객 만족도 95% 이상을 유지하고 있습니다."
+        : "We partner only with verified Saju experts who have decades of experience. They follow traditional interpretation methods strictly, and we maintain over 95% customer satisfaction rate for accuracy and insight quality."
+    },
+    {
+      id: 5,
+      question: language === 'ko' ? "어떤 언어를 지원하나요?" : "What languages do you support?",
+      answer: language === 'ko'
+        ? "한국어, 영어, 중국어, 일본어, 스페인어를 지원합니다. AI 기반 실시간 번역 서비스를 통해 언어 장벽 없이 정확한 소통이 가능하며, 문화적 뉘앙스까지 고려한 번역을 제공합니다."
+        : "We support Korean, English, Chinese, Japanese, and Spanish. Our AI-powered real-time translation service ensures accurate communication without language barriers, considering cultural nuances in translation."
+    },
+    {
+      id: 6,
+      question: language === 'ko' ? "가격은 어떻게 되나요?" : "What are the pricing options?",
+      answer: language === 'ko'
+        ? "기본 상담은 30분에 50,000원부터 시작하며, 전문가별로 다양한 가격대의 서비스를 제공합니다. 패키지 상담, 정기 구독 등 다양한 옵션이 있으며, 신규 고객에게는 특별 할인 혜택을 제공합니다."
+        : "Basic consultations start from ₩50,000 for 30 minutes, with various pricing tiers depending on the expert. We offer package deals, subscription options, and special discounts for new customers."
+    }
+  ];
 
   // Fetch services from Supabase
   useEffect(() => {
@@ -742,11 +1008,21 @@ export function Home() {
       try {
         const { data, error } = await supabase
           .from('locations')
-          .select('id, title, tagline, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id');
+          .select('id, title, title_ko, title_en, tagline, tagline_ko, tagline_en, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id');
         
         if (error) {
           console.error('Error fetching services:', error);
         } else if (data) {
+          console.log('✅ Services fetched successfully:', data.length, 'services');
+          console.log('📋 Service titles:', data.map(s => s.title));
+          console.log('🌐 Localization check:', {
+            language,
+            sampleService: data[0],
+            titleKo: data[0]?.title_ko,
+            titleEn: data[0]?.title_en,
+            taglineKo: data[0]?.tagline_ko,
+            taglineEn: data[0]?.tagline_en
+          });
           setServices(data);
         }
       } catch (error) {
@@ -764,13 +1040,13 @@ export function Home() {
       id: 1,
       title: t("todayFortune"),
       icon: SparklesIcon,
-      color: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)" // Red like Gryffindor
+      color: "linear-gradient(135deg, #4c1d95 0%, #3730a3 100%)" // Dark purple
     },
     {
       id: 3,
       title: t("liveTranslation"),
       icon: MicrophoneIcon,
-      color: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" // Blue like Ravenclaw
+      color: "linear-gradient(135deg, #4c1d95 0%, #3730a3 100%)" // Dark purple
     }
   ];
   
@@ -801,15 +1077,54 @@ export function Home() {
     return Math.round((Math.random() * 1.5 + 3.5) * 10) / 10; // Between 3.5 and 5.0
   };
 
-  // Transform Supabase data for display
-  const transformServiceData = (service: LocationService, index: number) => ({
-    id: service.id,
-    title: service.title,
-    price: getPrice(service.price_krw),
-    rating: getRandomRating(),
-    image: service.image_url || `사주 서비스 ${index + 1}`,
-    tagline: service.tagline
-  });
+  // Transform Supabase data for display with localization
+  const transformServiceData = (service: LocationService, index: number) => {
+    // Get localized title based on current language
+    const getLocalizedTitle = () => {
+      if (language === 'en' && service.title_en) {
+        console.log(`🇺🇸 Using English title for ${service.title}: ${service.title_en}`);
+        return service.title_en;
+      } else if (language === 'ko' && service.title_ko) {
+        console.log(`🇰🇷 Using Korean title for ${service.title}: ${service.title_ko}`);
+        return service.title_ko;
+      }
+      // Fallback to default title or Korean version
+      console.log(`⚠️ Using fallback title for ${service.title}: ${service.title || service.title_ko}`);
+      return service.title || service.title_ko || `Fortune Service ${index + 1}`;
+    };
+
+    // Get localized tagline based on current language
+    const getLocalizedTagline = () => {
+      if (language === 'en' && service.tagline_en) {
+        return service.tagline_en;
+      } else if (language === 'ko' && service.tagline_ko) {
+        return service.tagline_ko;
+      }
+      // Fallback to default tagline
+      return service.tagline;
+    };
+
+    const localizedTitle = getLocalizedTitle();
+    const localizedTagline = getLocalizedTagline();
+    
+    console.log(`🔄 Transformed service ${index + 1}:`, {
+      id: service.id,
+      originalTitle: service.title,
+      titleKo: service.title_ko,
+      titleEn: service.title_en,
+      finalTitle: localizedTitle,
+      language
+    });
+
+    return {
+      id: service.id, // UUID string
+      title: localizedTitle,
+      price: getPrice(service.price_krw),
+      rating: getRandomRating(),
+      image: service.image_url || `사주 서비스 ${index + 1}`,
+      tagline: localizedTagline
+    };
+  };
 
   // Split services into categories
   const popularServices = services.slice(0, 7).map(transformServiceData);
@@ -820,16 +1135,21 @@ export function Home() {
     discount: "33%"
   }));
 
+  // Debug logging for service categories
+  console.log('🎯 Popular Services:', popularServices.length, popularServices.map(s => s.title));
+  console.log('⭐ Recommended Services:', recommendedServices.length, recommendedServices.map(s => s.title));
+  console.log('🔥 Hot Deals Services:', hotDealsServices.length, hotDealsServices.map(s => s.title));
+
   const handleMoreClick = () => {
-    // More button also links to our sample business
-    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
-    navigate(`/business/${sampleBusinessId}`);
+    // More button links to our original business page
+    const originalBusinessId = '550e8400-e29b-41d4-a716-446655440002';
+    navigate(`/business/${originalBusinessId}`);
   };
 
-  const handleBusinessClick = (_businessId: number) => {
-    // For now, all service cards link to our sample business
-    const sampleBusinessId = '550e8400-e29b-41d4-a716-446655440002';
-    navigate(`/business/${sampleBusinessId}`);
+  const handleBusinessClick = (businessId: number | string) => {
+    // Navigate to the specific business detail page using the actual service ID
+    console.log('🔗 Navigating to business:', businessId, typeof businessId);
+    navigate(`/business/${businessId}`);
   };
 
   const handleSearchLocations = () => {
@@ -858,6 +1178,10 @@ export function Home() {
     if (e.key === 'Enter') {
       handleNameCreation();
     }
+  };
+
+  const toggleFAQ = (id: number) => {
+    setOpenFAQ(openFAQ === id ? null : id);
   };
 
   return (
@@ -963,23 +1287,59 @@ export function Home() {
         </HotDealsSection>
       </UnifiedSectionsContainer>
       
-      <ClosingSection>
-        <ClosingVideoBackground
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src={yinyangBg} type="video/mp4" />
-        </ClosingVideoBackground>
-        <ClosingContainer>
-          <ClosingTitle $language={language}>{t("closingTitle")}</ClosingTitle>
-          <ClosingSubtitle>{t("closingSubtitle")}</ClosingSubtitle>
-          <CTAButton onClick={() => navigate('/intro')}>
-            {t("learnMoreButton")}
+      {/* FAQ Section */}
+      <FAQSection>
+        <FAQContainer>
+          <FAQHeader>
+            <FAQTitle $language={language}>
+              {language === 'ko' ? "자주 묻는 질문" : "Frequently Asked Questions"}
+            </FAQTitle>
+            <FAQSubtitle>
+              {language === 'ko' 
+                ? "K-Saju에 대해 궁금한 점들을 확인해보세요"
+                : "Find answers to common questions about K-Saju"
+              }
+            </FAQSubtitle>
+          </FAQHeader>
+          
+          <FAQList>
+            {faqData.map((faq) => (
+              <FAQItem key={faq.id}>
+                <FAQQuestion onClick={() => toggleFAQ(faq.id)}>
+                  <FAQQuestionText>{faq.question}</FAQQuestionText>
+                  <FAQChevron $isOpen={openFAQ === faq.id}>
+                    <ChevronDownIcon />
+                  </FAQChevron>
+                </FAQQuestion>
+                <FAQAnswer $isOpen={openFAQ === faq.id}>
+                  <FAQAnswerContent>
+                    {faq.answer}
+                  </FAQAnswerContent>
+                </FAQAnswer>
+              </FAQItem>
+            ))}
+          </FAQList>
+        </FAQContainer>
+      </FAQSection>
+      
+      {/* Final CTA Section */}
+      <FinalCTASection>
+        <FinalCTAContainer>
+          <FinalCTATitle $language={language}>
+            {language === 'ko' ? "운명을 발견할 준비가 되셨나요?" : "Ready to Discover Your Destiny?"}
+          </FinalCTATitle>
+          <FinalCTASubtitle>
+            {language === 'ko' 
+              ? "검증된 전문가들의 엄선된 서비스로 근처에서 완벽한 한국 사주 경험을 찾아보세요."
+              : "Find the perfect Korean fortune telling experience near you with our curated selection of verified professionals."
+            }
+          </FinalCTASubtitle>
+          <CTAButton onClick={handleSearchLocations}>
+            {"✨ "}{t("searchLocations")}
           </CTAButton>
-        </ClosingContainer>
-      </ClosingSection>
+        </FinalCTAContainer>
+      </FinalCTASection>
+      
       {loading && <LoadingScreen />}
     </Wrapper>
   );

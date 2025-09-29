@@ -1254,7 +1254,7 @@ function useGoogleMaps(apiKey?: string) {
     s.id = id;
     s.async = true;
     s.defer = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&v=weekly&libraries=marker`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&v=weekly&libraries=geometry,places`;
     s.onload = () => setLoaded(true);
     s.onerror = () => setLoaded(false);
     document.head.appendChild(s);
@@ -2097,16 +2097,21 @@ export default function BusinessDetail() {
       return;
     }
     
-    if (!window.google) {
-      console.log('Google Maps not available');
-      setMapError('Google Maps를 로드할 수 없습니다.');
+    if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
+      console.log('Google Maps API not fully available:', {
+        google: !!window.google,
+        maps: !!(window.google && window.google.maps),
+        geocoder: !!(window.google && window.google.maps && window.google.maps.Geocoder)
+      });
+      setMapError('Google Maps API가 완전히 로드되지 않았습니다.');
       return;
     }
 
     console.log('Initializing map for address:', business.contact.address);
 
-    // 주소를 좌표로 변환 (Geocoding)
-    const geocoder = new (window as any).google.maps.Geocoder();
+    try {
+      // 주소를 좌표로 변환 (Geocoding)
+      const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ address: business.contact.address }, (results: any, status: any) => {
       console.log('Geocoding result:', { status, results });
       
@@ -2169,6 +2174,10 @@ export default function BusinessDetail() {
         setMapError('지도를 초기화하는 중 오류가 발생했습니다.');
       }
     });
+    } catch (error) {
+      console.error('Error creating geocoder:', error);
+      setMapError('Google Maps 초기화 중 오류가 발생했습니다.');
+    }
   }, [loaded, business, apiKey]);
 
   const formatPrice = (price: number, currency: string) => {
@@ -2453,6 +2462,18 @@ export default function BusinessDetail() {
                 </div>
               )}
               <MapContainer>
+                {apiKey && !mapLoaded && !mapError && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100%', 
+                    color: '#6b7280',
+                    fontSize: '0.9rem'
+                  }}>
+                    지도를 로드하는 중...
+                  </div>
+                )}
                 <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
               </MapContainer>
             </InfoCard>
