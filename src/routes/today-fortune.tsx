@@ -539,18 +539,24 @@ const Input = styled.input<{ $language: string }>`
       direction: ltr;
     }
     
-    /* Completely hide browser's default placeholder */
-    &::-webkit-datetime-edit-text {
-      color: transparent !important;
-      opacity: 0 !important;
+    /* Show browser's default datetime values when they have content */
+    &:not(:invalid):not(:placeholder-shown) {
+      &::-webkit-datetime-edit,
+      &::-webkit-datetime-edit-fields-wrapper,
+      &::-webkit-datetime-edit-text,
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field,
+      &::-webkit-datetime-edit-hour-field,
+      &::-webkit-datetime-edit-minute-field,
+      &::-webkit-datetime-edit-second-field {
+        color: #1a202c !important;
+        opacity: 1 !important;
+      }
     }
     
-    &::-webkit-datetime-edit-fields-wrapper {
-      color: transparent !important;
-    }
-    
-    /* Hide all default datetime edit elements when empty */
-    &:empty {
+    /* Hide placeholders when empty */
+    &:invalid {
       &::-webkit-datetime-edit,
       &::-webkit-datetime-edit-fields-wrapper,
       &::-webkit-datetime-edit-text,
@@ -565,23 +571,7 @@ const Input = styled.input<{ $language: string }>`
       }
     }
     
-    /* Custom placeholder overlay - only show when empty */
-    &[type="date"]:empty::before,
-    &[type="time"]:empty::before {
-      content: attr(data-placeholder);
-      color: #a0aec0;
-      font-style: italic;
-      position: absolute;
-      top: 50%;
-      left: 12px;
-      transform: translateY(-50%);
-      pointer-events: none;
-      z-index: 10;
-      background: white;
-      padding: 0 4px;
-    }
-    
-    /* Also show custom placeholder when invalid (no value) */
+    /* Show custom placeholder when no value is set */
     &[type="date"]:invalid::before,
     &[type="time"]:invalid::before {
       content: attr(data-placeholder);
@@ -589,12 +579,10 @@ const Input = styled.input<{ $language: string }>`
       font-style: italic;
       position: absolute;
       top: 50%;
-      left: 12px;
+      left: 1rem;
       transform: translateY(-50%);
       pointer-events: none;
-      z-index: 10;
-      background: white;
-      padding: 0 4px;
+      z-index: 1;
     }
   }
 `;
