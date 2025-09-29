@@ -1425,7 +1425,7 @@ const FormattedDescription = ({ description }: { description: string }) => {
 // Mock data - 실제로는 Supabase DB에서 가져올 데이터
 const mockBusinessData: Record<string, Business> = {
   "1": {
-    id: 1,
+    id: "1",
     title: "AI 사주 분석",
     subtitle: "인공지능 기반 정확한 사주 해석",
     description: "최신 AI 기술을 활용하여 정확하고 상세한 사주 분석을 제공합니다. 전통 사주학과 현대 기술이 만나 더욱 정밀한 운세를 알려드립니다.",
@@ -1771,21 +1771,6 @@ export default function BusinessDetail() {
     return translations[key]?.[lang] || translations[key]?.['en'] || key;
   };
 
-  // Helper function to get multilingual content from business data
-  const getMultilingualContent = (field: string, defaultValue: string) => {
-    if (business?.translations && business.translations[field]) {
-      const languageMap: Record<string, string> = {
-        'ko': 'ko',
-        'en': 'en', 
-        'ja': 'ja',
-        'zh': 'zh',
-        'es': 'es'
-      };
-      const langCode = languageMap[language] || 'ko';
-      return business.translations[field][langCode] || business.translations[field]['ko'] || defaultValue;
-    }
-    return defaultValue;
-  };
 
   // Helper function to detect language of review text
   const detectReviewLanguage = (text: string): string => {
@@ -2444,8 +2429,8 @@ export default function BusinessDetail() {
                   <MapPinIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
                   {getLocalizedText('address', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('address', business.contact.address))}>
-                  {getMultilingualContent('address', business.contact.address)}
+                <BusinessInfoValue onClick={() => copyToClipboard(business.contact.address)}>
+                  {business.contact.address}
                 </BusinessInfoValue>
               </BusinessInfoItem>
               <BusinessInfoItem>
@@ -2465,8 +2450,8 @@ export default function BusinessDetail() {
                   <ClockIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
                   {getLocalizedText('business_hours', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('business_hours', business.business_hours))}>
-                  {getMultilingualContent('business_hours', business.business_hours)}
+                <BusinessInfoValue onClick={() => copyToClipboard(business.business_hours)}>
+                  {business.business_hours}
                 </BusinessInfoValue>
               </BusinessInfoItem>
               <BusinessInfoItem>
@@ -2474,8 +2459,8 @@ export default function BusinessDetail() {
                   <PhoneIcon style={{ width: 16, height: 16, color: '#6b7280' }} />
                   {getLocalizedText('phone', language)}
                 </BusinessInfoLabel>
-                <BusinessInfoValue onClick={() => copyToClipboard(getMultilingualContent('phone', business.contact.phone))}>
-                  {getMultilingualContent('phone', business.contact.phone)}
+                <BusinessInfoValue onClick={() => copyToClipboard(business.contact.phone)}>
+                  {business.contact.phone}
                 </BusinessInfoValue>
               </BusinessInfoItem>
             </InfoCard>
