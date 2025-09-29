@@ -254,7 +254,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapErrorText: "Error loading map",
     mapInitializationError: "Error initializing map",
     geocodingFailedFallback: "Geocoding failed, using default location",
-    loading: "Loading...",
     businessNotFoundError: "Business not found",
     // Intro page translations
     whyChooseKSaju: "Why Choose K-Saju?",
@@ -530,7 +529,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapErrorText: "지도 로드 중 오류 발생",
     mapInitializationError: "지도 초기화 중 오류 발생",
     geocodingFailedFallback: "지오코딩 실패, 기본 위치 사용",
-    loading: "로딩 중...",
     businessNotFoundError: "업체를 찾을 수 없습니다",
     // Intro page translations
     whyChooseKSaju: "왜 K-Saju를 선택해야 할까요?",
@@ -809,7 +807,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapErrorText: "地图加载错误",
     mapInitializationError: "地图初始化错误",
     geocodingFailedFallback: "地理编码失败，使用默认位置",
-    loading: "加载中...",
     businessNotFoundError: "找不到企业",
     // Intro page translations
     whyChooseKSaju: "为什么选择K-Saju？",
@@ -1085,7 +1082,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapErrorText: "地図の読み込みエラー",
     mapInitializationError: "地図の初期化エラー",
     geocodingFailedFallback: "ジオコーディング失敗、デフォルト位置を使用",
-    loading: "読み込み中...",
     businessNotFoundError: "事業者が見つかりません",
     // Intro page translations
     whyChooseKSaju: "なぜK-Sajuを選ぶべきか？",
@@ -1364,7 +1360,6 @@ const TRANSLATIONS: Record<Language, Translations> = {
     mapErrorText: "Error cargando el mapa",
     mapInitializationError: "Error inicializando el mapa",
     geocodingFailedFallback: "Geocodificación fallida, usando ubicación predeterminada",
-    loading: "Cargando...",
     businessNotFoundError: "Negocio no encontrado",
     // Intro page translations
     whyChooseKSaju: "¿Por qué elegir K-Saju?",
