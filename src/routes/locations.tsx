@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "styled-components";
-import { PlusIcon, MinusIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, Squares2X2Icon, Bars3Icon } from "@heroicons/react/24/outline";
+import { PlusIcon, MinusIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, Squares2X2Icon, Bars3Icon, MapPinIcon } from "@heroicons/react/24/outline";
 import { supabase } from "../supabase";
 import starBg from "../assets/star_bg.png";
 import { ServiceCard } from "../components/service_card";
@@ -41,6 +41,8 @@ type LocationItem = {
   taglineJa?: string;
   taglineEs?: string;
 };
+
+type LocationDisplayItem = LocationItem & { distanceKm?: number };
 
 const Background = styled.div`
   position: relative;
@@ -208,10 +210,42 @@ const ServiceCardWrap = styled.div<{ $active?: boolean }>`
   cursor: pointer;
   border-radius: 12px;
   transition: transform 120ms ease, box-shadow 120ms ease;
+  position: relative;
   ${p => p.$active ? "transform: translateY(-1px);" : ""}
   @media (max-width: 768px) {
     justify-content: center; /* center the card content on mobile */
   }
+`;
+
+const DistanceBadge = styled.div`
+  position: absolute;
+  top: 6px;
+  left: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 4;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+`;
+
+const LoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(17, 24, 39, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f3f4f6;
+  font-size: 14px;
+  gap: 8px;
+  z-index: 5;
 `;
 
 const Title = styled.div`
@@ -308,25 +342,34 @@ const ControlsBar = styled.div`
   flex-shrink: 0;
 `;
 
-const FilterButton = styled.button`
+const FilterButton = styled.button<{ $active?: boolean }>`
   height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0 12px;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #111827;
+  border: 1px solid ${p => (p.$active ? "#111827" : "#d1d5db")};
+  background: ${p => (p.$active ? "#111827" : "#ffffff")};
+  color: ${p => (p.$active ? "#ffffff" : "#111827")};
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease;
-  &:hover { background: #f9fafb; }
+  gap: 6px;
+  font-size: 14px;
+  &:hover { background: ${p => (p.$active ? "#0f172a" : "#f9fafb")}; }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: #e5e7eb;
+    color: #6b7280;
+    border-color: #d1d5db;
+  }
 `;
 
 const SortMenu = styled.div`
   position: absolute;
   top: 40px;
-  left: 0;
+  right: 0;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -348,6 +391,28 @@ const SortItem = styled.button<{ $active?: boolean }>`
   font-size: 14px;
   text-align: left;
   &:hover { background: #f9fafb; }
+`;
+
+const LocationNotice = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.85);
+  color: #f3f4f6;
+  font-size: 13px;
+  backdrop-filter: blur(6px);
+`;
+
+const LocationError = styled(LocationNotice)`
+  background: rgba(185, 28, 28, 0.92);
+  color: #fef2f2;
+`;
+
+const LocationBadge = styled(LocationNotice)`
+  background: rgba(22, 163, 74, 0.85);
+  color: #f0fdf4;
 `;
 
 const Resizer = styled.div<{ $mapRatio: number; $visible: boolean }>`
@@ -474,12 +539,44 @@ function useGoogleMaps(apiKey?: string) {
   return loaded;
 }
 
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function requestUserLocation(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000,
+    });
+  });
+}
+
 export default function Locations() {
   const { language } = useI18n();
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const [places, setPlaces] = useState<Place[]>([]);
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [mapRatio, setMapRatio] = useState<number>(0.4); // 0.4 ~ 0.45 max to prevent expansion beyond cards
+  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [mapFilteredLocations, setMapFilteredLocations] = useState<LocationDisplayItem[]>([]);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [requestingLocation, setRequestingLocation] = useState(false);
+  const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const placesById = useMemo(() => new Map(places.map(p => [p.id, p])), [places]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -487,6 +584,7 @@ export default function Locations() {
   const listRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "title-asc" | "title-desc">("price-asc");
+  const [showOnlyNearby, setShowOnlyNearby] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [lastScrollTop, setLastScrollTop] = useState(0);
   const cardsWrapRef = useRef<HTMLDivElement>(null);
@@ -495,6 +593,7 @@ export default function Locations() {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<any>(null);
   const markerMap = useRef<Record<string, any>>({});
+  const boundsListenerRef = useRef<any>(null);
   const loaded = useGoogleMaps(apiKey);
   const pastelMapStyles = useRef<any>([
     { elementType: "geometry", stylers: [{ color: "#fffbeb" }] },
@@ -511,19 +610,33 @@ export default function Locations() {
   ]);
 
   const sortedLocations = useMemo(() => {
-    const copy = [...locations];
-    switch (sortBy) {
-      case "price-asc":
-        copy.sort((a,b) => a.priceKRW - b.priceKRW); break;
-      case "price-desc":
-        copy.sort((a,b) => b.priceKRW - a.priceKRW); break;
-      case "title-asc":
-        copy.sort((a,b) => a.title.localeCompare(b.title)); break;
-      case "title-desc":
-        copy.sort((a,b) => b.title.localeCompare(a.title)); break;
+    const base: LocationDisplayItem[] =
+      mapFilteredLocations.length > 0
+        ? mapFilteredLocations
+        : locations.map(loc => ({ ...loc, distanceKm: undefined }));
+
+    const copy = [...base];
+
+    if (showOnlyNearby) {
+      copy.sort((a, b) => {
+        const da = a.distanceKm ?? Number.POSITIVE_INFINITY;
+        const db = b.distanceKm ?? Number.POSITIVE_INFINITY;
+        return da - db;
+      });
     }
+
+    if (sortBy === "price-asc") {
+      copy.sort((a, b) => a.priceKRW - b.priceKRW);
+    } else if (sortBy === "price-desc") {
+      copy.sort((a, b) => b.priceKRW - a.priceKRW);
+    } else if (sortBy === "title-asc") {
+      copy.sort((a, b) => a.title.localeCompare(b.title));
+    } else {
+      copy.sort((a, b) => b.title.localeCompare(a.title));
+    }
+
     return copy;
-  }, [locations, sortBy]);
+  }, [mapFilteredLocations, locations, sortBy, showOnlyNearby]);
 
   // Fetch from Supabase
   useEffect(() => {
@@ -583,6 +696,7 @@ export default function Locations() {
           taglineEs: l.tagline_es,
         }));
         setLocations(mappedLocs);
+        setMapFilteredLocations(mappedLocs.map(loc => ({ ...loc, distanceKm: undefined })));
       }
       if ((places?.length ?? 0) === 0 || (locs?.length ?? 0) === 0) {
         console.log("Supabase fetch counts", { places: places?.length ?? 0, locations: locs?.length ?? 0 });
@@ -594,6 +708,52 @@ export default function Locations() {
   }, []);
 
   // Initialize map and markers when SDK and data are ready
+  const applyBoundsFilter = useCallback(
+    (bounds: any, locs: LocationItem[], origin?: { lat: number; lng: number }) => {
+      const computeDistance = (place: Place) =>
+        origin ? haversineDistance(origin.lat, origin.lng, place.latitude, place.longitude) : undefined;
+
+      if (!window.google) {
+        const fallback: LocationDisplayItem[] = locs
+          .map(loc => {
+            const place = placesById.get(loc.placeId);
+            if (!place) return null;
+            return { ...loc, distanceKm: computeDistance(place) };
+          })
+          .filter(Boolean) as LocationDisplayItem[];
+        setMapFilteredLocations(fallback);
+        return;
+      }
+
+      const mapInstance = mapObj.current;
+      const filtered: LocationDisplayItem[] = [];
+
+      for (const loc of locs) {
+        const place = placesById.get(loc.placeId);
+        if (!place) continue;
+
+        const position = new (window as any).google.maps.LatLng(place.latitude, place.longitude);
+        const withinBounds = bounds ? bounds.contains(position) : true;
+
+        const marker = markerMap.current[loc.id];
+        if (marker) {
+          if (marker instanceof (window as any).google.maps.Marker) {
+            marker.setMap(withinBounds ? mapInstance : null);
+          } else if ("map" in marker) {
+            marker.map = withinBounds ? mapInstance : null;
+          }
+        }
+
+        if (withinBounds) {
+          filtered.push({ ...loc, distanceKm: computeDistance(place) });
+        }
+      }
+
+      setMapFilteredLocations(filtered);
+    },
+    [placesById]
+  );
+
   useEffect(() => {
     if (!loaded || !mapRef.current || !window.google) return;
 
@@ -606,6 +766,21 @@ export default function Locations() {
       disableDefaultUI: true,
       styles: pastelMapStyles.current,
     });
+
+    const map = mapObj.current;
+
+    // Install bounds change listener
+    const updateBounds = () => {
+      const newBounds = map.getBounds();
+      if (newBounds) {
+        setMapBounds(newBounds);
+        applyBoundsFilter(newBounds, locations, showOnlyNearby ? userPosition ?? undefined : undefined);
+      }
+    };
+    boundsListenerRef.current = map.addListener("idle", updateBounds);
+
+    // Apply initial bounds once map is ready
+    updateBounds();
 
     // Clear previous markers
     markerMap.current = {};
@@ -715,7 +890,7 @@ export default function Locations() {
         ctx.textBaseline = 'middle';
         ctx.fillText(text, boxWidth / 2, boxHeight / 2);
         
-        const marker = new (window as any).google.maps.Marker({
+        const fallbackMarker = new (window as any).google.maps.Marker({
           map: mapObj.current,
           position: { lat: place.latitude, lng: place.longitude },
           icon: {
@@ -724,14 +899,76 @@ export default function Locations() {
             scaledSize: new (window as any).google.maps.Size(boxWidth, boxHeight)
           } as any,
         });
-        marker.addListener("click", () => {
+        fallbackMarker.addListener("click", () => {
           setSelectedId(loc.id);
           listRefs.current[loc.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
         });
-        markerMap.current[loc.id] = marker;
+        markerMap.current[loc.id] = fallbackMarker;
       }
     }
-  }, [loaded, placesById, locations]);
+    return () => {
+      if (boundsListenerRef.current) {
+        (window as any).google.maps.event.removeListener(boundsListenerRef.current);
+        boundsListenerRef.current = null;
+      }
+    };
+  }, [loaded, placesById, locations, applyBoundsFilter]);
+
+  useEffect(() => {
+    if (!mapObj.current || !window.google) {
+      setMapFilteredLocations(locations.map(loc => ({ ...loc, distanceKm: undefined })));
+      return;
+    }
+    const map = mapObj.current;
+    const bounds = map.getBounds();
+    if (bounds) {
+      setMapBounds(bounds);
+      applyBoundsFilter(bounds, locations, showOnlyNearby ? userPosition ?? undefined : undefined);
+    } else {
+      setMapFilteredLocations(locations.map(loc => ({ ...loc, distanceKm: undefined })));
+    }
+  }, [locations, applyBoundsFilter, showOnlyNearby, userPosition]);
+
+  useEffect(() => {
+    if (!showOnlyNearby || userPosition || requestingLocation || geolocationError) return;
+
+    setRequestingLocation(true);
+    requestUserLocation()
+      .then(position => {
+        const coords = position.coords;
+        const next = { lat: coords.latitude, lng: coords.longitude };
+        setUserPosition(next);
+        setRequestingLocation(false);
+        setGeolocationError(null);
+
+        if (mapBounds) {
+          applyBoundsFilter(mapBounds, locations, next);
+        }
+      })
+      .catch(err => {
+        setRequestingLocation(false);
+        setGeolocationError(err.message || "Unable to retrieve location");
+      });
+  }, [showOnlyNearby, userPosition, requestingLocation, geolocationError, locations, mapBounds, applyBoundsFilter]);
+
+  const handleToggleNearby = () => {
+    setShowOnlyNearby(prev => {
+      const next = !prev;
+      if (!next) {
+        // Reset geolocation filters
+        setUserPosition(null);
+        setGeolocationError(null);
+        setRequestingLocation(false);
+        // Reapply filtering without distances
+        if (mapBounds) {
+          applyBoundsFilter(mapBounds, locations);
+        } else {
+          setMapFilteredLocations(locations.map(loc => ({ ...loc, distanceKm: undefined })));
+        }
+      }
+      return next;
+    });
+  };
 
   // Focus selected marker
   useEffect(() => {
@@ -884,7 +1121,17 @@ export default function Locations() {
               <ArrowsPointingOutIcon width={18} height={18} color="#111827" />
             )}
           </ControlButton>
+          <ControlButton onClick={handleToggleNearby} aria-label="Toggle nearby filter" disabled={requestingLocation}>
+            <MapPinIcon width={18} height={18} color="#111827" />
+          </ControlButton>
         </MapControls>
+
+        {requestingLocation && (
+          <LoadingOverlay>
+            <MapPinIcon width={16} height={16} color="#f3f4f6" />
+            Locating you…
+          </LoadingOverlay>
+        )}
         <MapDiv ref={mapRef} />
       </MapPane>
       <Resizer
@@ -917,20 +1164,26 @@ export default function Locations() {
             <div style={{ fontWeight: 700, color: "#ffffff" }}>Look through 100+ locations</div>
           </div>
           <ControlsBar>
-            <FilterButton onClick={() => setShowSort(v => !v)} aria-label="Filter & Sort">
-              Sort
-              <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ width: 16, height: 16, marginLeft: 6 }}>
-                <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z" fill="#6b7280" />
-              </svg>
+            <FilterButton onClick={handleToggleNearby} $active={showOnlyNearby} disabled={requestingLocation}>
+              <MapPinIcon width={18} height={18} color={showOnlyNearby ? "#ffffff" : "#111827"} />
+              Nearby
             </FilterButton>
-            {showSort && (
-              <SortMenu>
-                <SortItem $active={sortBy === 'price-asc'} onClick={() => { setSortBy('price-asc'); setShowSort(false); }}>Price: Low to High</SortItem>
-                <SortItem $active={sortBy === 'price-desc'} onClick={() => { setSortBy('price-desc'); setShowSort(false); }}>Price: High to Low</SortItem>
-                <SortItem $active={sortBy === 'title-asc'} onClick={() => { setSortBy('title-asc'); setShowSort(false); }}>Title: A → Z</SortItem>
-                <SortItem $active={sortBy === 'title-desc'} onClick={() => { setSortBy('title-desc'); setShowSort(false); }}>Title: Z → A</SortItem>
-              </SortMenu>
-            )}
+            <div style={{ position: 'relative' }}>
+              <FilterButton onClick={() => setShowSort(v => !v)} aria-label="Filter & Sort">
+                Sort
+                <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ width: 16, height: 16, marginLeft: 6 }}>
+                  <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.09 1.03l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.26a.75.75 0 01.02-1.06z" fill="#6b7280" />
+                </svg>
+              </FilterButton>
+              {showSort && (
+                <SortMenu>
+                  <SortItem $active={sortBy === 'price-asc'} onClick={() => { setSortBy('price-asc'); setShowSort(false); }}>Price: Low to High</SortItem>
+                  <SortItem $active={sortBy === 'price-desc'} onClick={() => { setSortBy('price-desc'); setShowSort(false); }}>Price: High to Low</SortItem>
+                  <SortItem $active={sortBy === 'title-asc'} onClick={() => { setSortBy('title-asc'); setShowSort(false); }}>Title: A → Z</SortItem>
+                  <SortItem $active={sortBy === 'title-desc'} onClick={() => { setSortBy('title-desc'); setShowSort(false); }}>Title: Z → A</SortItem>
+                </SortMenu>
+              )}
+            </div>
             <ViewSwitch>
               <ViewBtn onClick={() => setViewMode("list")} $active={viewMode === "list"} aria-label="List view">
                 <Bars3Icon width={18} height={18} color={viewMode === "list" ? "#111827" : "#6b7280"} />
@@ -941,11 +1194,26 @@ export default function Locations() {
             </ViewSwitch>
           </ControlsBar>
         </ListHeader>
+
+        {showOnlyNearby && geolocationError && (
+          <LocationError>
+            <MapPinIcon width={16} height={16} color="#fef2f2" />
+            {geolocationError}
+          </LocationError>
+        )}
+        {showOnlyNearby && userPosition && !geolocationError && (
+          <LocationBadge>
+            <MapPinIcon width={16} height={16} color="#f0fdf4" />
+            Showing places near you
+          </LocationBadge>
+        )}
+
         {!apiKey && (
           <Notice>
             Set VITE_GOOGLE_MAPS_API_KEY in your environment to view the map. The list still works.
           </Notice>
         )}
+
         <CardsWrap ref={cardsWrapRef}>
         {sortedLocations.length === 0 ? (
           <Notice>등록된 체험이 없습니다. Supabase에 시드 데이터를 추가해 주세요.</Notice>
@@ -953,7 +1221,7 @@ export default function Locations() {
         <Cards $mode={viewMode}>
           {sortedLocations.map((loc) => {
             const place = placesById.get(loc.placeId);
-            // Use localized title based on user's language preference
+            // Use localized title
             const localizedTitle = getLocalizedContent(
               language,
               loc.titleKo,
@@ -976,11 +1244,15 @@ export default function Locations() {
                 ref={(el) => { listRefs.current[loc.id] = el; }}
                 onClick={() => {
                   setSelectedId(loc.id);
-                  // Navigate to the actual business detail page using the location ID
                   window.open(`/business/${loc.id}`, '_blank');
                 }}
                 $active={selectedId === loc.id}
               >
+                {showOnlyNearby && loc.distanceKm !== undefined && (
+                  <DistanceBadge>
+                    {loc.distanceKm.toFixed(1)} km
+                  </DistanceBadge>
+                )}
                 <ServiceCard service={service} variant="popular" />
               </ServiceCardWrap>
             );
