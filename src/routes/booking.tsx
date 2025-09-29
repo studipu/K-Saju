@@ -1460,7 +1460,6 @@ export default function Booking() {
             <InfoCard>
               <CardTitle>{getBookingText('booking_summary', language)}</CardTitle>
               <BusinessInfo>
-                <BusinessName $language={language}>{mockBusinessData.title}</BusinessName>
                 <BusinessDetails>
                   <DetailItem>
                     <DetailIcon>
