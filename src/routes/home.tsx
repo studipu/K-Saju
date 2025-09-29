@@ -930,9 +930,15 @@ interface LocationService {
   title: string;
   title_ko?: string;
   title_en?: string;
+  title_zh?: string;
+  title_ja?: string;
+  title_es?: string;
   tagline?: string;
   tagline_ko?: string;
   tagline_en?: string;
+  tagline_zh?: string;
+  tagline_ja?: string;
+  tagline_es?: string;
   image_url?: string;
   price_krw: number;
   activity_level?: string;
@@ -996,7 +1002,11 @@ export function Home() {
       try {
         const { data, error } = await supabase
           .from('locations')
-          .select('id, title, title_ko, title_en, tagline, tagline_ko, tagline_en, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id');
+          .select(`
+            id, title, image_url, price_krw, activity_level, skill_level, max_guests_total, min_age, place_id,
+            title_ko, title_en, title_zh, title_ja, title_es,
+            tagline, tagline_ko, tagline_en, tagline_zh, tagline_ja, tagline_es
+          `);
         
         if (error) {
           console.error('Error fetching services:', error);
@@ -1060,36 +1070,36 @@ export function Home() {
     // Get localized title based on current language
     const getLocalizedTitle = () => {
       switch (language) {
-        case 'en':
-          return service.title_en || service.title || service.title_ko || `Fortune Service ${index + 1}`;
         case 'ko':
           return service.title_ko || service.title || `사주 서비스 ${index + 1}`;
+        case 'en':
+          return service.title_en || service.title_ko || service.title || `Fortune Service ${index + 1}`;
         case 'zh':
-          return service.title || service.title_ko || `四柱服务 ${index + 1}`;
+          return service.title_zh || service.title_ko || service.title || `四柱服务 ${index + 1}`;
         case 'ja':
-          return service.title || service.title_ko || `四柱サービス ${index + 1}`;
+          return service.title_ja || service.title_ko || service.title || `四柱サービス ${index + 1}`;
         case 'es':
-          return service.title_en || service.title || service.title_ko || `Servicio Saju ${index + 1}`;
+          return service.title_es || service.title_en || service.title_ko || service.title || `Servicio Saju ${index + 1}`;
         default:
-          return service.title_en || service.title || service.title_ko || `Fortune Service ${index + 1}`;
+          return service.title_en || service.title_ko || service.title || `Fortune Service ${index + 1}`;
       }
     };
 
     // Get localized tagline based on current language
     const getLocalizedTagline = () => {
       switch (language) {
-        case 'en':
-          return service.tagline_en || service.tagline || service.tagline_ko;
         case 'ko':
           return service.tagline_ko || service.tagline;
+        case 'en':
+          return service.tagline_en || service.tagline_ko || service.tagline;
         case 'zh':
-          return service.tagline || service.tagline_ko;
+          return service.tagline_zh || service.tagline_ko || service.tagline;
         case 'ja':
-          return service.tagline || service.tagline_ko;
+          return service.tagline_ja || service.tagline_ko || service.tagline;
         case 'es':
-          return service.tagline_en || service.tagline || service.tagline_ko;
+          return service.tagline_es || service.tagline_en || service.tagline_ko || service.tagline;
         default:
-          return service.tagline_en || service.tagline || service.tagline_ko;
+          return service.tagline_en || service.tagline_ko || service.tagline;
       }
     };
 

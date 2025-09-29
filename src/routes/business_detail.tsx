@@ -1644,13 +1644,43 @@ export default function BusinessDetail() {
   const [guestCount, setGuestCount] = useState(1);
   const [showAllReviews, setShowAllReviews] = useState(false);
   
-  // pseudo reviews (fallback when DB has no reviews)
-  const pseudoReviews: BusinessReview[] = [
-    { id: 1001, name: '홍길동', date: '2024.12.01', rating: 5, text: '정말 친절하고 정확한 상담이었어요. 다음에도 이용할게요.' },
-    { id: 1002, name: '김철수', date: '2024.11.20', rating: 4, text: '전반적으로 만족합니다. 설명이 이해하기 쉬웠어요.' },
-    { id: 1003, name: '이영희', date: '2024.11.05', rating: 5, text: '정확도가 높아서 놀랐어요! 추천합니다.' },
-    { id: 1004, name: '박민수', date: '2024.10.12', rating: 5, text: '가격 대비 최고의 경험이었습니다. 재방문 의사 있어요.' }
-  ];
+  // pseudo reviews (fallback when DB has no reviews) - localized by language
+  const getPseudoReviews = (lang: string): BusinessReview[] => {
+    const reviewsByLanguage: Record<string, BusinessReview[]> = {
+      ko: [
+        { id: 1001, name: '홍길동', date: '2024.12.01', rating: 5, text: '정말 친절하고 정확한 상담이었어요. 다음에도 이용할게요.' },
+        { id: 1002, name: '김철수', date: '2024.11.20', rating: 4, text: '전반적으로 만족합니다. 설명이 이해하기 쉬웠어요.' },
+        { id: 1003, name: '이영희', date: '2024.11.05', rating: 5, text: '정확도가 높아서 놀랐어요! 추천합니다.' },
+        { id: 1004, name: '박민수', date: '2024.10.12', rating: 5, text: '가격 대비 최고의 경험이었습니다. 재방문 의사 있어요.' }
+      ],
+      en: [
+        { id: 1001, name: 'John Smith', date: '2024.12.01', rating: 5, text: 'Really kind and accurate consultation. I will use this service again.' },
+        { id: 1002, name: 'Mike Johnson', date: '2024.11.20', rating: 4, text: 'Overall satisfied. The explanation was easy to understand.' },
+        { id: 1003, name: 'Sarah Wilson', date: '2024.11.05', rating: 5, text: 'Surprised by the high accuracy! I recommend it.' },
+        { id: 1004, name: 'David Brown', date: '2024.10.12', rating: 5, text: 'Best experience for the price. I plan to return.' }
+      ],
+      zh: [
+        { id: 1001, name: '李明', date: '2024.12.01', rating: 5, text: '真的很亲切，咨询也很准确。下次还会使用。' },
+        { id: 1002, name: '王刚', date: '2024.11.20', rating: 4, text: '整体很满意。解释很容易理解。' },
+        { id: 1003, name: '张丽', date: '2024.11.05', rating: 5, text: '准确度很高，让我很惊讶！推荐给大家。' },
+        { id: 1004, name: '陈伟', date: '2024.10.12', rating: 5, text: '性价比最高的体验。有再次光临的意愿。' }
+      ],
+      ja: [
+        { id: 1001, name: '田中太郎', date: '2024.12.01', rating: 5, text: '本当に親切で正確な相談でした。また利用します。' },
+        { id: 1002, name: '佐藤花子', date: '2024.11.20', rating: 4, text: '全体的に満足しています。説明が分かりやすかったです。' },
+        { id: 1003, name: '鈴木一郎', date: '2024.11.05', rating: 5, text: '正確度が高くて驚きました！おすすめします。' },
+        { id: 1004, name: '高橋美穂', date: '2024.10.12', rating: 5, text: 'コスパ最高の体験でした。再訪問したいです。' }
+      ],
+      es: [
+        { id: 1001, name: 'Carlos García', date: '2024.12.01', rating: 5, text: 'Realmente amable y consulta precisa. Volveré a usar este servicio.' },
+        { id: 1002, name: 'María López', date: '2024.11.20', rating: 4, text: 'En general satisfecho. La explicación fue fácil de entender.' },
+        { id: 1003, name: 'José Martín', date: '2024.11.05', rating: 5, text: '¡Sorprendido por la alta precisión! Lo recomiendo.' },
+        { id: 1004, name: 'Ana Rodríguez', date: '2024.10.12', rating: 5, text: 'La mejor experiencia por el precio. Planeo volver.' }
+      ]
+    };
+    
+    return reviewsByLanguage[lang] || reviewsByLanguage.ko;
+  };
   
   // 구글 맵 관련
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
@@ -1842,15 +1872,17 @@ export default function BusinessDetail() {
       try {
         setLoading(true);
         
-        // Supabase에서 locations 데이터 가져오기 (localized fields 포함)
+        // Supabase에서 locations 데이터 가져오기 (모든 localized fields 포함)
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
           .select(`
             *, 
-            title_ko, title_en, 
-            subtitle_ko, subtitle_en,
-            description_ko, description_en,
-            business_hours_ko, business_hours_en
+            title_ko, title_en, title_zh, title_ja, title_es,
+            subtitle_ko, subtitle_en, subtitle_zh, subtitle_ja, subtitle_es,
+            description_ko, description_en, description_zh, description_ja, description_es,
+            business_hours_ko, business_hours_en, business_hours_zh, business_hours_ja, business_hours_es,
+            price_description_ko, price_description_en, price_description_zh, price_description_ja, price_description_es,
+            tagline_ko, tagline_en, tagline_zh, tagline_ja, tagline_es
           `)
           .eq('id', id)
           .single();
@@ -1881,15 +1913,25 @@ export default function BusinessDetail() {
         const getLocalizedContent = (
           koreanField: string | undefined,
           englishField: string | undefined,
+          chineseField: string | undefined,
+          japaneseField: string | undefined,
+          spanishField: string | undefined,
           fallback: string
         ) => {
-          if (language === 'en' && englishField) {
-            return englishField;
-          } else if (language === 'ko' && koreanField) {
-            return koreanField;
+          switch (language) {
+            case 'ko':
+              return koreanField || englishField || fallback;
+            case 'en':
+              return englishField || koreanField || fallback;
+            case 'zh':
+              return chineseField || koreanField || englishField || fallback;
+            case 'ja':
+              return japaneseField || koreanField || englishField || fallback;
+            case 'es':
+              return spanishField || englishField || koreanField || fallback;
+            default:
+              return englishField || koreanField || fallback;
           }
-          // Fallback to Korean first, then English, then provided fallback
-          return koreanField || englishField || fallback;
         };
 
         // Business 인터페이스에 맞게 데이터 변환
@@ -1898,6 +1940,9 @@ export default function BusinessDetail() {
           title: getLocalizedContent(
             locationData.title_ko,
             locationData.title_en,
+            locationData.title_zh,
+            locationData.title_ja,
+            locationData.title_es,
             locationData.title || '사주 서비스'
           ),
           title_ko: locationData.title_ko,
@@ -1905,6 +1950,9 @@ export default function BusinessDetail() {
           subtitle: getLocalizedContent(
             locationData.subtitle_ko,
             locationData.subtitle_en,
+            locationData.subtitle_zh,
+            locationData.subtitle_ja,
+            locationData.subtitle_es,
             locationData.subtitle || '전통 사주와 현대 기술의 만남'
           ),
           subtitle_ko: locationData.subtitle_ko,
@@ -1912,6 +1960,9 @@ export default function BusinessDetail() {
           description: getLocalizedContent(
             locationData.description_ko,
             locationData.description_en,
+            locationData.description_zh,
+            locationData.description_ja,
+            locationData.description_es,
             locationData.description || '정확하고 상세한 사주 분석을 제공합니다.'
           ),
           description_ko: locationData.description_ko,
@@ -1921,7 +1972,14 @@ export default function BusinessDetail() {
           icon: locationData.icon || '🔮',
           features: locationData.features || [],
           base_price: locationData.base_price || locationData.price || 29000,
-          price_description: locationData.price_description || '1회 상담 기준',
+          price_description: getLocalizedContent(
+            locationData.price_description_ko,
+            locationData.price_description_en,
+            locationData.price_description_zh,
+            locationData.price_description_ja,
+            locationData.price_description_es,
+            locationData.price_description || '1회 상담 기준'
+          ),
           currency: locationData.currency || 'KRW',
           rating: locationData.rating || 4.5,
           review_count: locationData.review_count || 0,
@@ -1934,6 +1992,9 @@ export default function BusinessDetail() {
           business_hours: getLocalizedContent(
             locationData.business_hours_ko,
             locationData.business_hours_en,
+            locationData.business_hours_zh,
+            locationData.business_hours_ja,
+            locationData.business_hours_es,
             locationData.business_hours || 'Open 09:00 - 21:00'
           ),
           business_hours_ko: locationData.business_hours_ko,
@@ -1950,7 +2011,7 @@ export default function BusinessDetail() {
         };
 
         setBusiness(businessData);
-        const allReviews = (businessData.reviews && businessData.reviews.length > 0) ? businessData.reviews : pseudoReviews;
+        const allReviews = (businessData.reviews && businessData.reviews.length > 0) ? businessData.reviews : getPseudoReviews(language);
         setReviews(allReviews);
         
         // Debug: Log the business data to check images
@@ -2239,7 +2300,7 @@ export default function BusinessDetail() {
       <Container $language={language}>
         <ContentWrapper $isNavFixed={isNavFixed} $language={language}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
-            <p>Loading...</p>
+            <p>{t('loading')}</p>
           </div>
         </ContentWrapper>
       </Container>
@@ -2251,7 +2312,7 @@ export default function BusinessDetail() {
       <Container $language={language}>
         <ContentWrapper $isNavFixed={isNavFixed} $language={language}>
           <div style={{ padding: '3rem', textAlign: 'center' }}>
-            <p>Business not found</p>
+            <p>{t('businessNotFoundError')}</p>
           </div>
         </ContentWrapper>
       </Container>
@@ -2268,24 +2329,24 @@ export default function BusinessDetail() {
               $imageUrl={business.main_image_url || business.gallery_images?.[0]}
               onClick={() => handleImageClick(0)}
             >
-              {!business.main_image_url && !business.gallery_images?.[0] && 'Main Photo'}
+              {!business.main_image_url && !business.gallery_images?.[0] && t('mainPhoto')}
             </MainImage>
             <ThumbnailImage 
               $imageUrl={business.gallery_images?.[1]}
               onClick={() => handleImageClick(1)}
             >
-              {!business.gallery_images?.[1] && 'Photo 2'}
+              {!business.gallery_images?.[1] && `${t('photo')} 2`}
             </ThumbnailImage>
             <ThumbnailImage 
               $imageUrl={business.gallery_images?.[2]}
               onClick={() => handleImageClick(2)}
             >
-              {!business.gallery_images?.[2] && 'Photo 3'}
+              {!business.gallery_images?.[2] && `${t('photo')} 3`}
             </ThumbnailImage>
           </ImageGrid>
           <ShowAllPhotosButton onClick={handleMoreImages}>
             <CameraIcon style={{ width: 16, height: 16 }} />
-            Show all photos
+            {t('showAllPhotos')}
           </ShowAllPhotosButton>
         </ImageGallery>
 
@@ -2308,13 +2369,13 @@ export default function BusinessDetail() {
 
             {/* Overview section */}
             <Section id="overview">
-              <SectionHeader $language={language}>Overview</SectionHeader>
+              <SectionHeader $language={language}>{t('overview')}</SectionHeader>
               <FormattedDescription description={business.description} />
             </Section>
 
             {/* Services section */}
             <Section id="amenities">
-              <SectionHeader $language={language}>Services</SectionHeader>
+              <SectionHeader $language={language}>{t('services')}</SectionHeader>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div style={{ 
                   display: 'flex', alignItems: 'center', gap: '12px'
@@ -2373,7 +2434,7 @@ export default function BusinessDetail() {
               {/* Guest counter */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ marginBottom: 12, fontSize: 16, fontWeight: 600, color: '#222222' }}>
-                  {getGuestsText(language)}
+                  {t('guests')}
                 </div>
                 <div style={{ border: '1px solid #dddddd', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <button
@@ -2415,9 +2476,9 @@ export default function BusinessDetail() {
                 </div>
               </div>
               
-              <BookingButton style={{ width: '100%' }} onClick={handleBook}>Reserve</BookingButton>
+              <BookingButton style={{ width: '100%' }} onClick={handleBook}>{t('reserve')}</BookingButton>
               <div style={{ marginTop: 8, textAlign: 'center', fontSize: 13, color: '#717171' }}>
-                {getNoChargeText(language)}
+                {t('noChargeYet')}
               </div>
             </BookingCard>
 
@@ -2470,14 +2531,14 @@ export default function BusinessDetail() {
               {!apiKey && (
                 <div style={{ padding: '1rem' }}>
                   <MapNotice>
-                    Please set VITE_GOOGLE_MAPS_API_KEY environment variable to view the map.
+                    {t('mapNotAvailableText')}
                   </MapNotice>
                 </div>
               )}
               {apiKey && mapError && (
                 <div style={{ padding: '1rem' }}>
                   <MapNotice>
-                    {mapError}
+                    {t('mapErrorText')}
                   </MapNotice>
                 </div>
               )}
@@ -2491,7 +2552,7 @@ export default function BusinessDetail() {
                     color: '#6b7280',
                     fontSize: '0.9rem'
                   }}>
-                    지도를 로드하는 중...
+                    {t('mapLoadingText')}
                   </div>
                 )}
                 <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
@@ -2524,7 +2585,7 @@ export default function BusinessDetail() {
                 marginBottom: 32
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Accuracy</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('accuracy')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2545,7 +2606,7 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Communication</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('communication')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2566,7 +2627,7 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Value</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('value')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2587,7 +2648,7 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Service quality</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('serviceQuality')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2608,7 +2669,7 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Professionalism</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('professionalism')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2629,7 +2690,7 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#222222', fontSize: 14 }}>Timeliness</span>
+                  <span style={{ color: '#222222', fontSize: 14 }}>{t('timeliness')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ 
                       width: 80, 
@@ -2728,7 +2789,7 @@ export default function BusinessDetail() {
                 }}
                 onClick={() => setShowAllReviews(true)}
                 >
-                  Show all {totalReviews} reviews
+                  {t('showAllReviews')} {totalReviews}
                 </button>
               </div>
             )}
@@ -2750,7 +2811,7 @@ export default function BusinessDetail() {
             $imageUrl={business.gallery_images[selectedImageIndex]}
             onClick={(e) => e.stopPropagation()}
           >
-            {!business.gallery_images[selectedImageIndex] && `Photo ${selectedImageIndex + 1}`}
+            {!business.gallery_images[selectedImageIndex] && `${t('photo')} ${selectedImageIndex + 1}`}
           </ImageModalMainImage>
           <ImageModalThumbnails onClick={(e) => e.stopPropagation()}>
             {business.gallery_images.map((imageUrl, index) => (
@@ -2760,7 +2821,7 @@ export default function BusinessDetail() {
                 $imageUrl={imageUrl}
                 onClick={() => handleThumbnailClick(index)}
               >
-                {!imageUrl && `Photo ${index + 1}`}
+                {!imageUrl && `${t('photo')} ${index + 1}`}
               </ImageModalThumbnail>
             ))}
           </ImageModalThumbnails>
@@ -2774,7 +2835,7 @@ export default function BusinessDetail() {
             <span className="currency">{formatPrice(business.base_price, business.currency)}</span>
             <span className="period">{getPerSessionShort(language)}</span>
           </MobilePriceDisplay>
-          <MobileBookingButton onClick={handleBook}>Reserve</MobileBookingButton>
+          <MobileBookingButton onClick={handleBook}>{t('reserve')}</MobileBookingButton>
         </div>
       </MobileBottomBar>
       
@@ -2785,7 +2846,7 @@ export default function BusinessDetail() {
 
       {/* Copy success toast */}
       <CopyToast visible={showCopyToast}>
-        ✅ Copied to clipboard!
+        ✅ {t('copiedToClipboard')}
       </CopyToast>
     </Container>
   );
