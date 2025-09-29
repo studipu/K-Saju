@@ -338,10 +338,10 @@ export function ServiceCard({ service, variant = 'popular', onClick }: ServiceCa
   return (
     <Card $variant={variant} onClick={handleClick}>
       <CardImage 
-        $imageUrl={service.image && service.image.startsWith('http') ? service.image : undefined}
+        $imageUrl={service.image && (service.image.startsWith('http') || service.image.startsWith('/')) ? service.image : undefined}
         $variant={variant}
       >
-        {!service.image || !service.image.startsWith('http') ? service.image || t("noImage") : ''}
+        {!service.image || (!service.image.startsWith('http') && !service.image.startsWith('/')) ? service.image || t("noImage") : ''}
       </CardImage>
       <CardContent $variant={variant}>
         <SymbolMark $variant={variant}>✦</SymbolMark>
