@@ -247,7 +247,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     premiumExperience: "Premium Experience",
     premiumExperienceDesc: "Provides a special experience to feel the depth of Korean culture and memorable cultural experiences.",
     convenientBooking: "Convenient Booking",
-    convenientBookingDesc: "Easy online booking system allows you to easily make fortune telling consultation appointments anytime, anywhere."
+    convenientBookingDesc: "Easy online booking system allows you to easily make fortune telling consultation appointments anytime, anywhere.",
+    // FAQ translations
+    faqTitle: "Frequently Asked Questions",
+    faqSubtitle: "Find answers to common questions about K-Saju",
+    faqWhatIsSaju: "What is Saju?",
+    faqWhatIsSajuAnswer: "Saju is a traditional Korean fortune-telling practice based on the four pillars of destiny: year, month, day, and hour of birth. This ancient wisdom has been used for thousands of years to interpret personality, fate, and future prospects.",
+    faqHowKSajuDifferent: "How is K-Saju different?",
+    faqHowKSajuDifferentAnswer: "K-Saju combines traditional Saju wisdom with modern convenience. We offer multilingual support, verified expert matching, and AI-powered recommendations to provide accurate and reliable fortune telling services without language barriers.",
+    faqHowConsultationWorks: "How does a consultation work?",
+    faqHowConsultationWorksAnswer: "After booking online, you'll have a 1:1 consultation with your chosen expert. Our real-time translation service ensures smooth communication, and you'll receive personalized interpretations and advice tailored to your situation.",
+    faqHowAccurate: "How accurate are the readings?",
+    faqHowAccurateAnswer: "We partner only with verified Saju experts who have decades of experience. They follow traditional interpretation methods strictly, and we maintain over 95% customer satisfaction rate for accuracy and insight quality.",
+    faqWhatLanguages: "What languages do you support?",
+    faqWhatLanguagesAnswer: "We support Korean, English, Chinese, Japanese, and Spanish. Our AI-powered real-time translation service ensures accurate communication without language barriers, considering cultural nuances in translation.",
+    faqPricingOptions: "What are the pricing options?",
+    faqPricingOptionsAnswer: "Basic consultations start from ₩50,000 for 30 minutes, with various pricing tiers depending on the expert. We offer package deals, subscription options, and special discounts for new customers.",
+    // Final CTA translations
+    finalCtaTitle: "Ready to Discover Your Destiny?",
+    finalCtaSubtitle: "Find the perfect Korean fortune telling experience near you with our curated selection of verified professionals."
   },
   ko: {
     appName: "케이사주",
@@ -481,7 +499,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     premiumExperience: "프리미엄 경험",
     premiumExperienceDesc: "한국 문화의 깊이를 느낄 수 있는 특별한 경험과 기억에 남을 문화 체험을 제공합니다.",
     convenientBooking: "편리한 예약",
-    convenientBookingDesc: "간편한 온라인 예약 시스템으로 언제 어디서나 쉽게 사주풀이 상담을 예약하실 수 있습니다."
+    convenientBookingDesc: "간편한 온라인 예약 시스템으로 언제 어디서나 쉽게 사주풀이 상담을 예약하실 수 있습니다.",
+    // FAQ translations
+    faqTitle: "자주 묻는 질문",
+    faqSubtitle: "K-Saju에 대해 궁금한 점들을 확인해보세요",
+    faqWhatIsSaju: "사주란 무엇인가요?",
+    faqWhatIsSajuAnswer: "사주는 개인의 출생 연월일시(년, 월, 일, 시)를 기반으로 한 한국 전통 운명학입니다. 이 네 가지 기둥(四柱)으로 개인의 성격, 운명, 미래를 해석하는 학문으로, 수천 년의 역사를 가지고 있습니다.",
+    faqHowKSajuDifferent: "K-Saju는 어떻게 다른가요?",
+    faqHowKSajuDifferentAnswer: "K-Saju는 전통 사주학에 현대적 편의성을 더한 플랫폼입니다. 다국어 지원, 검증된 전문가 매칭, AI 기반 추천 시스템을 통해 언어 장벽 없이 정확하고 신뢰할 수 있는 사주 상담을 받으실 수 있습니다.",
+    faqHowConsultationWorks: "상담은 어떻게 진행되나요?",
+    faqHowConsultationWorksAnswer: "온라인으로 간편하게 예약한 후, 선택한 전문가와 1:1 상담을 진행합니다. 실시간 번역 서비스를 통해 언어 걱정 없이 소통할 수 있으며, 개인 맞춤형 해석과 조언을 받으실 수 있습니다.",
+    faqHowAccurate: "얼마나 정확한가요?",
+    faqHowAccurateAnswer: "저희는 수십 년의 경험을 가진 검증된 사주 전문가들과만 파트너십을 맺고 있습니다. 전통적인 사주 해석 방법을 엄격히 따르며, 고객 만족도 95% 이상을 유지하고 있습니다.",
+    faqWhatLanguages: "어떤 언어를 지원하나요?",
+    faqWhatLanguagesAnswer: "한국어, 영어, 중국어, 일본어, 스페인어를 지원합니다. AI 기반 실시간 번역 서비스를 통해 언어 장벽 없이 정확한 소통이 가능하며, 문화적 뉘앙스까지 고려한 번역을 제공합니다.",
+    faqPricingOptions: "가격은 어떻게 되나요?",
+    faqPricingOptionsAnswer: "기본 상담은 30분에 50,000원부터 시작하며, 전문가별로 다양한 가격대의 서비스를 제공합니다. 패키지 상담, 정기 구독 등 다양한 옵션이 있으며, 신규 고객에게는 특별 할인 혜택을 제공합니다.",
+    // Final CTA translations
+    finalCtaTitle: "운명을 발견할 준비가 되셨나요?",
+    finalCtaSubtitle: "검증된 전문가들의 엄선된 서비스로 근처에서 완벽한 한국 사주 경험을 찾아보세요."
   },
   zh: {
     appName: "K-Saju",
@@ -718,7 +754,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     premiumExperience: "优质体验",
     premiumExperienceDesc: "提供感受韩国文化深度的特殊体验和难忘的文化体验。",
     convenientBooking: "便捷预约",
-    convenientBookingDesc: "便捷的在线预约系统让您随时随地轻松预约算命咨询。"
+    convenientBookingDesc: "便捷的在线预约系统让您随时随地轻松预约算命咨询。",
+    // FAQ translations
+    faqTitle: "常见问题",
+    faqSubtitle: "查找关于K-Saju的常见问题答案",
+    faqWhatIsSaju: "什么是四柱？",
+    faqWhatIsSajuAnswer: "四柱是基于出生年月日时（年、月、日、时）的韩国传统命理学。这门以四个支柱为基础的学科用于解读个人性格、命运和未来，拥有数千年的历史。",
+    faqHowKSajuDifferent: "K-Saju有什么不同？",
+    faqHowKSajuDifferentAnswer: "K-Saju将传统四柱学与现代便利性相结合。我们提供多语言支持、经验证的专家匹配和AI驱动的推荐系统，让您无需语言障碍即可获得准确可靠的算命服务。",
+    faqHowConsultationWorks: "咨询是如何进行的？",
+    faqHowConsultationWorksAnswer: "在线简单预约后，您将与选择的专家进行一对一咨询。通过实时翻译服务，您可以无语言顾虑地沟通，并获得个性化的解读和建议。",
+    faqHowAccurate: "准确度如何？",
+    faqHowAccurateAnswer: "我们仅与拥有数十年经验的经验证四柱专家合作。他们严格遵循传统四柱解读方法，我们保持95%以上的客户满意度。",
+    faqWhatLanguages: "支持哪些语言？",
+    faqWhatLanguagesAnswer: "我们支持韩语、英语、中文、日语、西班牙语。通过AI驱动的实时翻译服务，确保无语言障碍的准确沟通，并考虑文化细微差别的翻译。",
+    faqPricingOptions: "价格选项如何？",
+    faqPricingOptionsAnswer: "基本咨询从30分钟50,000韩元开始，根据专家提供不同价位的服务。我们提供套餐咨询、定期订阅等多种选择，为新客户提供特别折扣优惠。",
+    // Final CTA translations
+    finalCtaTitle: "准备好发现您的命运了吗？",
+    finalCtaSubtitle: "通过我们精选的经验证专业人士，在您附近找到完美的韩国算命体验。"
   },
   ja: {
     appName: "K-Saju",
@@ -952,7 +1006,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     premiumExperience: "プレミアム体験",
     premiumExperienceDesc: "韓国文化の深さを感じられる特別な体験と記憶に残る文化的体験を提供します。",
     convenientBooking: "便利な予約",
-    convenientBookingDesc: "簡単なオンライン予約システムで、いつでもどこでも簡単に占い相談を予約できます。"
+    convenientBookingDesc: "簡単なオンライン予約システムで、いつでもどこでも簡単に占い相談を予約できます。",
+    // FAQ translations
+    faqTitle: "よくある質問",
+    faqSubtitle: "K-Sajuに関するよくある質問の答えを見つけてください",
+    faqWhatIsSaju: "四柱とは何ですか？",
+    faqWhatIsSajuAnswer: "四柱は個人の出生年月日時（年、月、日、時）に基づく韓国伝統運命学です。この四つの柱で個人の性格、運命、未来を解釈する学問で、数千年の歴史があります。",
+    faqHowKSajuDifferent: "K-Sajuは何が違いますか？",
+    faqHowKSajuDifferentAnswer: "K-Sajuは伝統的な四柱学に現代的な利便性を加えたプラットフォームです。多言語サポート、検証された専門家マッチング、AI基盤推薦システムを通じて言語の壁なく正確で信頼できる四柱相談を受けられます。",
+    faqHowConsultationWorks: "相談はどのように進められますか？",
+    faqHowConsultationWorksAnswer: "オンラインで簡単に予約した後、選択した専門家と1:1相談を行います。リアルタイム翻訳サービスを通じて言語の心配なくコミュニケーションでき、個人カスタマイズされた解釈とアドバイスを受けられます。",
+    faqHowAccurate: "どれくらい正確ですか？",
+    faqHowAccurateAnswer: "私たちは数十年の経験を持つ検証された四柱専門家とのみパートナーシップを結んでいます。伝統的な四柱解釈方法を厳格に従い、お客様満足度95%以上を維持しています。",
+    faqWhatLanguages: "どの言語をサポートしていますか？",
+    faqWhatLanguagesAnswer: "韓国語、英語、中国語、日本語、スペイン語をサポートしています。AI基盤のリアルタイム翻訳サービスを通じて言語の壁なく正確なコミュニケーションが可能で、文化的ニュアンスまで考慮した翻訳を提供します。",
+    faqPricingOptions: "価格はどうなっていますか？",
+    faqPricingOptionsAnswer: "基本相談は30分で50,000ウォンから始まり、専門家別に様々な価格帯のサービスを提供します。パッケージ相談、定期購読など様々なオプションがあり、新規お客様には特別割引特典を提供します。",
+    // Final CTA translations
+    finalCtaTitle: "運命を発見する準備はできましたか？",
+    finalCtaSubtitle: "検証された専門家の厳選されたサービスで、近くで完璧な韓国四柱体験を見つけてください。"
   },
   es: {
     appName: "K-Saju",
@@ -1189,7 +1261,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     premiumExperience: "Experiencia Premium",
     premiumExperienceDesc: "Proporciona una experiencia especial para sentir la profundidad de la cultura coreana y experiencias culturales memorables.",
     convenientBooking: "Reserva Conveniente",
-    convenientBookingDesc: "Sistema de reserva en línea fácil te permite hacer citas de consulta de adivinación fácilmente en cualquier momento y lugar."
+    convenientBookingDesc: "Sistema de reserva en línea fácil te permite hacer citas de consulta de adivinación fácilmente en cualquier momento y lugar.",
+    // FAQ translations
+    faqTitle: "Preguntas Frecuentes",
+    faqSubtitle: "Encuentra respuestas a preguntas comunes sobre K-Saju",
+    faqWhatIsSaju: "¿Qué es Saju?",
+    faqWhatIsSajuAnswer: "Saju es una práctica tradicional coreana de adivinación basada en los cuatro pilares del destino: año, mes, día y hora de nacimiento. Esta sabiduría ancestral ha sido utilizada durante miles de años para interpretar la personalidad, el destino y las perspectivas futuras.",
+    faqHowKSajuDifferent: "¿En qué se diferencia K-Saju?",
+    faqHowKSajuDifferentAnswer: "K-Saju combina la sabiduría tradicional del Saju con la conveniencia moderna. Ofrecemos soporte multilingüe, emparejamiento de expertos verificados y recomendaciones impulsadas por IA para proporcionar servicios de adivinación precisos y confiables sin barreras de idioma.",
+    faqHowConsultationWorks: "¿Cómo funciona una consulta?",
+    faqHowConsultationWorksAnswer: "Después de reservar en línea, tendrás una consulta 1:1 con tu experto elegido. Nuestro servicio de traducción en tiempo real asegura una comunicación fluida, y recibirás interpretaciones personalizadas y consejos adaptados a tu situación.",
+    faqHowAccurate: "¿Qué tan precisas son las lecturas?",
+    faqHowAccurateAnswer: "Solo nos asociamos con expertos en Saju verificados que tienen décadas de experiencia. Siguen métodos de interpretación tradicionales estrictamente, y mantenemos más del 95% de satisfacción del cliente por precisión y calidad de perspectivas.",
+    faqWhatLanguages: "¿Qué idiomas apoyan?",
+    faqWhatLanguagesAnswer: "Apoyamos coreano, inglés, chino, japonés y español. Nuestro servicio de traducción en tiempo real impulsado por IA asegura una comunicación precisa sin barreras de idioma, considerando los matices culturales en la traducción.",
+    faqPricingOptions: "¿Cuáles son las opciones de precios?",
+    faqPricingOptionsAnswer: "Las consultas básicas comienzan desde ₩50,000 por 30 minutos, con varios niveles de precios dependiendo del experto. Ofrecemos ofertas de paquetes, opciones de suscripción y descuentos especiales para nuevos clientes.",
+    // Final CTA translations
+    finalCtaTitle: "¿Listo para Descubrir Tu Destino?",
+    finalCtaSubtitle: "Encuentra la experiencia perfecta de adivinación coreana cerca de ti con nuestra selección curada de profesionales verificados."
   },
 };
 

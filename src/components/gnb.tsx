@@ -359,7 +359,6 @@ export default function GNB() {
                 {language === 'ko' ? '사주란?' : 'What is Saju?'}
               </button>
               
-              {!((user?.user_metadata as any)?.preferred_language) && (
               <div style={{ position: "relative" }} data-dropdown>
                 <IconButton $isScrolled={isScrolled} onClick={onToggleLang} aria-label={t("language")}>
                   <span style={{ fontSize: 20 }}>
@@ -426,7 +425,6 @@ export default function GNB() {
                   </div>
                 )}
               </div>
-              )}
 
               {user && (
                 <IconButton $isScrolled={isScrolled} onClick={onMessages} aria-label={t("messages")}>
@@ -663,8 +661,7 @@ export default function GNB() {
                 {t("settings")}
               </MobileMenuItem>
 
-              {/* Language Selection for Mobile (if no user preference) */}
-              {!((user?.user_metadata as any)?.preferred_language) && (
+              {/* Language Selection for Mobile */}
                 <MobileLangSection>
                   {[
                     { code: "en", label: "English", icon: "🇺🇸" },
@@ -688,7 +685,6 @@ export default function GNB() {
                     </MobileMenuItem>
                   ))}
                 </MobileLangSection>
-              )}
 
               {/* Logout */}
               <MobileMenuItem onClick={onMobileLogout} style={{ color: "#dc2626", marginTop: "8px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
@@ -701,8 +697,7 @@ export default function GNB() {
             </>
           ) : (
             <>
-              {/* Language Selection for Mobile (if no user and no preference) */}
-              {!user && (
+              {/* Language Selection for Mobile */}
                 <MobileLangSection>
                   {[
                     { code: "en", label: "English", icon: "🇺🇸" },
@@ -726,7 +721,6 @@ export default function GNB() {
                     </MobileMenuItem>
                   ))}
                 </MobileLangSection>
-              )}
 
               {/* Sign In */}
               <MobileMenuItem onClick={onMobileSignIn} style={{ marginTop: "8px", borderTop: "1px solid #e5e7eb", paddingTop: "16px", background: "#f3f4f6", fontWeight: 600 }}>

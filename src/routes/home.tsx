@@ -956,49 +956,37 @@ export function Home() {
   // State for FAQ accordions
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
-  // FAQ data
+  // FAQ data with proper localization
   const faqData = [
     {
       id: 1,
-      question: language === 'ko' ? "사주란 무엇인가요?" : "What is Saju?",
-      answer: language === 'ko' 
-        ? "사주는 개인의 출생 연월일시(년, 월, 일, 시)를 기반으로 한 한국 전통 운명학입니다. 이 네 가지 기둥(四柱)으로 개인의 성격, 운명, 미래를 해석하는 학문으로, 수천 년의 역사를 가지고 있습니다."
-        : "Saju is a traditional Korean fortune-telling practice based on the four pillars of destiny: year, month, day, and hour of birth. This ancient wisdom has been used for thousands of years to interpret personality, fate, and future prospects."
+      question: t("faqWhatIsSaju"),
+      answer: t("faqWhatIsSajuAnswer")
     },
     {
       id: 2,
-      question: language === 'ko' ? "K-Saju는 어떻게 다른가요?" : "How is K-Saju different?",
-      answer: language === 'ko'
-        ? "K-Saju는 전통 사주학에 현대적 편의성을 더한 플랫폼입니다. 다국어 지원, 검증된 전문가 매칭, AI 기반 추천 시스템을 통해 언어 장벽 없이 정확하고 신뢰할 수 있는 사주 상담을 받으실 수 있습니다."
-        : "K-Saju combines traditional Saju wisdom with modern convenience. We offer multilingual support, verified expert matching, and AI-powered recommendations to provide accurate and reliable fortune telling services without language barriers."
+      question: t("faqHowKSajuDifferent"),
+      answer: t("faqHowKSajuDifferentAnswer")
     },
     {
       id: 3,
-      question: language === 'ko' ? "상담은 어떻게 진행되나요?" : "How does a consultation work?",
-      answer: language === 'ko'
-        ? "온라인으로 간편하게 예약한 후, 선택한 전문가와 1:1 상담을 진행합니다. 실시간 번역 서비스를 통해 언어 걱정 없이 소통할 수 있으며, 개인 맞춤형 해석과 조언을 받으실 수 있습니다."
-        : "After booking online, you'll have a 1:1 consultation with your chosen expert. Our real-time translation service ensures smooth communication, and you'll receive personalized interpretations and advice tailored to your situation."
+      question: t("faqHowConsultationWorks"),
+      answer: t("faqHowConsultationWorksAnswer")
     },
     {
       id: 4,
-      question: language === 'ko' ? "얼마나 정확한가요?" : "How accurate are the readings?",
-      answer: language === 'ko'
-        ? "저희는 수십 년의 경험을 가진 검증된 사주 전문가들과만 파트너십을 맺고 있습니다. 전통적인 사주 해석 방법을 엄격히 따르며, 고객 만족도 95% 이상을 유지하고 있습니다."
-        : "We partner only with verified Saju experts who have decades of experience. They follow traditional interpretation methods strictly, and we maintain over 95% customer satisfaction rate for accuracy and insight quality."
+      question: t("faqHowAccurate"),
+      answer: t("faqHowAccurateAnswer")
     },
     {
       id: 5,
-      question: language === 'ko' ? "어떤 언어를 지원하나요?" : "What languages do you support?",
-      answer: language === 'ko'
-        ? "한국어, 영어, 중국어, 일본어, 스페인어를 지원합니다. AI 기반 실시간 번역 서비스를 통해 언어 장벽 없이 정확한 소통이 가능하며, 문화적 뉘앙스까지 고려한 번역을 제공합니다."
-        : "We support Korean, English, Chinese, Japanese, and Spanish. Our AI-powered real-time translation service ensures accurate communication without language barriers, considering cultural nuances in translation."
+      question: t("faqWhatLanguages"),
+      answer: t("faqWhatLanguagesAnswer")
     },
     {
       id: 6,
-      question: language === 'ko' ? "가격은 어떻게 되나요?" : "What are the pricing options?",
-      answer: language === 'ko'
-        ? "기본 상담은 30분에 50,000원부터 시작하며, 전문가별로 다양한 가격대의 서비스를 제공합니다. 패키지 상담, 정기 구독 등 다양한 옵션이 있으며, 신규 고객에게는 특별 할인 혜택을 제공합니다."
-        : "Basic consultations start from ₩50,000 for 30 minutes, with various pricing tiers depending on the expert. We offer package deals, subscription options, and special discounts for new customers."
+      question: t("faqPricingOptions"),
+      answer: t("faqPricingOptionsAnswer")
     }
   ];
 
@@ -1013,16 +1001,6 @@ export function Home() {
         if (error) {
           console.error('Error fetching services:', error);
         } else if (data) {
-          console.log('✅ Services fetched successfully:', data.length, 'services');
-          console.log('📋 Service titles:', data.map(s => s.title));
-          console.log('🌐 Localization check:', {
-            language,
-            sampleService: data[0],
-            titleKo: data[0]?.title_ko,
-            titleEn: data[0]?.title_en,
-            taglineKo: data[0]?.tagline_ko,
-            taglineEn: data[0]?.tagline_en
-          });
           setServices(data);
         }
       } catch (error) {
@@ -1081,40 +1059,42 @@ export function Home() {
   const transformServiceData = (service: LocationService, index: number) => {
     // Get localized title based on current language
     const getLocalizedTitle = () => {
-      if (language === 'en' && service.title_en) {
-        console.log(`🇺🇸 Using English title for ${service.title}: ${service.title_en}`);
-        return service.title_en;
-      } else if (language === 'ko' && service.title_ko) {
-        console.log(`🇰🇷 Using Korean title for ${service.title}: ${service.title_ko}`);
-        return service.title_ko;
+      switch (language) {
+        case 'en':
+          return service.title_en || service.title || service.title_ko || `Fortune Service ${index + 1}`;
+        case 'ko':
+          return service.title_ko || service.title || `사주 서비스 ${index + 1}`;
+        case 'zh':
+          return service.title || service.title_ko || `四柱服务 ${index + 1}`;
+        case 'ja':
+          return service.title || service.title_ko || `四柱サービス ${index + 1}`;
+        case 'es':
+          return service.title_en || service.title || service.title_ko || `Servicio Saju ${index + 1}`;
+        default:
+          return service.title_en || service.title || service.title_ko || `Fortune Service ${index + 1}`;
       }
-      // Fallback to default title or Korean version
-      console.log(`⚠️ Using fallback title for ${service.title}: ${service.title || service.title_ko}`);
-      return service.title || service.title_ko || `Fortune Service ${index + 1}`;
     };
 
     // Get localized tagline based on current language
     const getLocalizedTagline = () => {
-      if (language === 'en' && service.tagline_en) {
-        return service.tagline_en;
-      } else if (language === 'ko' && service.tagline_ko) {
-        return service.tagline_ko;
+      switch (language) {
+        case 'en':
+          return service.tagline_en || service.tagline || service.tagline_ko;
+        case 'ko':
+          return service.tagline_ko || service.tagline;
+        case 'zh':
+          return service.tagline || service.tagline_ko;
+        case 'ja':
+          return service.tagline || service.tagline_ko;
+        case 'es':
+          return service.tagline_en || service.tagline || service.tagline_ko;
+        default:
+          return service.tagline_en || service.tagline || service.tagline_ko;
       }
-      // Fallback to default tagline
-      return service.tagline;
     };
 
     const localizedTitle = getLocalizedTitle();
     const localizedTagline = getLocalizedTagline();
-    
-    console.log(`🔄 Transformed service ${index + 1}:`, {
-      id: service.id,
-      originalTitle: service.title,
-      titleKo: service.title_ko,
-      titleEn: service.title_en,
-      finalTitle: localizedTitle,
-      language
-    });
 
     return {
       id: service.id, // UUID string
@@ -1135,10 +1115,6 @@ export function Home() {
     discount: "33%"
   }));
 
-  // Debug logging for service categories
-  console.log('🎯 Popular Services:', popularServices.length, popularServices.map(s => s.title));
-  console.log('⭐ Recommended Services:', recommendedServices.length, recommendedServices.map(s => s.title));
-  console.log('🔥 Hot Deals Services:', hotDealsServices.length, hotDealsServices.map(s => s.title));
 
   const handleMoreClick = () => {
     // More button links to our original business page
@@ -1148,7 +1124,6 @@ export function Home() {
 
   const handleBusinessClick = (businessId: number | string) => {
     // Navigate to the specific business detail page using the actual service ID
-    console.log('🔗 Navigating to business:', businessId, typeof businessId);
     navigate(`/business/${businessId}`);
   };
 
@@ -1292,13 +1267,10 @@ export function Home() {
         <FAQContainer>
           <FAQHeader>
             <FAQTitle $language={language}>
-              {language === 'ko' ? "자주 묻는 질문" : "Frequently Asked Questions"}
+              {t("faqTitle")}
             </FAQTitle>
             <FAQSubtitle>
-              {language === 'ko' 
-                ? "K-Saju에 대해 궁금한 점들을 확인해보세요"
-                : "Find answers to common questions about K-Saju"
-              }
+              {t("faqSubtitle")}
             </FAQSubtitle>
           </FAQHeader>
           
@@ -1326,13 +1298,10 @@ export function Home() {
       <FinalCTASection>
         <FinalCTAContainer>
           <FinalCTATitle $language={language}>
-            {language === 'ko' ? "운명을 발견할 준비가 되셨나요?" : "Ready to Discover Your Destiny?"}
+            {t("finalCtaTitle")}
           </FinalCTATitle>
           <FinalCTASubtitle>
-            {language === 'ko' 
-              ? "검증된 전문가들의 엄선된 서비스로 근처에서 완벽한 한국 사주 경험을 찾아보세요."
-              : "Find the perfect Korean fortune telling experience near you with our curated selection of verified professionals."
-            }
+            {t("finalCtaSubtitle")}
           </FinalCTASubtitle>
           <CTAButton onClick={handleSearchLocations}>
             {"✨ "}{t("searchLocations")}
